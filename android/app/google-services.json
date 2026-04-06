@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "702524155709",
+    "project_id": "cookoo-record",
+    "storage_bucket": "cookoo-record.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:702524155709:android:63309fc17769f7c9e18754",
+        "android_client_info": {
+          "package_name": "com.example.cookoo_record"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCWHrLMtYBTyPiQrIJTmjQiDLC5YU5c_vk"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

@@ -1,0 +1,104 @@
+import 'package:camera/camera.dart';
+import 'package:flutter/foundation.dart';
+
+import '../data/enums/video_recording_mode.dart';
+import '../data/enums/video_recording_status.dart';
+import '../data/models/video_recording_flow_model.dart';
+import '../data/models/saved_video_recording_model.dart';
+
+@immutable
+class VideoState {
+  const VideoState({
+    this.isLoading = true,
+    this.flow,
+    this.isRecordingFlowVisible = false,
+    this.recordingStatus = VideoRecordingStatus.idle,
+    this.cameraController,
+    this.availableCameras = const <CameraDescription>[],
+    this.activeCamera,
+    this.recordedVideo,
+    this.savedRecordings = const <SavedVideoRecordingModel>[],
+    this.savedRecordingsStorageLocationLabel,
+    this.recordingDuration = Duration.zero,
+    this.supportsPauseResume = true,
+    this.selectedRecordingMode = VideoRecordingMode.fullScreen,
+    this.feedbackMessage,
+  });
+
+  final bool isLoading;
+  final VideoRecordingFlowModel? flow;
+  final bool isRecordingFlowVisible;
+  final VideoRecordingStatus recordingStatus;
+  final CameraController? cameraController;
+  final List<CameraDescription> availableCameras;
+  final CameraDescription? activeCamera;
+  final XFile? recordedVideo;
+  final List<SavedVideoRecordingModel> savedRecordings;
+  final String? savedRecordingsStorageLocationLabel;
+  final Duration recordingDuration;
+  final bool supportsPauseResume;
+  final VideoRecordingMode selectedRecordingMode;
+  final String? feedbackMessage;
+
+  bool get isPreparingRecording =>
+      recordingStatus == VideoRecordingStatus.preparing;
+
+  bool get isRecording => recordingStatus == VideoRecordingStatus.recording;
+
+  bool get isPaused => recordingStatus == VideoRecordingStatus.paused;
+
+  bool get isFinalizing => recordingStatus == VideoRecordingStatus.finalizing;
+
+  bool get hasActiveRecording =>
+      isRecording || isPaused || isPreparingRecording || isFinalizing;
+
+  VideoState copyWith({
+    bool? isLoading,
+    VideoRecordingFlowModel? flow,
+    bool? isRecordingFlowVisible,
+    VideoRecordingStatus? recordingStatus,
+    CameraController? cameraController,
+    List<CameraDescription>? availableCameras,
+    CameraDescription? activeCamera,
+    XFile? recordedVideo,
+    List<SavedVideoRecordingModel>? savedRecordings,
+    String? savedRecordingsStorageLocationLabel,
+    Duration? recordingDuration,
+    bool? supportsPauseResume,
+    VideoRecordingMode? selectedRecordingMode,
+    String? feedbackMessage,
+    bool clearFeedbackMessage = false,
+    bool clearCameraController = false,
+    bool clearActiveCamera = false,
+    bool clearRecordedVideo = false,
+  }) {
+    return VideoState(
+      isLoading: isLoading ?? this.isLoading,
+      flow: flow ?? this.flow,
+      isRecordingFlowVisible:
+          isRecordingFlowVisible ?? this.isRecordingFlowVisible,
+      recordingStatus: recordingStatus ?? this.recordingStatus,
+      cameraController: clearCameraController
+          ? null
+          : cameraController ?? this.cameraController,
+      availableCameras: availableCameras ?? this.availableCameras,
+      activeCamera: clearActiveCamera
+          ? null
+          : activeCamera ?? this.activeCamera,
+      recordedVideo: clearRecordedVideo
+          ? null
+          : recordedVideo ?? this.recordedVideo,
+      savedRecordings: savedRecordings ?? this.savedRecordings,
+      savedRecordingsStorageLocationLabel:
+          savedRecordingsStorageLocationLabel ??
+          this.savedRecordingsStorageLocationLabel,
+      recordingDuration: recordingDuration ?? this.recordingDuration,
+      supportsPauseResume: supportsPauseResume ?? this.supportsPauseResume,
+      selectedRecordingMode:
+          selectedRecordingMode ?? this.selectedRecordingMode,
+      feedbackMessage: clearFeedbackMessage
+          ? null
+          : feedbackMessage ?? this.feedbackMessage,
+    );
+  }
+}

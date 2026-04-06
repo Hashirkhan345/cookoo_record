@@ -1,0 +1,55 @@
+{
+  "flutter": {
+    "platforms": {
+      "android": {
+        "default": {
+          "projectId": "cookoo-record",
+          "appId": "1:702524155709:android:63309fc17769f7c9e18754",
+          "fileOutput": "android/app/google-services.json"
+        }
+      },
+      "ios": {
+        "default": {
+          "projectId": "cookoo-record",
+          "appId": "1:702524155709:ios:3a4704c5125f20d4e18754",
+          "uploadDebugSymbols": false,
+          "fileOutput": "ios/Runner/GoogleService-Info.plist"
+        }
+      },
+      "macos": {
+        "default": {
+          "projectId": "cookoo-record",
+          "appId": "1:702524155709:ios:3a4704c5125f20d4e18754",
+          "uploadDebugSymbols": false,
+          "fileOutput": "macos/Runner/GoogleService-Info.plist"
+        }
+      },
+      "dart": {
+        "lib/firebase_options.dart": {
+          "projectId": "cookoo-record",
+          "configurations": {
+            "android": "1:702524155709:android:63309fc17769f7c9e18754",
+            "ios": "1:702524155709:ios:3a4704c5125f20d4e18754",
+            "macos": "1:702524155709:ios:3a4704c5125f20d4e18754",
+            "web": "1:702524155709:web:4e567e9224790fc6e18754",
+            "windows": "1:702524155709:web:7f7e0b6b6f1e6a82e18754"
+          }
+        }
+      }
+    }
+  },
+  "hosting": {
+    "public": "build/web",
+    "ignore": [
+      "firebase.json",
+      "**/.*",
+      "**/node_modules/**"
+    ],
+    "rewrites": [
+      {
+        "source": "**",
+        "destination": "/index.html"
+      }
+    ]
+  }
+}
