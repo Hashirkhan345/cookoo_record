@@ -24,6 +24,13 @@ class VideoHomeScreen extends ConsumerStatefulWidget {
 
 class _VideoHomeScreenState extends ConsumerState<VideoHomeScreen> {
   bool _isRecordingFlowVisible = false;
+  final ScrollController _pageScrollController = ScrollController();
+
+  @override
+  void dispose() {
+    _pageScrollController.dispose();
+    super.dispose();
+  }
 
   Future<void> _showRecordingFlow() async {
     _isRecordingFlowVisible = true;
@@ -212,6 +219,7 @@ class _VideoHomeScreenState extends ConsumerState<VideoHomeScreen> {
     final Size screenSize = MediaQuery.sizeOf(context);
     final bool isDesktop = screenSize.width >= 980;
     final double headlineSize = screenSize.width < 640 ? 36 : 48;
+    final double contentHorizontalPadding = isDesktop ? 112 : 20;
 
     return Scaffold(
       body: DecoratedBox(
@@ -242,139 +250,162 @@ class _VideoHomeScreenState extends ConsumerState<VideoHomeScreen> {
                 ),
               Positioned.fill(
                 child: Padding(
-                  padding: EdgeInsets.fromLTRB(
-                    isDesktop ? 112 : 20,
-                    18,
-                    20,
-                    24,
-                  ),
-                  child: Align(
-                    alignment: Alignment.topCenter,
-                    child: ConstrainedBox(
-                      constraints: const BoxConstraints(maxWidth: 980),
+                  padding: const EdgeInsets.fromLTRB(0, 18, 0, 24),
+                  child: ScrollConfiguration(
+                    behavior: const MaterialScrollBehavior().copyWith(
+                      scrollbars: false,
+                    ),
+                    child: Scrollbar(
+                      controller: _pageScrollController,
+                      thumbVisibility: isDesktop,
+                      trackVisibility: false,
+                      interactive: true,
+                      radius: const Radius.circular(999),
+                      thickness: 10,
                       child: SingleChildScrollView(
-                        child: Column(
-                          children: <Widget>[
-                            if (!isDesktop && authState.user != null)
-                              Align(
-                                alignment: Alignment.centerLeft,
-                                child: HomeAccountMenu(
-                                  user: authState.user!,
-                                  isBusy: authState.isSubmitting,
-                                  onSelected: (HomeAccountMenuAction action) {
-                                    unawaited(
-                                      _handleAccountMenuSelection(
-                                        action,
-                                        authState,
-                                      ),
-                                    );
-                                  },
-                                ),
-                              ),
-                            // HomeTopBar(isDesktop: isDesktop),
-                            const SizedBox(height: 28),
-                            Text(
-                              flow.heroTitle,
-                              textAlign: TextAlign.center,
-                              style: TextStyle(
-                                fontSize: headlineSize,
-                                fontWeight: FontWeight.w800,
-                                letterSpacing: -1.5,
-                              ),
-                            ),
-                            const SizedBox(height: 16),
-                            ConstrainedBox(
-                              constraints: const BoxConstraints(maxWidth: 620),
-                              child: Text(
-                                flow.heroDescription,
-                                textAlign: TextAlign.center,
-                                style: const TextStyle(
-                                  color: VideoFeatureTheme.muted,
-                                  fontSize: 18,
-                                  height: 1.5,
-                                ),
-                              ),
-                            ),
-                            const SizedBox(height: 28),
-                            FilledButton.icon(
-                              key: const Key('recordVideoButton'),
-                              onPressed: ref
-                                  .read(videoControllerProvider.notifier)
-                                  .openRecordingFlow,
-                              icon: const Icon(
-                                Icons.videocam_outlined,
-                                size: 28,
-                              ),
-                              label: Text(flow.heroActionLabel),
-                              style: FilledButton.styleFrom(
-                                backgroundColor: VideoFeatureTheme.primary,
-                                foregroundColor: Colors.white,
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 34,
-                                  vertical: 24,
-                                ),
-                                textStyle: const TextStyle(
-                                  fontSize: 20,
-                                  fontWeight: FontWeight.w700,
-                                ),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(24),
-                                ),
-                              ),
-                            ),
-                            const SizedBox(height: 28),
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 22,
-                                vertical: 14,
-                              ),
-                              decoration: BoxDecoration(
-                                color: Colors.white.withValues(alpha: 0.86),
-                                borderRadius: BorderRadius.circular(18),
-                                border: Border.all(
-                                  color: VideoFeatureTheme.line,
-                                ),
-                              ),
-                              child: Wrap(
-                                spacing: 12,
-                                runSpacing: 12,
-                                alignment: WrapAlignment.center,
-                                crossAxisAlignment: WrapCrossAlignment.center,
+                        controller: _pageScrollController,
+                        child: Padding(
+                          padding: EdgeInsets.symmetric(
+                            horizontal: contentHorizontalPadding,
+                          ),
+                          child: Align(
+                            alignment: Alignment.topCenter,
+                            child: ConstrainedBox(
+                              constraints: const BoxConstraints(maxWidth: 980),
+                              child: Column(
                                 children: <Widget>[
-                                  const Icon(
-                                    Icons.desktop_mac_outlined,
-                                    color: VideoFeatureTheme.primary,
-                                  ),
+                                  if (!isDesktop && authState.user != null)
+                                    Align(
+                                      alignment: Alignment.centerLeft,
+                                      child: HomeAccountMenu(
+                                        user: authState.user!,
+                                        isBusy: authState.isSubmitting,
+                                        onSelected:
+                                            (HomeAccountMenuAction action) {
+                                              unawaited(
+                                                _handleAccountMenuSelection(
+                                                  action,
+                                                  authState,
+                                                ),
+                                              );
+                                            },
+                                      ),
+                                    ),
+                                  // HomeTopBar(isDesktop: isDesktop),
+                                  const SizedBox(height: 28),
                                   Text(
-                                    flow.helperMessage,
-                                    style: const TextStyle(
-                                      color: VideoFeatureTheme.muted,
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.w500,
+                                    flow.heroTitle,
+                                    textAlign: TextAlign.center,
+                                    style: TextStyle(
+                                      fontSize: headlineSize,
+                                      fontWeight: FontWeight.w800,
+                                      letterSpacing: -1.5,
                                     ),
                                   ),
+                                  const SizedBox(height: 16),
+                                  ConstrainedBox(
+                                    constraints: const BoxConstraints(
+                                      maxWidth: 620,
+                                    ),
+                                    child: Text(
+                                      flow.heroDescription,
+                                      textAlign: TextAlign.center,
+                                      style: const TextStyle(
+                                        color: VideoFeatureTheme.muted,
+                                        fontSize: 18,
+                                        height: 1.5,
+                                      ),
+                                    ),
+                                  ),
+                                  const SizedBox(height: 28),
+                                  FilledButton.icon(
+                                    key: const Key('recordVideoButton'),
+                                    onPressed: ref
+                                        .read(videoControllerProvider.notifier)
+                                        .openRecordingFlow,
+                                    icon: const Icon(
+                                      Icons.videocam_outlined,
+                                      size: 28,
+                                    ),
+                                    label: Text(flow.heroActionLabel),
+                                    style: FilledButton.styleFrom(
+                                      backgroundColor:
+                                          VideoFeatureTheme.primary,
+                                      foregroundColor: Colors.white,
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 34,
+                                        vertical: 24,
+                                      ),
+                                      textStyle: const TextStyle(
+                                        fontSize: 20,
+                                        fontWeight: FontWeight.w700,
+                                      ),
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(24),
+                                      ),
+                                    ),
+                                  ),
+                                  const SizedBox(height: 28),
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 22,
+                                      vertical: 14,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: Colors.white.withValues(
+                                        alpha: 0.86,
+                                      ),
+                                      borderRadius: BorderRadius.circular(18),
+                                      border: Border.all(
+                                        color: VideoFeatureTheme.line,
+                                      ),
+                                    ),
+                                    child: Wrap(
+                                      spacing: 12,
+                                      runSpacing: 12,
+                                      alignment: WrapAlignment.center,
+                                      crossAxisAlignment:
+                                          WrapCrossAlignment.center,
+                                      children: <Widget>[
+                                        const Icon(
+                                          Icons.desktop_mac_outlined,
+                                          color: VideoFeatureTheme.primary,
+                                        ),
+                                        Text(
+                                          flow.helperMessage,
+                                          style: const TextStyle(
+                                            color: VideoFeatureTheme.muted,
+                                            fontSize: 16,
+                                            fontWeight: FontWeight.w500,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  const SizedBox(height: 28),
+                                  ConstrainedBox(
+                                    constraints: const BoxConstraints(
+                                      maxWidth: 520,
+                                    ),
+                                    child: const Divider(
+                                      color: VideoFeatureTheme.line,
+                                      thickness: 1.2,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 34),
+                                  SavedRecordingsSection(
+                                    recordings: state.savedRecordings,
+                                    storageLocationLabel: state
+                                        .savedRecordingsStorageLocationLabel,
+                                    onDeleteRecording: ref
+                                        .read(videoControllerProvider.notifier)
+                                        .deleteSavedRecording,
+                                  ),
+                                  const SizedBox(height: 40),
                                 ],
                               ),
                             ),
-                            const SizedBox(height: 28),
-                            ConstrainedBox(
-                              constraints: const BoxConstraints(maxWidth: 520),
-                              child: const Divider(
-                                color: VideoFeatureTheme.line,
-                                thickness: 1.2,
-                              ),
-                            ),
-                            const SizedBox(height: 34),
-                            SavedRecordingsSection(
-                              recordings: state.savedRecordings,
-                              storageLocationLabel:
-                                  state.savedRecordingsStorageLocationLabel,
-                              onDeleteRecording: ref
-                                  .read(videoControllerProvider.notifier)
-                                  .deleteSavedRecording,
-                            ),
-                            const SizedBox(height: 40),
-                          ],
+                          ),
                         ),
                       ),
                     ),
