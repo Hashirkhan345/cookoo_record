@@ -2,6 +2,9 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import 'package:bloop/features/auth/data/models/app_user.dart';
+import 'package:bloop/features/auth/data/repository/auth_repository.dart';
+import 'package:bloop/features/auth/provider/auth_provider.dart';
 import 'package:bloop/features/video/data/enums/video_recording_status.dart';
 import 'package:bloop/features/video/data/enums/video_recording_storage_kind.dart';
 import 'package:bloop/features/video/data/models/saved_video_recording_model.dart';
@@ -10,12 +13,37 @@ import 'package:bloop/features/video/provider/video_provider.dart';
 import 'package:bloop/main.dart';
 
 void main() {
+  testWidgets('forgot password screen opens from the login screen', (
+    WidgetTester tester,
+  ) async {
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: <Override>[
+          authRepositoryProvider.overrideWith(
+            (ref) => FakeLoggedOutAuthRepository(),
+          ),
+        ],
+        child: const MyApp(),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Forgot password?'), findsOneWidget);
+
+    await tester.tap(find.text('Forgot password?'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Forgot password'), findsOneWidget);
+    expect(find.text('Back to sign in'), findsOneWidget);
+  });
+
   testWidgets('record video flow opens from the home screen', (
     WidgetTester tester,
   ) async {
     await tester.pumpWidget(
       ProviderScope(
         overrides: <Override>[
+          authRepositoryProvider.overrideWith((ref) => FakeAuthRepository()),
           videoControllerProvider.overrideWith((ref) => FakeVideoController()),
         ],
         child: const MyApp(),
@@ -58,6 +86,7 @@ void main() {
     await tester.pumpWidget(
       ProviderScope(
         overrides: <Override>[
+          authRepositoryProvider.overrideWith((ref) => FakeAuthRepository()),
           videoRepositoryProvider.overrideWith(
             (ref) => FailingSavedRecordingsRepository(),
           ),
@@ -169,4 +198,91 @@ class FailingSavedRecordingsRepository extends LocalVideoRepository {
   Future<String> getSavedRecordingsStorageLocationLabel() async {
     return 'Browser local storage';
   }
+}
+
+class FakeAuthRepository implements AuthRepository {
+  @override
+  Stream<AppUser?> authStateChanges() {
+    return Stream<AppUser?>.value(_user);
+  }
+
+  @override
+  Future<AppUser?> getCurrentUser() async {
+    return _user;
+  }
+
+  @override
+  Future<AppUser> registerWithEmail({
+    required String email,
+    required String password,
+    required String name,
+  }) async {
+    return _user;
+  }
+
+  @override
+  Future<void> sendPasswordResetEmail({required String email}) async {}
+
+  @override
+  Future<AppUser> signInWithEmail({
+    required String email,
+    required String password,
+  }) async {
+    return _user;
+  }
+
+  @override
+  Future<AppUser> signInWithGoogle() async {
+    return _user;
+  }
+
+  @override
+  Future<void> signOut() async {}
+
+  static const AppUser _user = AppUser(
+    uid: 'test-user',
+    email: 'tester@example.com',
+    name: 'Test User',
+    emailVerified: true,
+  );
+}
+
+class FakeLoggedOutAuthRepository implements AuthRepository {
+  @override
+  Stream<AppUser?> authStateChanges() {
+    return Stream<AppUser?>.value(null);
+  }
+
+  @override
+  Future<AppUser?> getCurrentUser() async {
+    return null;
+  }
+
+  @override
+  Future<AppUser> registerWithEmail({
+    required String email,
+    required String password,
+    required String name,
+  }) {
+    throw UnimplementedError();
+  }
+
+  @override
+  Future<void> sendPasswordResetEmail({required String email}) async {}
+
+  @override
+  Future<AppUser> signInWithEmail({
+    required String email,
+    required String password,
+  }) {
+    throw UnimplementedError();
+  }
+
+  @override
+  Future<AppUser> signInWithGoogle() {
+    throw UnimplementedError();
+  }
+
+  @override
+  Future<void> signOut() async {}
 }

@@ -2,8 +2,9 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'app/router/app_router.dart';
+import 'app/router/app_routes.dart';
 import 'firebase_options.dart';
-import 'features/auth/presentation/screens/auth_gate_screen.dart';
 import 'features/video/presentation/controller/video_feature_theme.dart';
 import 'features/video/presentation/controller/video_web_camera_registration.dart';
 
@@ -36,7 +37,8 @@ class MyApp extends StatelessWidget {
           displayColor: VideoFeatureTheme.ink,
         ),
       ),
-      home: const AuthGateScreen(),
+      initialRoute: AppRoute.root,
+      onGenerateRoute: AppRouter.onGenerateRoute,
     );
   }
 }

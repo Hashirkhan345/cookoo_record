@@ -3,15 +3,13 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../app/router/app_routes.dart';
 import '../../../auth/provider/auth_provider.dart';
 import '../../../auth/provider/auth_state.dart';
 import '../../provider/video_provider.dart';
 import '../../provider/video_state.dart';
 import '../controller/record_video_flow_controller.dart';
 import '../controller/video_feature_theme.dart';
-import 'help_center_screen.dart';
-import 'privacy_policy_screen.dart';
-import 'terms_and_conditions_screen.dart';
 import '../widgets/home_account_menu.dart';
 import '../widgets/home_sidebar.dart';
 // import '../widgets/home_top_bar.dart';
@@ -83,25 +81,13 @@ class _VideoHomeScreenState extends ConsumerState<VideoHomeScreen> {
         );
         return;
       case HomeAccountMenuAction.helpCenter:
-        await Navigator.of(context).push<void>(
-          MaterialPageRoute<void>(
-            builder: (BuildContext context) => const HelpCenterScreen(),
-          ),
-        );
+        await Navigator.of(context).pushNamed(AppRoute.helpCenter);
         return;
       case HomeAccountMenuAction.privacyPolicy:
-        await Navigator.of(context).push<void>(
-          MaterialPageRoute<void>(
-            builder: (BuildContext context) => const PrivacyPolicyScreen(),
-          ),
-        );
+        await Navigator.of(context).pushNamed(AppRoute.privacyPolicy);
         return;
       case HomeAccountMenuAction.termsAndConditions:
-        await Navigator.of(context).push<void>(
-          MaterialPageRoute<void>(
-            builder: (BuildContext context) => const TermsAndConditionsScreen(),
-          ),
-        );
+        await Navigator.of(context).pushNamed(AppRoute.termsAndConditions);
         return;
       case HomeAccountMenuAction.signOut:
         await _handleSignOut();
@@ -186,6 +172,13 @@ class _VideoHomeScreenState extends ConsumerState<VideoHomeScreen> {
       ref.read(videoControllerProvider.notifier).clearFeedbackMessage();
     });
     ref.listen<AuthState>(authControllerProvider, (previous, next) {
+      if ((previous?.isAuthenticated ?? false) && !next.isAuthenticated) {
+        Navigator.of(
+          context,
+        ).pushNamedAndRemoveUntil(AppRoute.login, (Route<dynamic> _) => false);
+        return;
+      }
+
       final String? feedbackMessage = next.feedbackMessage;
       if (feedbackMessage == null ||
           feedbackMessage == previous?.feedbackMessage) {

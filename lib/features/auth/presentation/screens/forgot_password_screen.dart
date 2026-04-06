@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../app/router/app_routes.dart';
 import '../../provider/auth_provider.dart';
 import '../../provider/auth_state.dart';
 import '../../../video/presentation/controller/video_feature_theme.dart';
@@ -52,18 +53,20 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
 
     return AuthScreenScaffold(
       title: 'Forgot password',
-      subtitle: 'Enter your email address and we will send you a reset link.',
-      footer: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
+      subtitle:
+          'Enter the email linked to your bloop account and we will send you a reset link.',
+      footer: Wrap(
+        alignment: WrapAlignment.center,
+        crossAxisAlignment: WrapCrossAlignment.center,
+        spacing: 4,
+        runSpacing: 4,
         children: <Widget>[
           const Text(
             'Remembered your password?',
             style: TextStyle(color: VideoFeatureTheme.muted),
           ),
           TextButton(
-            onPressed: authState.isSubmitting
-                ? null
-                : () => Navigator.of(context).pop(),
+            onPressed: authState.isSubmitting ? null : _backToSignIn,
             child: const Text('Back to sign in'),
           ),
         ],
@@ -73,6 +76,49 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: <Widget>[
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: VideoFeatureTheme.canvas,
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: VideoFeatureTheme.line),
+              ),
+              child: const Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: <Widget>[
+                  Icon(
+                    Icons.mark_email_unread_outlined,
+                    color: VideoFeatureTheme.primary,
+                    size: 20,
+                  ),
+                  SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: <Widget>[
+                        Text(
+                          'We will email a secure link',
+                          style: TextStyle(
+                            color: VideoFeatureTheme.ink,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                        SizedBox(height: 4),
+                        Text(
+                          'Reset emails usually arrive within a minute. If you do not see it, check spam or promotions.',
+                          style: TextStyle(
+                            color: VideoFeatureTheme.muted,
+                            fontSize: 13,
+                            height: 1.45,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 20),
             AuthTextField(
               controller: _emailController,
               label: 'Email',
@@ -107,7 +153,16 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
                       height: 20,
                       child: CircularProgressIndicator(strokeWidth: 2),
                     )
-                  : const Text('Done'),
+                  : const Text('Send reset link'),
+            ),
+            const SizedBox(height: 12),
+            const Text(
+              'Use the same email you use to sign in to bloop.',
+              style: TextStyle(
+                color: VideoFeatureTheme.muted,
+                fontSize: 13,
+                height: 1.4,
+              ),
             ),
           ],
         ),
@@ -131,5 +186,15 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
     Navigator.of(
       context,
     ).pop('Password reset email sent. Check your inbox for the reset link.');
+  }
+
+  Future<void> _backToSignIn() async {
+    final NavigatorState navigator = Navigator.of(context);
+    if (navigator.canPop()) {
+      navigator.pop();
+      return;
+    }
+
+    await navigator.pushReplacementNamed(AppRoute.login);
   }
 }

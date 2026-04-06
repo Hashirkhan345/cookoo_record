@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../app/router/app_routes.dart';
 import '../../provider/auth_provider.dart';
 import '../../provider/auth_state.dart';
 import '../../../video/presentation/controller/video_feature_theme.dart';
@@ -39,7 +40,9 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
       }
 
       if (next.isAuthenticated && !(previous?.isAuthenticated ?? false)) {
-        Navigator.of(context).popUntil((Route<dynamic> route) => route.isFirst);
+        Navigator.of(
+          context,
+        ).pushNamedAndRemoveUntil(AppRoute.home, (Route<dynamic> _) => false);
         return;
       }
 
@@ -58,18 +61,20 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
 
     return AuthScreenScaffold(
       title: 'Create account',
-      subtitle: 'Register with email/password or continue with Google.',
-      footer: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
+      subtitle:
+          'Set up your bloop workspace to keep recordings, drafts, and account access in one place.',
+      footer: Wrap(
+        alignment: WrapAlignment.center,
+        crossAxisAlignment: WrapCrossAlignment.center,
+        spacing: 4,
+        runSpacing: 4,
         children: <Widget>[
           const Text(
             'Already have an account?',
             style: TextStyle(color: VideoFeatureTheme.muted),
           ),
           TextButton(
-            onPressed: authState.isSubmitting
-                ? null
-                : () => Navigator.of(context).pop(),
+            onPressed: authState.isSubmitting ? null : _backToSignIn,
             child: const Text('Sign in'),
           ),
         ],
@@ -79,6 +84,49 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: <Widget>[
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: VideoFeatureTheme.canvas,
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: VideoFeatureTheme.line),
+              ),
+              child: const Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: <Widget>[
+                  Icon(
+                    Icons.verified_user_outlined,
+                    color: VideoFeatureTheme.primary,
+                    size: 20,
+                  ),
+                  SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: <Widget>[
+                        Text(
+                          'Create your main account',
+                          style: TextStyle(
+                            color: VideoFeatureTheme.ink,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                        SizedBox(height: 4),
+                        Text(
+                          'Use the email you want connected to saved recordings and account recovery.',
+                          style: TextStyle(
+                            color: VideoFeatureTheme.muted,
+                            fontSize: 13,
+                            height: 1.45,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 20),
             AuthTextField(
               controller: _nameController,
               label: 'Full name',
@@ -139,6 +187,15 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                 return null;
               },
             ),
+            const SizedBox(height: 10),
+            const Text(
+              'Use at least 6 characters. A longer password is safer.',
+              style: TextStyle(
+                color: VideoFeatureTheme.muted,
+                fontSize: 13,
+                height: 1.4,
+              ),
+            ),
             const SizedBox(height: 24),
             FilledButton(
               onPressed: authState.isSubmitting ? null : _submitRegistration,
@@ -176,6 +233,15 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
               icon: const Icon(Icons.login_rounded),
               label: const Text('Continue with Google'),
             ),
+            const SizedBox(height: 14),
+            const Text(
+              'By continuing, you are creating a bloop account for this workspace.',
+              style: TextStyle(
+                color: VideoFeatureTheme.muted,
+                fontSize: 12,
+                height: 1.45,
+              ),
+            ),
           ],
         ),
       ),
@@ -194,5 +260,15 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
           email: _emailController.text.trim(),
           password: _passwordController.text,
         );
+  }
+
+  Future<void> _backToSignIn() async {
+    final NavigatorState navigator = Navigator.of(context);
+    if (navigator.canPop()) {
+      navigator.pop();
+      return;
+    }
+
+    await navigator.pushReplacementNamed(AppRoute.login);
   }
 }

@@ -88,7 +88,7 @@ class AuthScreenScaffold extends StatelessWidget {
                       const SizedBox(height: 28),
                       child,
                       const SizedBox(height: 20),
-                      footer,
+                      Align(alignment: Alignment.center, child: footer),
                     ],
                   ),
                 ),

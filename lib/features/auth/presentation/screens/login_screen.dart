@@ -1,13 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../app/router/app_routes.dart';
 import '../../provider/auth_provider.dart';
 import '../../provider/auth_state.dart';
 import '../../../video/presentation/controller/video_feature_theme.dart';
 import '../widgets/auth_screen_scaffold.dart';
 import '../widgets/auth_text_field.dart';
-import 'forgot_password_screen.dart';
-import 'register_screen.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
@@ -35,6 +34,13 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         return;
       }
 
+      if (next.isAuthenticated && !(previous?.isAuthenticated ?? false)) {
+        Navigator.of(
+          context,
+        ).pushNamedAndRemoveUntil(AppRoute.home, (Route<dynamic> _) => false);
+        return;
+      }
+
       final String? feedbackMessage = next.feedbackMessage;
       if (feedbackMessage != null &&
           feedbackMessage != previous?.feedbackMessage) {
@@ -51,8 +57,11 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     return AuthScreenScaffold(
       title: 'Sign in',
       subtitle: 'Access bloop with your Google account or email/password.',
-      footer: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
+      footer: Wrap(
+        alignment: WrapAlignment.center,
+        crossAxisAlignment: WrapCrossAlignment.center,
+        spacing: 4,
+        runSpacing: 4,
         children: <Widget>[
           const Text(
             'New to bloop?',
@@ -61,14 +70,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
           TextButton(
             onPressed: authState.isSubmitting
                 ? null
-                : () {
-                    Navigator.of(context).push(
-                      MaterialPageRoute<void>(
-                        builder: (BuildContext context) =>
-                            const RegisterScreen(),
-                      ),
-                    );
-                  },
+                : () => Navigator.of(context).pushNamed(AppRoute.register),
             child: const Text('Create account'),
           ),
         ],
@@ -175,11 +177,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   }
 
   Future<void> _openForgotPassword() async {
-    final String? result = await Navigator.of(context).push<String>(
-      MaterialPageRoute<String>(
-        builder: (BuildContext context) =>
-            ForgotPasswordScreen(initialEmail: _emailController.text.trim()),
-      ),
+    final String? result = await Navigator.of(context).pushNamed<String>(
+      AppRoute.forgotPassword,
+      arguments: _emailController.text.trim(),
     );
 
     if (!mounted || result == null) {

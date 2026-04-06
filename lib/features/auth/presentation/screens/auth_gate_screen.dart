@@ -1,17 +1,21 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../app/router/app_routes.dart';
 import '../../../video/presentation/controller/video_feature_theme.dart';
-import '../../../video/presentation/screens/video_home_screen.dart';
 import '../../provider/auth_provider.dart';
 import '../../provider/auth_state.dart';
-import 'login_screen.dart';
 
-class AuthGateScreen extends ConsumerWidget {
+class AuthGateScreen extends ConsumerStatefulWidget {
   const AuthGateScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<AuthGateScreen> createState() => _AuthGateScreenState();
+}
+
+class _AuthGateScreenState extends ConsumerState<AuthGateScreen> {
+  @override
+  Widget build(BuildContext context) {
     final AuthState authState = ref.watch(authControllerProvider);
 
     if (authState.isLoading) {
@@ -25,10 +29,23 @@ class AuthGateScreen extends ConsumerWidget {
       );
     }
 
-    if (authState.isAuthenticated) {
-      return const VideoHomeScreen();
-    }
+    final String targetRoute = authState.isAuthenticated
+        ? AppRoute.home
+        : AppRoute.login;
 
-    return const LoginScreen();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) {
+        return;
+      }
+
+      Navigator.of(context).pushReplacementNamed(targetRoute);
+    });
+
+    return const Scaffold(
+      body: DecoratedBox(
+        decoration: BoxDecoration(gradient: VideoFeatureTheme.screenBackground),
+        child: Center(child: CircularProgressIndicator()),
+      ),
+    );
   }
 }
