@@ -1,7 +1,6 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:video_player/video_player.dart';
 
 import '../../data/models/saved_video_recording_model.dart';
@@ -143,21 +142,6 @@ class _SavedRecordingPlayerState extends State<SavedRecordingPlayer> {
     await controller.setVolume(_isMuted ? 0 : 1);
   }
 
-  Future<void> _copyRecordingLabel() async {
-    await Clipboard.setData(
-      ClipboardData(text: widget.recording.storageSummary),
-    );
-
-    if (!mounted) {
-      return;
-    }
-
-    ScaffoldMessenger.of(context).hideCurrentSnackBar();
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(const SnackBar(content: Text('Recording location copied.')));
-  }
-
   Future<void> _openFullscreenPreview() async {
     if (!mounted) {
       return;
@@ -293,14 +277,6 @@ class _SavedRecordingPlayerState extends State<SavedRecordingPlayer> {
                       ),
                     ),
                   ),
-                  Positioned(
-                    top: 18,
-                    right: 18,
-                    child: _TopActionPill(
-                      onCopy: _copyRecordingLabel,
-                      onFullscreen: _openFullscreenPreview,
-                    ),
-                  ),
                   // const Positioned(
                   //   left: 86,
                   //   top: 86,
@@ -380,44 +356,6 @@ class _SavedRecordingPlayerState extends State<SavedRecordingPlayer> {
           ),
         );
       },
-    );
-  }
-}
-
-class _TopActionPill extends StatelessWidget {
-  const _TopActionPill({required this.onCopy, required this.onFullscreen});
-
-  final VoidCallback onCopy;
-  final VoidCallback onFullscreen;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-      decoration: BoxDecoration(
-        color: Colors.black.withValues(alpha: 0.42),
-        borderRadius: BorderRadius.circular(24),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: <Widget>[
-          IconButton(
-            onPressed: onCopy,
-            icon: const Icon(Icons.link_rounded, color: Colors.white, size: 28),
-            tooltip: 'Copy recording location',
-          ),
-          const SizedBox(width: 8),
-          IconButton(
-            onPressed: onFullscreen,
-            icon: const Icon(
-              Icons.open_in_full_rounded,
-              color: Colors.white,
-              size: 28,
-            ),
-            tooltip: 'Open full screen preview',
-          ),
-        ],
-      ),
     );
   }
 }

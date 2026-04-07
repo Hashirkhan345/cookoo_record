@@ -8,12 +8,10 @@ class SavedRecordingsSection extends StatelessWidget {
   const SavedRecordingsSection({
     super.key,
     required this.recordings,
-    required this.storageLocationLabel,
     required this.onDeleteRecording,
   });
 
   final List<SavedVideoRecordingModel> recordings;
-  final String? storageLocationLabel;
   final ValueChanged<SavedVideoRecordingModel> onDeleteRecording;
 
   @override
@@ -32,11 +30,9 @@ class SavedRecordingsSection extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 8),
-          Text(
-            storageLocationLabel == null || storageLocationLabel!.isEmpty
-                ? 'Your saved videos will appear here after recording.'
-                : 'Stored in $storageLocationLabel',
-            style: const TextStyle(
+          const Text(
+            'Play, download, or share your saved videos from here.',
+            style: TextStyle(
               color: VideoFeatureTheme.muted,
               fontSize: 15,
               height: 1.5,

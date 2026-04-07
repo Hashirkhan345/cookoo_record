@@ -90,16 +90,6 @@ class _SavedRecordingCardState extends State<SavedRecordingCard> {
                         fontWeight: FontWeight.w600,
                       ),
                     ),
-                    const SizedBox(height: 8),
-                    Text(
-                      recording.storageSummary,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        color: VideoFeatureTheme.muted,
-                        fontSize: 13,
-                      ),
-                    ),
                   ],
                 ),
               ),

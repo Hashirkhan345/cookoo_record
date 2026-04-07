@@ -402,8 +402,6 @@ class _VideoHomeScreenState extends ConsumerState<VideoHomeScreen> {
                                   const SizedBox(height: 34),
                                   SavedRecordingsSection(
                                     recordings: state.savedRecordings,
-                                    storageLocationLabel: state
-                                        .savedRecordingsStorageLocationLabel,
                                     onDeleteRecording: ref
                                         .read(videoControllerProvider.notifier)
                                         .deleteSavedRecording,
