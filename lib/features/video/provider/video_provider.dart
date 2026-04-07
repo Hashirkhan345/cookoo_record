@@ -27,6 +27,7 @@ class VideoController extends StateNotifier<VideoState> {
 
   final VideoRepository _repository;
   Timer? _recordingTimer;
+  Future<CameraController>? _cameraControllerInitialization;
 
   Future<void> load() async {
     state = state.copyWith(isLoading: true, clearFeedbackMessage: true);
@@ -63,18 +64,45 @@ class VideoController extends StateNotifier<VideoState> {
     }
   }
 
-  void openRecordingFlow() {
-    if (state.flow == null) {
+  Future<void> openRecordingFlow() async {
+    if (state.flow == null ||
+        state.isRecordingFlowVisible ||
+        state.isPreparingCameraPreview) {
+      return;
+    }
+
+    state = state.copyWith(
+      isRecordingFlowVisible: false,
+      clearFeedbackMessage: true,
+      recordingStatus: VideoRecordingStatus.idle,
+      isPreparingCameraPreview: true,
+      recordingDuration: Duration.zero,
+      clearRecordedVideo: true,
+      selectedRecordingMode: VideoRecordingMode.fullScreen,
+    );
+
+    String? feedbackMessage;
+    try {
+      await _ensureCameraController();
+    } on _CancelledCameraPreviewPreparation {
+      return;
+    } catch (error, stackTrace) {
+      debugPrint('[video] openRecordingFlow preview setup failed: $error');
+      debugPrintStack(
+        label: '[video] openRecordingFlow preview setup stack',
+        stackTrace: stackTrace,
+      );
+      feedbackMessage = _describeRecordingError(error);
+    }
+
+    if (!mounted) {
       return;
     }
 
     state = state.copyWith(
       isRecordingFlowVisible: true,
-      clearFeedbackMessage: true,
-      recordingStatus: VideoRecordingStatus.idle,
-      recordingDuration: Duration.zero,
-      clearRecordedVideo: true,
-      selectedRecordingMode: VideoRecordingMode.fullScreen,
+      isPreparingCameraPreview: false,
+      feedbackMessage: feedbackMessage,
     );
   }
 
@@ -113,6 +141,9 @@ class VideoController extends StateNotifier<VideoState> {
           ? await _ensureCameraController()
           : await _ensureOptionalCameraController();
       await _repository.startRecording(controller, mode: selectedMode);
+      if (kIsWeb && selectedMode.capturesDisplay) {
+        await _refreshWebCameraPreviewAfterDisplayCapture();
+      }
       _startTimer();
       state = state.copyWith(
         recordingStatus: VideoRecordingStatus.recording,
@@ -288,6 +319,30 @@ class VideoController extends StateNotifier<VideoState> {
       return existingController;
     }
 
+    final Future<CameraController>? existingInitialization =
+        _cameraControllerInitialization;
+    if (existingInitialization != null) {
+      return existingInitialization;
+    }
+
+    final Future<CameraController> initialization = _createCameraController();
+    _cameraControllerInitialization = initialization;
+
+    try {
+      return await initialization;
+    } finally {
+      if (identical(_cameraControllerInitialization, initialization)) {
+        _cameraControllerInitialization = null;
+      }
+    }
+  }
+
+  Future<CameraController> _createCameraController() async {
+    final CameraController? existingController = state.cameraController;
+    if (existingController != null && existingController.value.isInitialized) {
+      return existingController;
+    }
+
     final List<CameraDescription> cameras = state.availableCameras.isNotEmpty
         ? state.availableCameras
         : await _repository.getAvailableCameras();
@@ -304,7 +359,17 @@ class VideoController extends StateNotifier<VideoState> {
 
     final CameraController controller = await _repository
         .createCameraController(activeCamera);
-    await _repository.initializeCameraController(controller);
+    try {
+      await _repository.initializeCameraController(controller);
+    } catch (_) {
+      await controller.dispose();
+      rethrow;
+    }
+
+    if (!mounted) {
+      await controller.dispose();
+      throw const _CancelledCameraPreviewPreparation();
+    }
 
     state = state.copyWith(
       cameraController: controller,
@@ -319,6 +384,8 @@ class VideoController extends StateNotifier<VideoState> {
   Future<CameraController?> _ensureOptionalCameraController() async {
     try {
       return await _ensureCameraController();
+    } on _CancelledCameraPreviewPreparation {
+      return null;
     } catch (_) {
       return null;
     }
@@ -334,16 +401,82 @@ class VideoController extends StateNotifier<VideoState> {
   }
 
   Future<void> _disposeCameraController() async {
+    _cameraControllerInitialization = null;
     final CameraController? controller = state.cameraController;
     if (controller != null) {
       await controller.dispose();
     }
 
     state = state.copyWith(
+      isPreparingCameraPreview: false,
       clearCameraController: true,
       clearActiveCamera: true,
       recordingDuration: Duration.zero,
     );
+  }
+
+  Future<void> _refreshWebCameraPreviewAfterDisplayCapture() async {
+    final CameraController? controller = state.cameraController;
+    if (controller == null || !controller.value.isInitialized) {
+      return;
+    }
+
+    try {
+      await controller.pausePreview();
+      await Future<void>.delayed(const Duration(milliseconds: 80));
+      await controller.resumePreview();
+      return;
+    } catch (error, stackTrace) {
+      debugPrint(
+        '[video] refreshWebCameraPreviewAfterDisplayCapture '
+        'pause/resume failed: $error',
+      );
+      debugPrintStack(
+        label:
+            '[video] refreshWebCameraPreviewAfterDisplayCapture '
+            'pause/resume stack',
+        stackTrace: stackTrace,
+      );
+    }
+
+    final CameraDescription? activeCamera = state.activeCamera;
+    if (activeCamera == null) {
+      return;
+    }
+
+    try {
+      await controller.dispose();
+      state = state.copyWith(clearCameraController: true);
+
+      final CameraController refreshedController = await _repository
+          .createCameraController(activeCamera);
+      await _repository.initializeCameraController(refreshedController);
+
+      if (!mounted) {
+        await refreshedController.dispose();
+        return;
+      }
+
+      state = state.copyWith(
+        cameraController: refreshedController,
+        activeCamera: activeCamera,
+        supportsPauseResume: _repository.supportsPauseResume(),
+      );
+    } catch (error, stackTrace) {
+      debugPrint(
+        '[video] refreshWebCameraPreviewAfterDisplayCapture '
+        'reinitialize failed: $error',
+      );
+      debugPrintStack(
+        label:
+            '[video] refreshWebCameraPreviewAfterDisplayCapture '
+            'reinitialize stack',
+        stackTrace: stackTrace,
+      );
+      if (mounted) {
+        state = state.copyWith(feedbackMessage: _describeRecordingError(error));
+      }
+    }
   }
 
   String _describeRecordingError(Object error) {
@@ -410,4 +543,8 @@ class VideoController extends StateNotifier<VideoState> {
     }
     unawaited(stopRecordingSession());
   }
+}
+
+final class _CancelledCameraPreviewPreparation implements Exception {
+  const _CancelledCameraPreviewPreparation();
 }

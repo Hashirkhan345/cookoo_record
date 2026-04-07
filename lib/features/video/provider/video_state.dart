@@ -13,6 +13,7 @@ class VideoState {
     this.flow,
     this.isRecordingFlowVisible = false,
     this.recordingStatus = VideoRecordingStatus.idle,
+    this.isPreparingCameraPreview = false,
     this.cameraController,
     this.availableCameras = const <CameraDescription>[],
     this.activeCamera,
@@ -29,6 +30,7 @@ class VideoState {
   final VideoRecordingFlowModel? flow;
   final bool isRecordingFlowVisible;
   final VideoRecordingStatus recordingStatus;
+  final bool isPreparingCameraPreview;
   final CameraController? cameraController;
   final List<CameraDescription> availableCameras;
   final CameraDescription? activeCamera;
@@ -57,6 +59,7 @@ class VideoState {
     VideoRecordingFlowModel? flow,
     bool? isRecordingFlowVisible,
     VideoRecordingStatus? recordingStatus,
+    bool? isPreparingCameraPreview,
     CameraController? cameraController,
     List<CameraDescription>? availableCameras,
     CameraDescription? activeCamera,
@@ -78,6 +81,8 @@ class VideoState {
       isRecordingFlowVisible:
           isRecordingFlowVisible ?? this.isRecordingFlowVisible,
       recordingStatus: recordingStatus ?? this.recordingStatus,
+      isPreparingCameraPreview:
+          isPreparingCameraPreview ?? this.isPreparingCameraPreview,
       cameraController: clearCameraController
           ? null
           : cameraController ?? this.cameraController,

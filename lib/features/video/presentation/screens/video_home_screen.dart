@@ -229,7 +229,7 @@ class _VideoHomeScreenState extends ConsumerState<VideoHomeScreen> {
         child: SafeArea(
           child: Stack(
             children: <Widget>[
-              if (isDesktop)
+              if (isDesktop && !state.isRecordingFlowVisible)
                 Positioned(
                   left: 12,
                   top: 12,
@@ -274,7 +274,9 @@ class _VideoHomeScreenState extends ConsumerState<VideoHomeScreen> {
                               constraints: const BoxConstraints(maxWidth: 980),
                               child: Column(
                                 children: <Widget>[
-                                  if (!isDesktop && authState.user != null)
+                                  if (!isDesktop &&
+                                      !state.isRecordingFlowVisible &&
+                                      authState.user != null)
                                     Align(
                                       alignment: Alignment.centerLeft,
                                       child: HomeAccountMenu(
@@ -320,9 +322,14 @@ class _VideoHomeScreenState extends ConsumerState<VideoHomeScreen> {
                                   const SizedBox(height: 28),
                                   FilledButton.icon(
                                     key: const Key('recordVideoButton'),
-                                    onPressed: ref
-                                        .read(videoControllerProvider.notifier)
-                                        .openRecordingFlow,
+                                    onPressed: state.isPreparingCameraPreview
+                                        ? null
+                                        : ref
+                                              .read(
+                                                videoControllerProvider
+                                                    .notifier,
+                                              )
+                                              .openRecordingFlow,
                                     icon: const Icon(
                                       Icons.videocam_outlined,
                                       size: 28,
