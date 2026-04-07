@@ -68,7 +68,7 @@ class LocalVideoRepository implements VideoRepository {
   VideoRecordingFlowModel loadVideoRecordingFlowSync() {
     return const VideoRecordingFlowModel(
       brandLabel: 'bloop',
-      heroTitle: 'Record your first video',
+      heroTitle: 'Record your video',
       heroDescription:
           'Launch a polished recording flow directly from the home screen and keep the presenter visible in the lower section.',
       heroActionLabel: 'Record a Video',

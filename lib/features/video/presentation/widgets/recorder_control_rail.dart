@@ -12,6 +12,7 @@ class RecorderControlRail extends StatelessWidget {
     required this.onStop,
     required this.onPauseResume,
     required this.onDelete,
+    this.showFooterAction = false,
   });
 
   final String durationLabel;
@@ -21,6 +22,7 @@ class RecorderControlRail extends StatelessWidget {
   final Future<void> Function() onStop;
   final Future<void> Function() onPauseResume;
   final Future<void> Function() onDelete;
+  final bool showFooterAction;
 
   @override
   Widget build(BuildContext context) {
@@ -76,21 +78,23 @@ class RecorderControlRail extends StatelessWidget {
             ],
           ),
         ),
-        const SizedBox(height: 24),
-        Container(
-          width: 62,
-          height: 62,
-          decoration: BoxDecoration(
-            color: Colors.white.withValues(alpha: 0.9),
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: VideoFeatureTheme.line),
+        if (showFooterAction) ...<Widget>[
+          const SizedBox(height: 24),
+          Container(
+            width: 62,
+            height: 62,
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: 0.9),
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: VideoFeatureTheme.line),
+            ),
+            child: const Icon(
+              Icons.settings_outlined,
+              color: VideoFeatureTheme.ink,
+              size: 30,
+            ),
           ),
-          child: const Icon(
-            Icons.settings_outlined,
-            color: VideoFeatureTheme.ink,
-            size: 30,
-          ),
-        ),
+        ],
       ],
     );
   }

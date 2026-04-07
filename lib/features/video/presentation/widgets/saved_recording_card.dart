@@ -132,8 +132,8 @@ class _SavedRecordingCardState extends State<SavedRecordingCard> {
                       child: FilledButton.icon(
                         key: Key('playRecordingButton_${recording.id}'),
                         onPressed: _openPlayer,
-                        icon: const Icon(Icons.open_in_full_rounded),
-                        label: const Text('Open fullscreen'),
+                        icon: const Icon(Icons.play_circle_fill_rounded),
+                        label: const Text('Watch recording'),
                         style: FilledButton.styleFrom(
                           backgroundColor: VideoFeatureTheme.primary,
                           foregroundColor: Colors.white,
@@ -392,8 +392,8 @@ class _SavedRecordingPreviewTile extends StatelessWidget {
                   top: 14,
                   left: 14,
                   child: _PreviewLabel(
-                    icon: Icons.movie_creation_outlined,
-                    label: 'Saved clip',
+                    icon: Icons.bookmark_rounded,
+                    label: 'Saved',
                   ),
                 ),
                 Positioned(
@@ -576,7 +576,7 @@ class _PreviewMenuButton extends StatelessWidget {
           <PopupMenuEntry<_RecordingCardMenuAction>>[
             const PopupMenuItem<_RecordingCardMenuAction>(
               value: _RecordingCardMenuAction.openPlayer,
-              child: Text('Open fullscreen'),
+              child: Text('Watch recording'),
             ),
             const PopupMenuItem<_RecordingCardMenuAction>(
               value: _RecordingCardMenuAction.share,
@@ -652,7 +652,7 @@ class _PreviewActionPill extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Tooltip(
-      message: 'Open fullscreen',
+      message: 'Watch recording',
       child: Material(
         color: Colors.transparent,
         child: InkWell(
@@ -669,13 +669,13 @@ class _PreviewActionPill extends StatelessWidget {
               mainAxisSize: MainAxisSize.min,
               children: <Widget>[
                 const Icon(
-                  Icons.open_in_full_rounded,
+                  Icons.play_circle_fill_rounded,
                   color: Colors.white,
                   size: 18,
                 ),
                 const SizedBox(width: 8),
                 const Text(
-                  'Open fullscreen',
+                  'Watch recording',
                   style: TextStyle(
                     color: Colors.white,
                     fontSize: 13,
@@ -742,7 +742,11 @@ class _OwnerAvatarState extends State<_OwnerAvatar> {
   Widget build(BuildContext context) {
     final String? photoUrl = widget.user?.photoUrl?.trim();
     if (photoUrl == null || photoUrl.isEmpty || _hidePhoto) {
-      return _FallbackOwnerAvatar(initials: widget.user?.initials ?? 'B');
+      return SizedBox(
+        width: 40,
+        height: 40,
+        child: _FallbackOwnerAvatar(initials: widget.user?.initials ?? 'B'),
+      );
     }
 
     return SizedBox(
@@ -785,15 +789,20 @@ class _FallbackOwnerAvatar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ColoredBox(
-      color: VideoFeatureTheme.primary,
+    return DecoratedBox(
+      decoration: const BoxDecoration(
+        color: VideoFeatureTheme.primary,
+        shape: BoxShape.circle,
+      ),
       child: Center(
         child: Text(
           initials,
+          textAlign: TextAlign.center,
           style: const TextStyle(
             color: Colors.white,
             fontWeight: FontWeight.w800,
             fontSize: 15,
+            letterSpacing: -0.3,
           ),
         ),
       ),

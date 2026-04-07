@@ -78,36 +78,6 @@ class _RecordVideoFlowScreenState extends ConsumerState<RecordVideoFlowScreen> {
                         onDelete: videoController.deleteRecordingSession,
                       ),
                     ),
-                  if (!isCompact)
-                    Positioned(
-                      left: 114,
-                      top: 285,
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 18,
-                          vertical: 14,
-                        ),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFF22262F),
-                          borderRadius: BorderRadius.circular(20),
-                          boxShadow: const <BoxShadow>[
-                            BoxShadow(
-                              color: Color(0x1F0B1326),
-                              blurRadius: 20,
-                              offset: Offset(0, 10),
-                            ),
-                          ],
-                        ),
-                        child: const Text(
-                          'Choose camera',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.w700,
-                            fontSize: 16,
-                          ),
-                        ),
-                      ),
-                    ),
                   if (isCompact && hasActiveRecording)
                     Positioned(
                       top: 32,
@@ -142,36 +112,38 @@ class _RecordVideoFlowScreenState extends ConsumerState<RecordVideoFlowScreen> {
                         cameraController: state.cameraController,
                       ),
                     ),
-                  Align(
-                    alignment: isCompact
-                        ? Alignment.bottomCenter
-                        : Alignment.centerRight,
-                    child: Padding(
-                      padding: EdgeInsets.fromLTRB(
-                        horizontalPadding,
-                        isCompact ? 106 : 16,
-                        horizontalPadding,
-                        16,
-                      ),
-                      child: RecorderPanel(
-                        brandLabel: flow.brandLabel,
-                        options: panelOptions,
-                        statusLabel: _panelStatusLabel(flow, state),
-                        recordingLimitLabel: flow.recordingLimitLabel,
-                        tutorialLabel: flow.tutorialLabel,
-                        onClose: videoController.closeRecordingFlow,
-                        selectedRecordingMode: state.selectedRecordingMode,
-                        onSelectRecordingMode: (selectedRecordingMode) async {
-                          videoController.selectRecordingMode(
-                            selectedRecordingMode,
-                          );
-                        },
-                        onStartRecording: videoController.startRecordingSession,
-                        isRecordingActive: hasActiveRecording,
-                        isBusy: isBusy,
+                  if (!hasActiveRecording)
+                    Align(
+                      alignment: isCompact
+                          ? Alignment.bottomCenter
+                          : Alignment.centerRight,
+                      child: Padding(
+                        padding: EdgeInsets.fromLTRB(
+                          horizontalPadding,
+                          isCompact ? 106 : 16,
+                          horizontalPadding,
+                          16,
+                        ),
+                        child: RecorderPanel(
+                          brandLabel: flow.brandLabel,
+                          options: panelOptions,
+                          statusLabel: _panelStatusLabel(flow, state),
+                          recordingLimitLabel: flow.recordingLimitLabel,
+                          tutorialLabel: flow.tutorialLabel,
+                          onClose: videoController.closeRecordingFlow,
+                          selectedRecordingMode: state.selectedRecordingMode,
+                          onSelectRecordingMode: (selectedRecordingMode) async {
+                            videoController.selectRecordingMode(
+                              selectedRecordingMode,
+                            );
+                          },
+                          onStartRecording:
+                              videoController.startRecordingSession,
+                          isRecordingActive: hasActiveRecording,
+                          isBusy: isBusy,
+                        ),
                       ),
                     ),
-                  ),
                 ],
               );
             },

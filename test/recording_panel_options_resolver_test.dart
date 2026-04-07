@@ -15,7 +15,7 @@ void main() {
     () {
       const VideoRecordingFlowModel flow = VideoRecordingFlowModel(
         brandLabel: 'bloop',
-        heroTitle: 'Record your first video',
+        heroTitle: 'Record your video',
         heroDescription: 'Description',
         heroActionLabel: 'Record a Video',
         helperMessage: 'Helper',

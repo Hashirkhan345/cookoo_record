@@ -43,7 +43,7 @@ class SavedRecordingsSection extends StatelessWidget {
                   ),
                 ),
               ),
-              _HeaderChip(label: '${sortedRecordings.length} saved'),
+              _HeaderChip(label: '${sortedRecordings.length} Saved'),
               const SizedBox(width: 12),
               const _HeaderChip(label: 'Newest first', icon: Icons.schedule),
             ],
