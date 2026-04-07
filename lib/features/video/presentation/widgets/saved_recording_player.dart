@@ -12,10 +12,12 @@ class SavedRecordingPlayer extends StatefulWidget {
     super.key,
     required this.recording,
     this.autoplayMuted = true,
+    this.isFullscreen = false,
   });
 
   final SavedVideoRecordingModel recording;
   final bool autoplayMuted;
+  final bool isFullscreen;
 
   @override
   State<SavedRecordingPlayer> createState() => _SavedRecordingPlayerState();
@@ -159,11 +161,20 @@ class _SavedRecordingPlayerState extends State<SavedRecordingPlayer> {
             child: SavedRecordingPlayer(
               recording: widget.recording,
               autoplayMuted: false,
+              isFullscreen: true,
             ),
           ),
         );
       },
     );
+  }
+
+  Future<void> _closeFullscreenPreview() async {
+    if (!mounted) {
+      return;
+    }
+
+    Navigator.of(context).maybePop();
   }
 
   Future<void> _playMuted() async {
@@ -193,6 +204,21 @@ class _SavedRecordingPlayerState extends State<SavedRecordingPlayer> {
     return value.position >= value.duration - const Duration(milliseconds: 250);
   }
 
+  String _formatPlaybackLabel(Duration duration) {
+    final Duration safeDuration = duration.isNegative
+        ? Duration.zero
+        : duration;
+    final int hours = safeDuration.inHours;
+    final int minutes = safeDuration.inMinutes.remainder(60);
+    final int seconds = safeDuration.inSeconds.remainder(60);
+
+    if (hours > 0) {
+      return '${hours.toString().padLeft(2, '0')}:${minutes.toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')}';
+    }
+
+    return '${safeDuration.inMinutes.toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')}';
+  }
+
   @override
   Widget build(BuildContext context) {
     final VideoPlayerController? controller = _controller;
@@ -212,6 +238,14 @@ class _SavedRecordingPlayerState extends State<SavedRecordingPlayer> {
         final bool isPlaying = isReady && controller.value.isPlaying;
         final bool isComplete =
             isReady && _isPlaybackComplete(controller.value);
+        final Duration duration = isReady
+            ? controller.value.duration
+            : Duration.zero;
+        final Duration position = isReady
+            ? (controller.value.position > duration
+                  ? duration
+                  : controller.value.position)
+            : Duration.zero;
 
         return Container(
           key: Key('savedRecordingStage_${widget.recording.id}'),
@@ -277,6 +311,16 @@ class _SavedRecordingPlayerState extends State<SavedRecordingPlayer> {
                       ),
                     ),
                   ),
+                  if (widget.isFullscreen)
+                    Positioned(
+                      top: 18,
+                      left: 18,
+                      child: _OverlayIconButton(
+                        icon: Icons.arrow_back_rounded,
+                        tooltip: 'Back to player',
+                        onPressed: _closeFullscreenPreview,
+                      ),
+                    ),
                   // const Positioned(
                   //   left: 86,
                   //   top: 86,
@@ -315,39 +359,21 @@ class _SavedRecordingPlayerState extends State<SavedRecordingPlayer> {
                   Positioned(
                     left: 0,
                     right: 0,
-                    bottom: 72,
-                    child: IgnorePointer(
-                      ignoring: !isReady,
-                      child: ColoredBox(
-                        color: VideoFeatureTheme.primary,
-                        child: SizedBox(
-                          height: 4,
-                          child: isReady
-                              ? VideoProgressIndicator(
-                                  controller,
-                                  allowScrubbing: true,
-                                  padding: EdgeInsets.zero,
-                                  colors: VideoProgressColors(
-                                    playedColor: VideoFeatureTheme.primary,
-                                    bufferedColor: Colors.white30,
-                                    backgroundColor: Colors.white12,
-                                  ),
-                                )
-                              : const SizedBox.expand(),
-                        ),
-                      ),
-                    ),
-                  ),
-                  Positioned(
-                    left: 0,
-                    right: 0,
                     bottom: 0,
                     child: _BottomControlBar(
+                      controller: controller,
                       isMuted: _isMuted,
                       isReady: isReady,
+                      isPlaying: isPlaying,
+                      isFullscreen: widget.isFullscreen,
+                      elapsedLabel: _formatPlaybackLabel(position),
+                      durationLabel: _formatPlaybackLabel(duration),
                       onReplay: _restartPlayback,
+                      onPlayPause: _togglePlayPause,
                       onVolume: _toggleMute,
-                      onFullscreen: _openFullscreenPreview,
+                      onToggleFullscreen: widget.isFullscreen
+                          ? _closeFullscreenPreview
+                          : _openFullscreenPreview,
                     ),
                   ),
                 ],
@@ -356,6 +382,42 @@ class _SavedRecordingPlayerState extends State<SavedRecordingPlayer> {
           ),
         );
       },
+    );
+  }
+}
+
+class _OverlayIconButton extends StatelessWidget {
+  const _OverlayIconButton({
+    required this.icon,
+    required this.tooltip,
+    required this.onPressed,
+  });
+
+  final IconData icon;
+  final String tooltip;
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    return Tooltip(
+      message: tooltip,
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onPressed,
+          borderRadius: BorderRadius.circular(999),
+          child: Container(
+            width: 52,
+            height: 52,
+            decoration: BoxDecoration(
+              color: Colors.black.withValues(alpha: 0.46),
+              shape: BoxShape.circle,
+              border: Border.all(color: Colors.white.withValues(alpha: 0.18)),
+            ),
+            child: Icon(icon, color: Colors.white, size: 26),
+          ),
+        ),
+      ),
     );
   }
 }
@@ -422,23 +484,34 @@ class _CenterAction extends StatelessWidget {
 
 class _BottomControlBar extends StatelessWidget {
   const _BottomControlBar({
+    required this.controller,
     required this.isMuted,
     required this.isReady,
+    required this.isPlaying,
+    required this.isFullscreen,
+    required this.elapsedLabel,
+    required this.durationLabel,
     required this.onReplay,
+    required this.onPlayPause,
     required this.onVolume,
-    required this.onFullscreen,
+    required this.onToggleFullscreen,
   });
 
+  final VideoPlayerController controller;
   final bool isMuted;
   final bool isReady;
+  final bool isPlaying;
+  final bool isFullscreen;
+  final String elapsedLabel;
+  final String durationLabel;
   final VoidCallback onReplay;
+  final VoidCallback onPlayPause;
   final VoidCallback onVolume;
-  final VoidCallback onFullscreen;
+  final VoidCallback onToggleFullscreen;
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      height: 72,
       decoration: BoxDecoration(
         gradient: LinearGradient(
           begin: Alignment.topCenter,
@@ -448,42 +521,146 @@ class _BottomControlBar extends StatelessWidget {
             Colors.black.withValues(alpha: 0.58),
           ],
         ),
+        border: Border(
+          top: BorderSide(color: Colors.white.withValues(alpha: 0.1)),
+        ),
       ),
-      padding: const EdgeInsets.symmetric(horizontal: 20),
-      child: Row(
+      padding: const EdgeInsets.fromLTRB(18, 14, 18, 18),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
         children: <Widget>[
-          IconButton(
-            onPressed: isReady ? onReplay : null,
-            icon: const Icon(
-              Icons.replay_outlined,
-              color: Colors.white70,
-              size: 34,
-            ),
-            tooltip: 'Replay recording',
+          Row(
+            children: <Widget>[
+              Text(
+                elapsedLabel,
+                style: const TextStyle(
+                  color: Colors.white70,
+                  fontSize: 13,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: 0.2,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(999),
+                  child: SizedBox(
+                    height: 6,
+                    child: isReady
+                        ? VideoProgressIndicator(
+                            controller,
+                            allowScrubbing: true,
+                            padding: EdgeInsets.zero,
+                            colors: VideoProgressColors(
+                              playedColor: VideoFeatureTheme.primary,
+                              bufferedColor: Colors.white30,
+                              backgroundColor: Colors.white12,
+                            ),
+                          )
+                        : ColoredBox(
+                            color: Colors.white.withValues(alpha: 0.14),
+                          ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Text(
+                durationLabel,
+                style: const TextStyle(
+                  color: Colors.white70,
+                  fontSize: 13,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: 0.2,
+                ),
+              ),
+            ],
           ),
-          const SizedBox(width: 12),
-          IconButton(
-            onPressed: isReady ? onVolume : null,
-            icon: Icon(
-              isMuted ? Icons.volume_off_outlined : Icons.volume_up_outlined,
-              color: Colors.white70,
-              size: 34,
-            ),
-            tooltip: isMuted ? 'Unmute recording' : 'Mute recording',
-          ),
-          const Spacer(),
-          const Icon(Icons.settings_outlined, color: Colors.white54, size: 34),
-          const SizedBox(width: 12),
-          IconButton(
-            onPressed: onFullscreen,
-            icon: const Icon(
-              Icons.open_in_full_rounded,
-              color: Colors.white70,
-              size: 34,
-            ),
-            tooltip: 'Open full screen preview',
+          const SizedBox(height: 16),
+          Row(
+            children: <Widget>[
+              _ControlButton(
+                onPressed: isReady ? onPlayPause : null,
+                icon: isPlaying
+                    ? Icons.pause_rounded
+                    : Icons.play_arrow_rounded,
+                tooltip: isPlaying ? 'Pause recording' : 'Play recording',
+                highlighted: true,
+              ),
+              const SizedBox(width: 12),
+              _ControlButton(
+                onPressed: isReady ? onReplay : null,
+                icon: Icons.replay_rounded,
+                tooltip: 'Replay recording',
+              ),
+              const Spacer(),
+              _ControlButton(
+                onPressed: isReady ? onVolume : null,
+                icon: isMuted
+                    ? Icons.volume_off_outlined
+                    : Icons.volume_up_outlined,
+                tooltip: isMuted ? 'Unmute recording' : 'Mute recording',
+              ),
+              const SizedBox(width: 12),
+              _ControlButton(
+                onPressed: onToggleFullscreen,
+                icon: isFullscreen
+                    ? Icons.fullscreen_exit_rounded
+                    : Icons.open_in_full_rounded,
+                tooltip: isFullscreen
+                    ? 'Close full screen preview'
+                    : 'Open full screen preview',
+              ),
+            ],
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _ControlButton extends StatelessWidget {
+  const _ControlButton({
+    required this.onPressed,
+    required this.icon,
+    required this.tooltip,
+    this.highlighted = false,
+  });
+
+  final VoidCallback? onPressed;
+  final IconData icon;
+  final String tooltip;
+  final bool highlighted;
+
+  @override
+  Widget build(BuildContext context) {
+    final Color foregroundColor = onPressed == null
+        ? Colors.white38
+        : (highlighted ? Colors.white : Colors.white70);
+
+    return Tooltip(
+      message: tooltip,
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onPressed,
+          borderRadius: BorderRadius.circular(18),
+          child: Container(
+            width: 48,
+            height: 48,
+            decoration: BoxDecoration(
+              color: highlighted
+                  ? VideoFeatureTheme.primary
+                  : Colors.white.withValues(
+                      alpha: onPressed == null ? 0.08 : 0.12,
+                    ),
+              borderRadius: BorderRadius.circular(18),
+              border: Border.all(
+                color: Colors.white.withValues(alpha: highlighted ? 0 : 0.14),
+              ),
+            ),
+            child: Icon(icon, color: foregroundColor, size: 28),
+          ),
+        ),
       ),
     );
   }
