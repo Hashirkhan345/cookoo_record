@@ -19,6 +19,36 @@ class SavedRecordingPlayer extends StatefulWidget {
   final bool autoplayMuted;
   final bool isFullscreen;
 
+  static Future<void> showFullscreenDialog(
+    BuildContext context, {
+    required SavedVideoRecordingModel recording,
+    bool autoplayMuted = false,
+  }) {
+    return showDialog<void>(
+      context: context,
+      useSafeArea: false,
+      barrierColor: Colors.black.withValues(alpha: 0.92),
+      builder: (BuildContext context) {
+        return Material(
+          color: Colors.transparent,
+          child: SafeArea(
+            minimum: const EdgeInsets.all(18),
+            child: Center(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 1480),
+                child: SavedRecordingPlayer(
+                  recording: recording,
+                  autoplayMuted: autoplayMuted,
+                  isFullscreen: true,
+                ),
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
   @override
   State<SavedRecordingPlayer> createState() => _SavedRecordingPlayerState();
 }
@@ -149,23 +179,10 @@ class _SavedRecordingPlayerState extends State<SavedRecordingPlayer> {
       return;
     }
 
-    await showDialog<void>(
-      context: context,
-      barrierColor: Colors.black.withValues(alpha: 0.82),
-      builder: (BuildContext context) {
-        return Dialog(
-          backgroundColor: Colors.transparent,
-          insetPadding: const EdgeInsets.all(24),
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 1180),
-            child: SavedRecordingPlayer(
-              recording: widget.recording,
-              autoplayMuted: false,
-              isFullscreen: true,
-            ),
-          ),
-        );
-      },
+    await SavedRecordingPlayer.showFullscreenDialog(
+      context,
+      recording: widget.recording,
+      autoplayMuted: false,
     );
   }
 

@@ -402,6 +402,7 @@ class _VideoHomeScreenState extends ConsumerState<VideoHomeScreen> {
                                   const SizedBox(height: 34),
                                   SavedRecordingsSection(
                                     recordings: state.savedRecordings,
+                                    currentUser: authState.user,
                                     onDeleteRecording: ref
                                         .read(videoControllerProvider.notifier)
                                         .deleteSavedRecording,
