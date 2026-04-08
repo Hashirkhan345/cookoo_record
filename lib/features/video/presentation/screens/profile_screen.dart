@@ -1,17 +1,106 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../app/router/app_routes.dart';
 import '../../../auth/data/models/app_user.dart';
+import '../../../auth/provider/auth_provider.dart';
+import '../../../auth/provider/auth_state.dart';
 import '../controller/video_feature_theme.dart';
 
-class ProfileScreen extends StatelessWidget {
+class ProfileScreen extends ConsumerStatefulWidget {
   const ProfileScreen({super.key, required this.user});
 
   final AppUser user;
 
   @override
+  ConsumerState<ProfileScreen> createState() => _ProfileScreenState();
+}
+
+class _ProfileScreenState extends ConsumerState<ProfileScreen> {
+  Future<void> _confirmDeleteAccount() async {
+    if (ref.read(authControllerProvider).isSubmitting) {
+      return;
+    }
+
+    final bool? shouldDelete = await showDialog<bool>(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          backgroundColor: Colors.white,
+          surfaceTintColor: Colors.white,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(28),
+            side: const BorderSide(color: VideoFeatureTheme.line),
+          ),
+          title: const Text(
+            'Delete account?',
+            style: TextStyle(
+              color: VideoFeatureTheme.ink,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+          content: const Text(
+            'This permanently removes your bloop account. If your session is old, Firebase may ask you to sign in again before deletion can finish.',
+            style: TextStyle(
+              color: VideoFeatureTheme.muted,
+              fontSize: 15,
+              height: 1.55,
+            ),
+          ),
+          actions: <Widget>[
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: const Text('Cancel'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.of(context).pop(true),
+              style: FilledButton.styleFrom(
+                backgroundColor: const Color(0xFFAF2D2D),
+                foregroundColor: Colors.white,
+              ),
+              child: const Text('Delete'),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (shouldDelete != true || !mounted) {
+      return;
+    }
+
+    await ref.read(authControllerProvider.notifier).deleteAccount();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final Size screenSize = MediaQuery.sizeOf(context);
-    final bool isWide = screenSize.width >= 900;
+    ref.listen<AuthState>(authControllerProvider, (previous, next) {
+      if (!(ModalRoute.of(context)?.isCurrent ?? true)) {
+        return;
+      }
+
+      if ((previous?.isAuthenticated ?? false) && !next.isAuthenticated) {
+        Navigator.of(
+          context,
+        ).pushNamedAndRemoveUntil(AppRoute.login, (Route<dynamic> _) => false);
+        return;
+      }
+
+      final String? feedbackMessage = next.feedbackMessage;
+      if (feedbackMessage == null ||
+          feedbackMessage == previous?.feedbackMessage) {
+        return;
+      }
+
+      final ScaffoldMessengerState messenger = ScaffoldMessenger.of(context);
+      messenger.hideCurrentSnackBar();
+      messenger.showSnackBar(SnackBar(content: Text(feedbackMessage)));
+      ref.read(authControllerProvider.notifier).clearFeedbackMessage();
+    });
+
+    final AuthState authState = ref.watch(authControllerProvider);
+    final AppUser user = authState.user ?? widget.user;
+    final bool isWide = MediaQuery.sizeOf(context).width >= 900;
 
     return Scaffold(
       body: DecoratedBox(
@@ -28,7 +117,9 @@ class ProfileScreen extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: <Widget>[
                     OutlinedButton.icon(
-                      onPressed: () => Navigator.of(context).pop(),
+                      onPressed: authState.isSubmitting
+                          ? null
+                          : () => Navigator.of(context).pop(),
                       icon: const Icon(Icons.arrow_back_rounded),
                       label: const Text('Back'),
                       style: OutlinedButton.styleFrom(
@@ -197,7 +288,7 @@ class ProfileScreen extends StatelessWidget {
                             ),
                             const SizedBox(height: 12),
                             const Text(
-                              'Account deletion is not available inside this workspace yet.',
+                              'Deleting your account permanently removes your access to bloop on this workspace.',
                               style: TextStyle(
                                 color: VideoFeatureTheme.muted,
                                 fontSize: 16,
@@ -205,13 +296,32 @@ class ProfileScreen extends StatelessWidget {
                               ),
                             ),
                             const SizedBox(height: 20),
-                            FilledButton(
-                              onPressed: null,
+                            FilledButton.icon(
+                              onPressed: authState.isSubmitting
+                                  ? null
+                                  : _confirmDeleteAccount,
+                              icon: authState.isSubmitting
+                                  ? const SizedBox(
+                                      width: 18,
+                                      height: 18,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2.2,
+                                        color: Colors.white,
+                                      ),
+                                    )
+                                  : const Icon(Icons.delete_outline_rounded),
+                              label: Text(
+                                authState.isSubmitting
+                                    ? 'Deleting account...'
+                                    : 'Delete Account',
+                              ),
                               style: FilledButton.styleFrom(
-                                disabledBackgroundColor:
-                                    VideoFeatureTheme.canvasShade,
-                                disabledForegroundColor:
-                                    VideoFeatureTheme.muted,
+                                backgroundColor: const Color(0xFFAF2D2D),
+                                foregroundColor: Colors.white,
+                                disabledBackgroundColor: const Color(
+                                  0xFFDBB3B3,
+                                ),
+                                disabledForegroundColor: Colors.white,
                                 padding: const EdgeInsets.symmetric(
                                   horizontal: 22,
                                   vertical: 16,
@@ -224,7 +334,6 @@ class ProfileScreen extends StatelessWidget {
                                   fontWeight: FontWeight.w700,
                                 ),
                               ),
-                              child: const Text('Delete Account'),
                             ),
                             const SizedBox(height: 34),
                             const Divider(
@@ -250,7 +359,9 @@ class ProfileScreen extends StatelessWidget {
                                   ),
                                 ),
                                 FilledButton.icon(
-                                  onPressed: () => Navigator.of(context).pop(),
+                                  onPressed: authState.isSubmitting
+                                      ? null
+                                      : () => Navigator.of(context).pop(),
                                   icon: const Icon(Icons.open_in_new_rounded),
                                   label: const Text('Back to workspace'),
                                   style: FilledButton.styleFrom(

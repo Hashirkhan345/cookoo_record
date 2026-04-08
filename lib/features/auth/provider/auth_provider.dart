@@ -143,6 +143,28 @@ class AuthController extends StateNotifier<AuthState> {
     }
   }
 
+  Future<void> deleteAccount() async {
+    if (state.isSubmitting) {
+      return;
+    }
+
+    state = state.copyWith(isSubmitting: true, clearFeedbackMessage: true);
+
+    try {
+      await _repository.deleteCurrentUser();
+      state = state.copyWith(
+        isSubmitting: false,
+        clearUser: true,
+        clearFeedbackMessage: true,
+      );
+    } catch (error) {
+      state = state.copyWith(
+        isSubmitting: false,
+        feedbackMessage: _describeAuthError(error),
+      );
+    }
+  }
+
   Future<void> signOut() async {
     if (state.isSubmitting) {
       return;
@@ -195,6 +217,9 @@ class AuthController extends StateNotifier<AuthState> {
           return 'Enable this sign-in method in Firebase Authentication.';
         case 'too-many-requests':
           return 'Too many attempts. Please wait a moment and try again.';
+        case 'requires-recent-login':
+        case 'credential-too-old-login-again':
+          return 'For security, sign in again before deleting your account.';
         default:
           return error.message ?? error.code;
       }

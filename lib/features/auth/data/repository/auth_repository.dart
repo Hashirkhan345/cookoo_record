@@ -27,6 +27,8 @@ abstract class AuthRepository {
 
   Future<void> sendPasswordResetEmail({required String email});
 
+  Future<void> deleteCurrentUser();
+
   Future<void> signOut();
 }
 
@@ -152,6 +154,62 @@ class FirebaseAuthRepository implements AuthRepository {
   @override
   Future<void> sendPasswordResetEmail({required String email}) {
     return _firebaseAuth.sendPasswordResetEmail(email: email.trim());
+  }
+
+  @override
+  Future<void> deleteCurrentUser() async {
+    final User user = _requireCurrentUser();
+    final String uid = user.uid;
+    Map<String, dynamic>? existingUserData;
+    bool profileDeleted = false;
+
+    try {
+      final DocumentSnapshot<Map<String, dynamic>> snapshot =
+          await _usersCollection.doc(uid).get();
+      existingUserData = snapshot.data();
+    } catch (error, stackTrace) {
+      debugPrint('[auth] Failed to read user profile before deletion: $error');
+      debugPrintStack(stackTrace: stackTrace);
+    }
+
+    try {
+      await _usersCollection.doc(uid).delete();
+      profileDeleted = true;
+    } catch (error, stackTrace) {
+      debugPrint('[auth] Failed to delete Firestore user profile: $error');
+      debugPrintStack(stackTrace: stackTrace);
+    }
+
+    try {
+      await user.delete();
+    } catch (error, stackTrace) {
+      if (profileDeleted && existingUserData != null) {
+        try {
+          await _usersCollection
+              .doc(uid)
+              .set(existingUserData, SetOptions(merge: true));
+        } catch (restoreError, restoreStackTrace) {
+          debugPrint(
+            '[auth] Failed to restore user profile after account deletion error: '
+            '$restoreError',
+          );
+          debugPrintStack(stackTrace: restoreStackTrace);
+        }
+      }
+
+      debugPrint('[auth] Failed to delete Firebase user: $error');
+      debugPrintStack(stackTrace: stackTrace);
+      rethrow;
+    }
+
+    if (!kIsWeb) {
+      try {
+        await _ensureGoogleSignInInitialized();
+        await GoogleSignIn.instance.signOut();
+      } catch (_) {
+        // Firebase deletion already succeeded.
+      }
+    }
   }
 
   @override

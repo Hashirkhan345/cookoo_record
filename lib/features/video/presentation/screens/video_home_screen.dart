@@ -179,6 +179,10 @@ class _VideoHomeScreenState extends ConsumerState<VideoHomeScreen> {
       ref.read(videoControllerProvider.notifier).clearFeedbackMessage();
     });
     ref.listen<AuthState>(authControllerProvider, (previous, next) {
+      if (!(ModalRoute.of(context)?.isCurrent ?? true)) {
+        return;
+      }
+
       if ((previous?.isAuthenticated ?? false) && !next.isAuthenticated) {
         Navigator.of(
           context,
