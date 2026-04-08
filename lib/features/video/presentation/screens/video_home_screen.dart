@@ -55,13 +55,13 @@ class _VideoHomeScreenState extends ConsumerState<VideoHomeScreen> {
   ) async {
     switch (action) {
       case HomeAccountMenuAction.profile:
-        await _showMenuDialog(
-          title: 'Profile',
-          icon: Icons.person_outline_rounded,
-          body:
-              '${authState.user?.name ?? 'User'}\n${authState.user?.email ?? ''}\n\n'
-              'Account status: ${authState.user?.emailVerified == true ? 'Verified email' : 'Email not verified yet'}',
-        );
+        final user = authState.user;
+        if (user == null) {
+          return;
+        }
+        await Navigator.of(
+          context,
+        ).pushNamed(AppRoute.profile, arguments: user);
         return;
       // case HomeAccountMenuAction.integrations:
       //   await _showMenuDialog(
@@ -229,25 +229,6 @@ class _VideoHomeScreenState extends ConsumerState<VideoHomeScreen> {
         child: SafeArea(
           child: Stack(
             children: <Widget>[
-              if (isDesktop && !state.isRecordingFlowVisible)
-                Positioned(
-                  left: 12,
-                  top: 12,
-                  bottom: 18,
-                  child: HomeSidebar(
-                    accountMenu: authState.user != null
-                        ? HomeAccountMenu(
-                            user: authState.user!,
-                            isBusy: authState.isSubmitting,
-                            onSelected: (HomeAccountMenuAction action) {
-                              unawaited(
-                                _handleAccountMenuSelection(action, authState),
-                              );
-                            },
-                          )
-                        : null,
-                  ),
-                ),
               Positioned.fill(
                 child: Padding(
                   padding: const EdgeInsets.fromLTRB(0, 18, 0, 24),
@@ -278,7 +259,7 @@ class _VideoHomeScreenState extends ConsumerState<VideoHomeScreen> {
                                       !state.isRecordingFlowVisible &&
                                       authState.user != null)
                                     Align(
-                                      alignment: Alignment.centerLeft,
+                                      alignment: Alignment.centerRight,
                                       child: HomeAccountMenu(
                                         user: authState.user!,
                                         isBusy: authState.isSubmitting,
@@ -418,6 +399,25 @@ class _VideoHomeScreenState extends ConsumerState<VideoHomeScreen> {
                   ),
                 ),
               ),
+              if (isDesktop && !state.isRecordingFlowVisible)
+                Positioned(
+                  right: 28,
+                  top: 12,
+                  bottom: 18,
+                  child: HomeSidebar(
+                    accountMenu: authState.user != null
+                        ? HomeAccountMenu(
+                            user: authState.user!,
+                            isBusy: authState.isSubmitting,
+                            onSelected: (HomeAccountMenuAction action) {
+                              unawaited(
+                                _handleAccountMenuSelection(action, authState),
+                              );
+                            },
+                          )
+                        : null,
+                  ),
+                ),
             ],
           ),
         ),

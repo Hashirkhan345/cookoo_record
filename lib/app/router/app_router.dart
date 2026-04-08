@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
 
 import 'app_routes.dart';
+import '../../features/auth/data/models/app_user.dart';
 import '../../features/auth/presentation/screens/auth_gate_screen.dart';
 import '../../features/auth/presentation/screens/forgot_password_screen.dart';
 import '../../features/auth/presentation/screens/login_screen.dart';
 import '../../features/auth/presentation/screens/register_screen.dart';
 import '../../features/video/presentation/screens/help_center_screen.dart';
 import '../../features/video/presentation/screens/privacy_policy_screen.dart';
+import '../../features/video/presentation/screens/profile_screen.dart';
 import '../../features/video/presentation/screens/terms_and_conditions_screen.dart';
 import '../../features/video/presentation/screens/video_home_screen.dart';
 
@@ -41,6 +43,16 @@ abstract final class AppRouter {
         return _buildRoute<String>(
           settings: settings,
           builder: (_) => ForgotPasswordScreen(initialEmail: initialEmail),
+        );
+      case AppRoute.profile:
+        final AppUser? user = settings.arguments is AppUser
+            ? settings.arguments! as AppUser
+            : null;
+
+        return _buildRoute<void>(
+          settings: settings,
+          builder: (_) =>
+              user != null ? ProfileScreen(user: user) : const VideoHomeScreen(),
         );
       case AppRoute.helpCenter:
         return _buildRoute<void>(

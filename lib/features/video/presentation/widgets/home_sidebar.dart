@@ -12,8 +12,8 @@ class HomeSidebar extends StatelessWidget {
     return Column(
       children: <Widget>[
         SizedBox(
-          width: 70,
-          height: 70,
+          width: 64,
+          height: 64,
           child: Center(
             child:
                 accountMenu ??
@@ -24,8 +24,6 @@ class HomeSidebar extends StatelessWidget {
                 ),
           ),
         ),
-        const SizedBox(height: 12),
-        const _SidebarAction(icon: Icons.person_add_alt_1_outlined, label: ''),
         const Spacer(),
         const SizedBox(height: 12),
       ],
