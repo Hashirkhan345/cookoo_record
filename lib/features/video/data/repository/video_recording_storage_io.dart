@@ -130,6 +130,22 @@ class IoVideoRecordingStorage implements VideoRecordingStorage {
     );
   }
 
+  @override
+  Future<void> clearSavedRecordings() async {
+    final SharedPreferences preferences = await SharedPreferences.getInstance();
+    final Directory documentsDirectory =
+        await getApplicationDocumentsDirectory();
+    final Directory recordingsDirectory = Directory(
+      path.join(documentsDirectory.path, _recordingsFolderName),
+    );
+
+    if (await recordingsDirectory.exists()) {
+      await recordingsDirectory.delete(recursive: true);
+    }
+
+    await preferences.remove(savedVideoRecordingsManifestKey);
+  }
+
   Future<Directory> _ensureRecordingsDirectory() async {
     final Directory documentsDirectory =
         await getApplicationDocumentsDirectory();

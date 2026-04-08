@@ -13,4 +13,6 @@ abstract class VideoRecordingStorage {
   });
 
   Future<void> deleteSavedRecording(SavedVideoRecordingModel recording);
+
+  Future<void> clearSavedRecordings();
 }

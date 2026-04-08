@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -5,6 +7,7 @@ import '../../../../app/router/app_routes.dart';
 import '../../../auth/data/models/app_user.dart';
 import '../../../auth/provider/auth_provider.dart';
 import '../../../auth/provider/auth_state.dart';
+import '../../provider/video_provider.dart';
 import '../controller/video_feature_theme.dart';
 
 class ProfileScreen extends ConsumerStatefulWidget {
@@ -17,6 +20,9 @@ class ProfileScreen extends ConsumerStatefulWidget {
 }
 
 class _ProfileScreenState extends ConsumerState<ProfileScreen> {
+  bool _isDeletingAccount = false;
+  bool _didHandleDeletionSuccess = false;
+
   Future<void> _confirmDeleteAccount() async {
     if (ref.read(authControllerProvider).isSubmitting) {
       return;
@@ -69,7 +75,35 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       return;
     }
 
+    _isDeletingAccount = true;
     await ref.read(authControllerProvider.notifier).deleteAccount();
+
+    if (!mounted) {
+      return;
+    }
+
+    if (ref.read(authControllerProvider).isAuthenticated) {
+      _isDeletingAccount = false;
+    }
+  }
+
+  Future<void> _handleDeletedAccountRedirect() async {
+    if (_didHandleDeletionSuccess) {
+      return;
+    }
+
+    _didHandleDeletionSuccess = true;
+    await ref
+        .read(videoControllerProvider.notifier)
+        .clearSavedRecordings(feedbackMessage: null);
+
+    if (!mounted) {
+      return;
+    }
+
+    Navigator.of(
+      context,
+    ).pushNamedAndRemoveUntil(AppRoute.login, (Route<dynamic> _) => false);
   }
 
   @override
@@ -80,9 +114,14 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       }
 
       if ((previous?.isAuthenticated ?? false) && !next.isAuthenticated) {
-        Navigator.of(
-          context,
-        ).pushNamedAndRemoveUntil(AppRoute.login, (Route<dynamic> _) => false);
+        if (_isDeletingAccount) {
+          unawaited(_handleDeletedAccountRedirect());
+        } else {
+          Navigator.of(context).pushNamedAndRemoveUntil(
+            AppRoute.login,
+            (Route<dynamic> _) => false,
+          );
+        }
         return;
       }
 

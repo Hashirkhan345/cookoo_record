@@ -305,6 +305,21 @@ class VideoController extends StateNotifier<VideoState> {
     }
   }
 
+  Future<void> clearSavedRecordings({String? feedbackMessage}) async {
+    try {
+      await _repository.clearSavedRecordings();
+      final String? storageLocationLabel = await _safeStorageLocationLabel();
+      state = state.copyWith(
+        savedRecordings: const <SavedVideoRecordingModel>[],
+        savedRecordingsStorageLocationLabel: storageLocationLabel,
+        clearRecordedVideo: true,
+        feedbackMessage: feedbackMessage,
+      );
+    } catch (error) {
+      state = state.copyWith(feedbackMessage: error.toString());
+    }
+  }
+
   Future<String?> _safeStorageLocationLabel() async {
     try {
       return await _repository.getSavedRecordingsStorageLocationLabel();

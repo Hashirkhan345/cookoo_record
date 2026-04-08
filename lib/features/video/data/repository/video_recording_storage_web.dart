@@ -176,6 +176,24 @@ class WebVideoRecordingStorage implements VideoRecordingStorage {
     );
   }
 
+  @override
+  Future<void> clearSavedRecordings() async {
+    final SharedPreferences preferences = await SharedPreferences.getInstance();
+    final List<SavedVideoRecordingModel> manifest = await _loadManifestSafely(
+      preferences,
+    );
+
+    for (final SavedVideoRecordingModel recording in manifest) {
+      try {
+        await _removeRecordingBytes(preferences, recording);
+      } catch (_) {
+        // Continue clearing remaining recordings even if one entry fails.
+      }
+    }
+
+    await preferences.remove(savedVideoRecordingsManifestKey);
+  }
+
   Future<List<SavedVideoRecordingModel>> _loadManifestSafely(
     SharedPreferences preferences,
   ) async {

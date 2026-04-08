@@ -48,6 +48,8 @@ abstract class VideoRepository {
 
   Future<void> deleteSavedRecording(SavedVideoRecordingModel recording);
 
+  Future<void> clearSavedRecordings();
+
   bool supportsPauseResume();
 }
 
@@ -216,6 +218,11 @@ class LocalVideoRepository implements VideoRepository {
   @override
   Future<void> deleteSavedRecording(SavedVideoRecordingModel recording) {
     return _recordingStorage.deleteSavedRecording(recording);
+  }
+
+  @override
+  Future<void> clearSavedRecordings() {
+    return _recordingStorage.clearSavedRecordings();
   }
 
   @override

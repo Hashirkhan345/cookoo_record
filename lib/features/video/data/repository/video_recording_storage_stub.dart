@@ -30,4 +30,7 @@ class _StubVideoRecordingStorage implements VideoRecordingStorage {
 
   @override
   Future<void> deleteSavedRecording(SavedVideoRecordingModel recording) async {}
+
+  @override
+  Future<void> clearSavedRecordings() async {}
 }
