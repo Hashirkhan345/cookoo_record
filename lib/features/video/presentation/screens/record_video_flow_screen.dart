@@ -9,6 +9,7 @@ import '../../provider/video_state.dart';
 import '../widgets/compact_control_strip.dart';
 import '../controller/recording_panel_options_resolver.dart';
 import '../widgets/profile_bubble.dart';
+import '../widgets/recording_cancel_dialog.dart';
 import '../widgets/recorder_control_rail.dart';
 import '../widgets/recorder_panel.dart';
 
@@ -41,6 +42,7 @@ class _RecordVideoFlowScreenState extends ConsumerState<RecordVideoFlowScreen> {
     final bool isCompact = screenSize.width < 1040;
     final bool isBusy = state.isPreparingRecording || state.isFinalizing;
     final bool hasActiveRecording = state.hasActiveRecording;
+    final bool showLiveControls = state.isRecording || state.isPaused;
     final bool canPauseResume = state.supportsPauseResume && !isBusy;
     final videoController = ref.read(videoControllerProvider.notifier);
     final panelOptions = resolveRecordingPanelOptions(flow: flow, state: state);
@@ -63,7 +65,7 @@ class _RecordVideoFlowScreenState extends ConsumerState<RecordVideoFlowScreen> {
 
               return Stack(
                 children: <Widget>[
-                  if (!isCompact && hasActiveRecording)
+                  if (!isCompact && showLiveControls)
                     Positioned(
                       left: 22,
                       top: 120,
@@ -75,10 +77,11 @@ class _RecordVideoFlowScreenState extends ConsumerState<RecordVideoFlowScreen> {
                         onStop: videoController.stopRecordingSession,
                         onPauseResume:
                             videoController.togglePauseResumeRecording,
-                        onDelete: videoController.deleteRecordingSession,
+                        onRestart: () => _handleRestartRequest(videoController),
+                        onDelete: () => _handleDeleteRequest(videoController),
                       ),
                     ),
-                  if (isCompact && hasActiveRecording)
+                  if (isCompact && showLiveControls)
                     Positioned(
                       top: 32,
                       left: 20,
@@ -91,7 +94,8 @@ class _RecordVideoFlowScreenState extends ConsumerState<RecordVideoFlowScreen> {
                         onStop: videoController.stopRecordingSession,
                         onPauseResume:
                             videoController.togglePauseResumeRecording,
-                        onDelete: videoController.deleteRecordingSession,
+                        onRestart: () => _handleRestartRequest(videoController),
+                        onDelete: () => _handleDeleteRequest(videoController),
                       ),
                     ),
                   if (isCompact)
@@ -183,5 +187,36 @@ class _RecordVideoFlowScreenState extends ConsumerState<RecordVideoFlowScreen> {
     }
 
     return flow.startRecordingLabel;
+  }
+
+  Future<void> _handleDeleteRequest(VideoController videoController) async {
+    final RecordingCancelAction? action =
+        await RecordingCancelDialog.showCancel(context);
+    if (!mounted || action == null || action == RecordingCancelAction.resume) {
+      return;
+    }
+
+    switch (action) {
+      case RecordingCancelAction.resume:
+        return;
+      case RecordingCancelAction.restart:
+        await videoController.restartRecordingSession();
+        return;
+      case RecordingCancelAction.cancelRecording:
+        await videoController.deleteRecordingSession();
+        return;
+    }
+  }
+
+  Future<void> _handleRestartRequest(VideoController videoController) async {
+    final RecordingCancelAction? action =
+        await RecordingCancelDialog.showRestart(context);
+    if (!mounted || action == null || action == RecordingCancelAction.resume) {
+      return;
+    }
+
+    if (action == RecordingCancelAction.restart) {
+      await videoController.restartRecordingSession();
+    }
   }
 }

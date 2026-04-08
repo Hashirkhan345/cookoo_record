@@ -10,6 +10,7 @@ class CompactControlStrip extends StatelessWidget {
     required this.isBusy,
     required this.onStop,
     required this.onPauseResume,
+    required this.onRestart,
     required this.onDelete,
   });
 
@@ -19,6 +20,7 @@ class CompactControlStrip extends StatelessWidget {
   final bool isBusy;
   final Future<void> Function() onStop;
   final Future<void> Function() onPauseResume;
+  final Future<void> Function() onRestart;
   final Future<void> Function() onDelete;
 
   @override
@@ -55,7 +57,14 @@ class CompactControlStrip extends StatelessWidget {
             enabled: canPauseResume && !isBusy,
             onTap: onPauseResume,
           ),
-          const SizedBox(width: 18),
+          const SizedBox(width: 14),
+          _CompactAction(
+            key: const Key('restartRecordingButton'),
+            icon: Symbols.restart_alt_rounded,
+            enabled: !isBusy,
+            onTap: onRestart,
+          ),
+          const SizedBox(width: 14),
           _CompactAction(
             key: const Key('deleteRecordingButton'),
             icon: Symbols.delete_rounded,

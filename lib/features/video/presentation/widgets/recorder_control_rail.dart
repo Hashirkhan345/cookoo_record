@@ -12,6 +12,7 @@ class RecorderControlRail extends StatelessWidget {
     required this.isBusy,
     required this.onStop,
     required this.onPauseResume,
+    required this.onRestart,
     required this.onDelete,
     this.showFooterAction = false,
   });
@@ -22,6 +23,7 @@ class RecorderControlRail extends StatelessWidget {
   final bool isBusy;
   final Future<void> Function() onStop;
   final Future<void> Function() onPauseResume;
+  final Future<void> Function() onRestart;
   final Future<void> Function() onDelete;
   final bool showFooterAction;
 
@@ -69,6 +71,14 @@ class RecorderControlRail extends StatelessWidget {
                 outlined: true,
                 enabled: canPauseResume && !isBusy,
                 onTap: onPauseResume,
+              ),
+              const SizedBox(height: 20),
+              _RailAction(
+                key: const Key('restartRecordingButton'),
+                icon: Symbols.restart_alt_rounded,
+                outlined: true,
+                enabled: !isBusy,
+                onTap: onRestart,
               ),
               const SizedBox(height: 20),
               _RailAction(

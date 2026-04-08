@@ -265,13 +265,46 @@ class VideoController extends StateNotifier<VideoState> {
         isRecordingFlowVisible: false,
         recordingStatus: VideoRecordingStatus.idle,
         clearRecordedVideo: true,
-        feedbackMessage: 'Recording deleted.',
+        clearFeedbackMessage: true,
       );
     } catch (error) {
       await _disposeCameraController();
       state = state.copyWith(
         isRecordingFlowVisible: false,
         recordingStatus: VideoRecordingStatus.idle,
+        feedbackMessage: _describeRecordingError(error),
+      );
+    }
+  }
+
+  Future<void> restartRecordingSession() async {
+    if (!state.hasActiveRecording || state.isFinalizing) {
+      return;
+    }
+
+    state = state.copyWith(
+      recordingStatus: VideoRecordingStatus.finalizing,
+      clearFeedbackMessage: true,
+    );
+    _recordingTimer?.cancel();
+
+    try {
+      final XFile recordedVideo = await _repository.stopRecording(
+        state.cameraController,
+      );
+      await _repository.deleteRecording(recordedVideo);
+      state = state.copyWith(
+        recordingStatus: VideoRecordingStatus.idle,
+        recordingDuration: Duration.zero,
+        clearRecordedVideo: true,
+        clearFeedbackMessage: true,
+      );
+      await startRecordingSession();
+    } catch (error) {
+      state = state.copyWith(
+        recordingStatus: VideoRecordingStatus.idle,
+        recordingDuration: Duration.zero,
+        clearRecordedVideo: true,
         feedbackMessage: _describeRecordingError(error),
       );
     }
