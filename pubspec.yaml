@@ -49,6 +49,7 @@ dependencies:
   cloud_firestore: ^6.1.3
   firebase_auth: ^6.2.0
   google_sign_in: ^7.2.0
+  material_symbols_icons: ^4.2928.1
 
 dev_dependencies:
   flutter_test:

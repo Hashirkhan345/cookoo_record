@@ -2,8 +2,10 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:material_symbols_icons/symbols.dart';
 
 import '../../../../app/router/app_routes.dart';
+import '../../../../app/widgets/action_icon_badge.dart';
 import '../../../auth/data/models/app_user.dart';
 import '../../../auth/provider/auth_provider.dart';
 import '../../../auth/provider/auth_state.dart';
@@ -348,7 +350,13 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                                         color: Colors.white,
                                       ),
                                     )
-                                  : const Icon(Icons.delete_outline_rounded),
+                                  : const ActionIconBadge(
+                                      icon: Symbols.delete_forever_rounded,
+                                      backgroundColor: Color(0x26FFFFFF),
+                                      foregroundColor: Colors.white,
+                                      size: 30,
+                                      iconSize: 18,
+                                    ),
                               label: Text(
                                 authState.isSubmitting
                                     ? 'Deleting account...'

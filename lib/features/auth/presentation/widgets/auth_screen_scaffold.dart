@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../video/presentation/controller/video_feature_theme.dart';
+import '../../../video/presentation/widgets/brand_lockup.dart';
 
 class AuthScreenScaffold extends StatelessWidget {
   const AuthScreenScaffold({
@@ -46,26 +47,7 @@ class AuthScreenScaffold extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: <Widget>[
-                      Container(
-                        width: 64,
-                        height: 64,
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(20),
-                          gradient: const LinearGradient(
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
-                            colors: <Color>[
-                              VideoFeatureTheme.primary,
-                              VideoFeatureTheme.accent,
-                            ],
-                          ),
-                        ),
-                        child: const Icon(
-                          Icons.lock_open_rounded,
-                          color: Colors.white,
-                          size: 30,
-                        ),
-                      ),
+                      const BrandMark(size: 64),
                       const SizedBox(height: 24),
                       Text(
                         title,

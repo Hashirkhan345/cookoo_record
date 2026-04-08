@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:material_symbols_icons/symbols.dart';
 
 class CompactControlStrip extends StatelessWidget {
   const CompactControlStrip({
@@ -32,7 +33,7 @@ class CompactControlStrip extends StatelessWidget {
         children: <Widget>[
           _CompactAction(
             key: const Key('stopRecordingButton'),
-            icon: Icons.stop_rounded,
+            icon: Symbols.stop_circle_rounded,
             enabled: !isBusy,
             onTap: onStop,
           ),
@@ -48,14 +49,16 @@ class CompactControlStrip extends StatelessWidget {
           const Spacer(),
           _CompactAction(
             key: const Key('togglePauseRecordingButton'),
-            icon: isPaused ? Icons.play_arrow_rounded : Icons.pause_rounded,
+            icon: isPaused
+                ? Symbols.play_circle_rounded
+                : Symbols.pause_circle_rounded,
             enabled: canPauseResume && !isBusy,
             onTap: onPauseResume,
           ),
           const SizedBox(width: 18),
           _CompactAction(
             key: const Key('deleteRecordingButton'),
-            icon: Icons.delete_outline_rounded,
+            icon: Symbols.delete_rounded,
             enabled: !isBusy,
             onTap: onDelete,
           ),

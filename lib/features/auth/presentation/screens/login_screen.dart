@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../app/router/app_routes.dart';
+import '../../../../app/widgets/google_brand_icon.dart';
 import '../../provider/auth_provider.dart';
 import '../../provider/auth_state.dart';
 import '../../../video/presentation/controller/video_feature_theme.dart';
@@ -147,14 +148,19 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   : ref.read(authControllerProvider.notifier).signInWithGoogle,
               style: OutlinedButton.styleFrom(
                 minimumSize: const Size.fromHeight(56),
+                backgroundColor: Colors.white,
                 foregroundColor: VideoFeatureTheme.ink,
                 side: const BorderSide(color: VideoFeatureTheme.line),
+                padding: const EdgeInsets.symmetric(horizontal: 18),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(18),
+                ),
                 textStyle: const TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w700,
                 ),
               ),
-              icon: const Icon(Icons.login_rounded),
+              icon: const GoogleBrandIcon(size: 20),
               label: const Text('Continue with Google'),
             ),
           ],

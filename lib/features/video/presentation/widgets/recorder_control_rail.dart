@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:material_symbols_icons/symbols.dart';
 
 import '../controller/video_feature_theme.dart';
 
@@ -46,7 +47,7 @@ class RecorderControlRail extends StatelessWidget {
             children: <Widget>[
               _RailAction(
                 key: const Key('stopRecordingButton'),
-                icon: Icons.stop_rounded,
+                icon: Symbols.stop_circle_rounded,
                 enabled: !isBusy,
                 onTap: onStop,
               ),
@@ -62,7 +63,9 @@ class RecorderControlRail extends StatelessWidget {
               const SizedBox(height: 20),
               _RailAction(
                 key: const Key('togglePauseRecordingButton'),
-                icon: isPaused ? Icons.play_arrow_rounded : Icons.pause_rounded,
+                icon: isPaused
+                    ? Symbols.play_circle_rounded
+                    : Symbols.pause_circle_rounded,
                 outlined: true,
                 enabled: canPauseResume && !isBusy,
                 onTap: onPauseResume,
@@ -70,7 +73,7 @@ class RecorderControlRail extends StatelessWidget {
               const SizedBox(height: 20),
               _RailAction(
                 key: const Key('deleteRecordingButton'),
-                icon: Icons.delete_outline_rounded,
+                icon: Symbols.delete_rounded,
                 outlined: true,
                 enabled: !isBusy,
                 onTap: onDelete,

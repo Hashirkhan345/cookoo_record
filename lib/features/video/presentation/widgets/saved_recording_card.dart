@@ -1,8 +1,10 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:material_symbols_icons/symbols.dart';
 import 'package:video_player/video_player.dart';
 
+import '../../../../app/widgets/action_icon_badge.dart';
 import '../../../auth/data/models/app_user.dart';
 import '../../data/models/saved_video_recording_model.dart';
 import '../controller/saved_recording_player_controller_factory.dart';
@@ -132,7 +134,13 @@ class _SavedRecordingCardState extends State<SavedRecordingCard> {
                       child: FilledButton.icon(
                         key: Key('playRecordingButton_${recording.id}'),
                         onPressed: _openPlayer,
-                        icon: const Icon(Icons.play_circle_fill_rounded),
+                        icon: const ActionIconBadge(
+                          icon: Symbols.play_arrow_rounded,
+                          backgroundColor: Color(0x33FFFFFF),
+                          foregroundColor: Colors.white,
+                          size: 30,
+                          iconSize: 18,
+                        ),
                         label: const Text('Watch recording'),
                         style: FilledButton.styleFrom(
                           backgroundColor: VideoFeatureTheme.primary,
@@ -156,7 +164,13 @@ class _SavedRecordingCardState extends State<SavedRecordingCard> {
                             : () => _handleRecordingAction(
                                 downloadSavedRecording,
                               ),
-                        icon: const Icon(Icons.download_rounded),
+                        icon: const ActionIconBadge(
+                          icon: Symbols.download_rounded,
+                          backgroundColor: Color(0xFFEAF1FF),
+                          foregroundColor: VideoFeatureTheme.primary,
+                          size: 30,
+                          iconSize: 18,
+                        ),
                         label: const Text('Download'),
                         style: OutlinedButton.styleFrom(
                           foregroundColor: VideoFeatureTheme.ink,
@@ -576,20 +590,33 @@ class _PreviewMenuButton extends StatelessWidget {
           <PopupMenuEntry<_RecordingCardMenuAction>>[
             const PopupMenuItem<_RecordingCardMenuAction>(
               value: _RecordingCardMenuAction.openPlayer,
-              child: Text('Watch recording'),
+              child: _MenuActionLabel(
+                icon: Symbols.play_circle_rounded,
+                label: 'Watch recording',
+              ),
             ),
             const PopupMenuItem<_RecordingCardMenuAction>(
               value: _RecordingCardMenuAction.share,
-              child: Text('Share'),
+              child: _MenuActionLabel(
+                icon: Symbols.share_rounded,
+                label: 'Share',
+              ),
             ),
             const PopupMenuItem<_RecordingCardMenuAction>(
               value: _RecordingCardMenuAction.download,
-              child: Text('Download'),
+              child: _MenuActionLabel(
+                icon: Symbols.download_rounded,
+                label: 'Download',
+              ),
             ),
             const PopupMenuDivider(height: 10),
             const PopupMenuItem<_RecordingCardMenuAction>(
               value: _RecordingCardMenuAction.delete,
-              child: Text('Delete'),
+              child: _MenuActionLabel(
+                icon: Symbols.delete_forever_rounded,
+                label: 'Delete',
+                isDestructive: true,
+              ),
             ),
           ],
       child: Container(
@@ -668,10 +695,12 @@ class _PreviewActionPill extends StatelessWidget {
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: <Widget>[
-                const Icon(
-                  Icons.play_circle_fill_rounded,
-                  color: Colors.white,
-                  size: 18,
+                const ActionIconBadge(
+                  icon: Symbols.play_arrow_rounded,
+                  backgroundColor: Color(0x33FFFFFF),
+                  foregroundColor: Colors.white,
+                  size: 26,
+                  iconSize: 14,
                 ),
                 const SizedBox(width: 8),
                 const Text(
@@ -687,6 +716,39 @@ class _PreviewActionPill extends StatelessWidget {
           ),
         ),
       ),
+    );
+  }
+}
+
+class _MenuActionLabel extends StatelessWidget {
+  const _MenuActionLabel({
+    required this.icon,
+    required this.label,
+    this.isDestructive = false,
+  });
+
+  final IconData icon;
+  final String label;
+  final bool isDestructive;
+
+  @override
+  Widget build(BuildContext context) {
+    final Color iconColor = isDestructive
+        ? const Color(0xFFAF2D2D)
+        : VideoFeatureTheme.ink;
+
+    return Row(
+      children: <Widget>[
+        Icon(icon, color: iconColor, size: 20),
+        const SizedBox(width: 12),
+        Text(
+          label,
+          style: TextStyle(
+            color: iconColor,
+            fontWeight: isDestructive ? FontWeight.w700 : FontWeight.w600,
+          ),
+        ),
+      ],
     );
   }
 }
