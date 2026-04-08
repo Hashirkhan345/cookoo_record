@@ -3,7 +3,7 @@ import 'package:material_symbols_icons/symbols.dart';
 
 import '../controller/video_feature_theme.dart';
 
-class RecorderControlRail extends StatelessWidget {
+class RecorderControlRail extends StatefulWidget {
   const RecorderControlRail({
     super.key,
     required this.durationLabel,
@@ -28,70 +28,90 @@ class RecorderControlRail extends StatelessWidget {
   final bool showFooterAction;
 
   @override
+  State<RecorderControlRail> createState() => _RecorderControlRailState();
+}
+
+class _RecorderControlRailState extends State<RecorderControlRail>
+    with SingleTickerProviderStateMixin {
+  bool _isExpanded = false;
+
+  @override
   Widget build(BuildContext context) {
     return Column(
       children: <Widget>[
-        Container(
-          width: 78,
-          padding: const EdgeInsets.symmetric(vertical: 18),
-          decoration: BoxDecoration(
-            color: const Color(0xEE151922),
-            borderRadius: BorderRadius.circular(28),
-            boxShadow: const <BoxShadow>[
-              BoxShadow(
-                color: Color(0x220B1326),
-                blurRadius: 24,
-                offset: Offset(0, 12),
-              ),
-            ],
-          ),
-          child: Column(
-            children: <Widget>[
-              _RailAction(
-                key: const Key('stopRecordingButton'),
-                icon: Symbols.stop_circle_rounded,
-                enabled: !isBusy,
-                onTap: onStop,
-              ),
-              const SizedBox(height: 14),
-              Text(
-                durationLabel,
-                style: const TextStyle(
-                  color: Colors.white70,
-                  fontSize: 16,
-                  fontWeight: FontWeight.w700,
+        MouseRegion(
+          onEnter: (_) => setState(() => _isExpanded = true),
+          onExit: (_) => setState(() => _isExpanded = false),
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 180),
+            curve: Curves.easeOutCubic,
+            width: 78,
+            padding: const EdgeInsets.symmetric(vertical: 18),
+            decoration: BoxDecoration(
+              color: const Color(0xEE151922),
+              borderRadius: BorderRadius.circular(28),
+              boxShadow: const <BoxShadow>[
+                BoxShadow(
+                  color: Color(0x220B1326),
+                  blurRadius: 24,
+                  offset: Offset(0, 12),
                 ),
+              ],
+            ),
+            child: AnimatedSize(
+              duration: const Duration(milliseconds: 180),
+              curve: Curves.easeOutCubic,
+              child: Column(
+                children: <Widget>[
+                  _RailAction(
+                    key: const Key('stopRecordingButton'),
+                    icon: Symbols.stop_circle_rounded,
+                    enabled: !widget.isBusy,
+                    onTap: widget.onStop,
+                  ),
+                  const SizedBox(height: 14),
+                  Text(
+                    widget.durationLabel,
+                    style: const TextStyle(
+                      color: Colors.white70,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  _RailAction(
+                    key: const Key('togglePauseRecordingButton'),
+                    icon: widget.isPaused
+                        ? Symbols.play_circle_rounded
+                        : Symbols.pause_circle_rounded,
+                    outlined: true,
+                    enabled: widget.canPauseResume && !widget.isBusy,
+                    onTap: widget.onPauseResume,
+                  ),
+                  if (_isExpanded) ...<Widget>[
+                    const SizedBox(height: 20),
+                    _RailAction(
+                      key: const Key('restartRecordingButton'),
+                      icon: Symbols.restart_alt_rounded,
+                      outlined: true,
+                      enabled: !widget.isBusy,
+                      onTap: widget.onRestart,
+                    ),
+                    const SizedBox(height: 20),
+                    _RailAction(
+                      key: const Key('deleteRecordingButton'),
+                      icon: Symbols.delete_rounded,
+                      outlined: true,
+                      enabled: !widget.isBusy,
+                      onTap: widget.onDelete,
+                    ),
+                  ],
+                ],
               ),
-              const SizedBox(height: 20),
-              _RailAction(
-                key: const Key('togglePauseRecordingButton'),
-                icon: isPaused
-                    ? Symbols.play_circle_rounded
-                    : Symbols.pause_circle_rounded,
-                outlined: true,
-                enabled: canPauseResume && !isBusy,
-                onTap: onPauseResume,
-              ),
-              const SizedBox(height: 20),
-              _RailAction(
-                key: const Key('restartRecordingButton'),
-                icon: Symbols.restart_alt_rounded,
-                outlined: true,
-                enabled: !isBusy,
-                onTap: onRestart,
-              ),
-              const SizedBox(height: 20),
-              _RailAction(
-                key: const Key('deleteRecordingButton'),
-                icon: Symbols.delete_rounded,
-                outlined: true,
-                enabled: !isBusy,
-                onTap: onDelete,
-              ),
-            ],
+            ),
           ),
         ),
-        if (showFooterAction) ...<Widget>[
+        if (widget.showFooterAction) ...<Widget>[
           const SizedBox(height: 24),
           Container(
             width: 62,
