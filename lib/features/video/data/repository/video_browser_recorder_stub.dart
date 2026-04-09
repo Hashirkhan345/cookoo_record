@@ -7,6 +7,12 @@ abstract class BrowserVideoRecorder {
 
   void setExternalStopListener(void Function()? listener);
 
+  Future<void> prepareRecording({required VideoRecordingMode mode});
+
+  Future<void> startPreparedRecording();
+
+  Future<void> cancelPreparedRecording();
+
   Future<void> startRecording({required VideoRecordingMode mode});
 
   Future<void> pauseRecording();
@@ -28,6 +34,19 @@ class UnsupportedBrowserVideoRecorder implements BrowserVideoRecorder {
 
   @override
   void setExternalStopListener(void Function()? listener) {}
+
+  @override
+  Future<void> prepareRecording({required VideoRecordingMode mode}) async {
+    throw UnsupportedError('Browser recording is not available.');
+  }
+
+  @override
+  Future<void> startPreparedRecording() async {
+    throw UnsupportedError('Browser recording is not available.');
+  }
+
+  @override
+  Future<void> cancelPreparedRecording() async {}
 
   @override
   Future<void> startRecording({required VideoRecordingMode mode}) async {

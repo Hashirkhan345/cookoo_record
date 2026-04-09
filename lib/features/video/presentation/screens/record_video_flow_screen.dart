@@ -8,6 +8,7 @@ import '../../provider/video_provider.dart';
 import '../../provider/video_state.dart';
 import '../widgets/compact_control_strip.dart';
 import '../controller/recording_panel_options_resolver.dart';
+import '../controller/video_feature_theme.dart';
 import '../widgets/profile_bubble.dart';
 import '../widgets/recording_cancel_dialog.dart';
 import '../widgets/recorder_control_rail.dart';
@@ -40,7 +41,10 @@ class _RecordVideoFlowScreenState extends ConsumerState<RecordVideoFlowScreen> {
 
     final Size screenSize = MediaQuery.sizeOf(context);
     final bool isCompact = screenSize.width < 1040;
-    final bool isBusy = state.isPreparingRecording || state.isFinalizing;
+    final bool isBusy =
+        state.isPreparingRecording ||
+        state.isFinalizing ||
+        state.isCountingDown;
     final bool hasActiveRecording = state.hasActiveRecording;
     final bool showLiveControls = state.isRecording || state.isPaused;
     final bool canPauseResume = state.supportsPauseResume && !isBusy;
@@ -148,6 +152,13 @@ class _RecordVideoFlowScreenState extends ConsumerState<RecordVideoFlowScreen> {
                         ),
                       ),
                     ),
+                  if (state.isCountingDown)
+                    Positioned.fill(
+                      child: _RecordingCountdownOverlay(
+                        label: state.countdownLabel!,
+                        isCompact: isCompact,
+                      ),
+                    ),
                 ],
               );
             },
@@ -170,6 +181,10 @@ class _RecordVideoFlowScreenState extends ConsumerState<RecordVideoFlowScreen> {
   }
 
   String _panelStatusLabel(VideoRecordingFlowModel flow, VideoState state) {
+    if (state.isCountingDown) {
+      return 'Get ready...';
+    }
+
     if (state.isPreparingRecording) {
       return 'Starting camera...';
     }
@@ -218,5 +233,101 @@ class _RecordVideoFlowScreenState extends ConsumerState<RecordVideoFlowScreen> {
     if (action == RecordingCancelAction.restart) {
       await videoController.restartRecordingSession();
     }
+  }
+}
+
+class _RecordingCountdownOverlay extends StatelessWidget {
+  const _RecordingCountdownOverlay({
+    required this.label,
+    required this.isCompact,
+  });
+
+  final String label;
+  final bool isCompact;
+
+  @override
+  Widget build(BuildContext context) {
+    final double badgeSize = isCompact ? 188 : 228;
+    final String caption = label == 'Go'
+        ? 'Starting now'
+        : 'Recording starts in';
+
+    return ColoredBox(
+      key: const Key('recordingCountdownOverlay'),
+      color: const Color(0xA60B1326),
+      child: Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: <Widget>[
+            Container(
+              width: badgeSize,
+              height: badgeSize,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: <Color>[Color(0xFF5B90F8), VideoFeatureTheme.primary],
+                ),
+                boxShadow: const <BoxShadow>[
+                  BoxShadow(
+                    color: Color(0x551D63E8),
+                    blurRadius: 42,
+                    offset: Offset(0, 20),
+                  ),
+                ],
+              ),
+              child: Center(
+                child: AnimatedSwitcher(
+                  duration: const Duration(milliseconds: 280),
+                  switchInCurve: Curves.easeOutCubic,
+                  switchOutCurve: Curves.easeInCubic,
+                  transitionBuilder:
+                      (Widget child, Animation<double> animation) {
+                        return FadeTransition(
+                          opacity: animation,
+                          child: ScaleTransition(
+                            scale: Tween<double>(
+                              begin: 0.72,
+                              end: 1,
+                            ).animate(animation),
+                            child: child,
+                          ),
+                        );
+                      },
+                  child: Text(
+                    label,
+                    key: ValueKey<String>(label),
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: label == 'Go'
+                          ? badgeSize * 0.28
+                          : badgeSize * 0.54,
+                      fontWeight: FontWeight.w900,
+                      letterSpacing: label == 'Go' ? -1.4 : -4.2,
+                      height: 1,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(height: 22),
+            AnimatedSwitcher(
+              duration: const Duration(milliseconds: 220),
+              child: Text(
+                caption,
+                key: ValueKey<String>(caption),
+                style: TextStyle(
+                  color: Colors.white.withValues(alpha: 0.92),
+                  fontSize: isCompact ? 18 : 20,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: -0.3,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }

@@ -1,4 +1,5 @@
-import 'package:flutter/widgets.dart';
+import 'package:camera/camera.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -6,10 +7,12 @@ import 'package:bloop/features/auth/data/models/app_user.dart';
 import 'package:bloop/features/auth/data/repository/auth_repository.dart';
 import 'package:bloop/features/auth/provider/auth_provider.dart';
 import 'package:bloop/features/video/data/enums/video_recording_status.dart';
+import 'package:bloop/features/video/data/enums/video_recording_mode.dart';
 import 'package:bloop/features/video/data/enums/video_recording_storage_kind.dart';
 import 'package:bloop/features/video/data/models/saved_video_recording_model.dart';
 import 'package:bloop/features/video/data/repository/video_repository.dart';
 import 'package:bloop/features/video/provider/video_provider.dart';
+import 'package:bloop/features/video/presentation/screens/record_video_flow_screen.dart';
 import 'package:bloop/main.dart';
 
 void main() {
@@ -40,6 +43,8 @@ void main() {
   testWidgets('record video flow opens from the home screen', (
     WidgetTester tester,
   ) async {
+    _setDesktopSurface(tester);
+
     await tester.pumpWidget(
       ProviderScope(
         overrides: <Override>[
@@ -53,7 +58,7 @@ void main() {
 
     expect(find.text('Record a Video'), findsOneWidget);
     expect(find.byKey(const Key('recordingPanel')), findsNothing);
-    expect(find.text('Saved recordings'), findsOneWidget);
+    expect(find.text('Videos'), findsOneWidget);
     expect(find.byKey(const Key('emptySavedRecordingsState')), findsOneWidget);
     expect(find.text('Ways to use bloop for education'), findsNothing);
 
@@ -67,7 +72,7 @@ void main() {
     await tester.tap(find.byKey(const Key('startRecordingButton')));
     await tester.pumpAndSettle();
 
-    expect(find.text('Recording live'), findsOneWidget);
+    expect(find.byKey(const Key('stopRecordingButton')), findsOneWidget);
 
     await tester.tap(find.byKey(const Key('stopRecordingButton')));
     await tester.pumpAndSettle();
@@ -76,13 +81,14 @@ void main() {
       find.byKey(const Key('savedRecordingCard_fake-recording')),
       findsOneWidget,
     );
-    expect(find.text('recording_fake.webm'), findsOneWidget);
     expect(find.text('Ways to use bloop for education'), findsNothing);
   });
 
   testWidgets('home screen still loads when saved recordings fail to restore', (
     WidgetTester tester,
   ) async {
+    _setDesktopSurface(tester);
+
     await tester.pumpWidget(
       ProviderScope(
         overrides: <Override>[
@@ -97,7 +103,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Record a Video'), findsOneWidget);
-    expect(find.text('Saved recordings'), findsOneWidget);
+    expect(find.text('Videos'), findsOneWidget);
     expect(find.byKey(const Key('emptySavedRecordingsState')), findsOneWidget);
     expect(find.text('Ways to use bloop for education'), findsNothing);
     expect(
@@ -107,6 +113,52 @@ void main() {
       findsOneWidget,
     );
   });
+
+  testWidgets('start recording shows the countdown before going live', (
+    WidgetTester tester,
+  ) async {
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: <Override>[
+          videoControllerProvider.overrideWith(
+            (ref) => CountdownVideoController(),
+          ),
+        ],
+        child: const MaterialApp(home: Scaffold(body: RecordVideoFlowScreen())),
+      ),
+    );
+    await tester.pump();
+
+    expect(find.text('Start recording'), findsOneWidget);
+
+    await tester.tap(find.byKey(const Key('startRecordingButton')));
+    await tester.pump();
+
+    expect(find.byKey(const Key('recordingCountdownOverlay')), findsOneWidget);
+    expect(find.text('3'), findsOneWidget);
+
+    await tester.pump(const Duration(seconds: 1));
+    expect(find.text('2'), findsOneWidget);
+
+    await tester.pump(const Duration(seconds: 1));
+    expect(find.text('1'), findsOneWidget);
+
+    await tester.pump(const Duration(seconds: 1));
+    expect(find.text('Go'), findsOneWidget);
+
+    await tester.pump(const Duration(milliseconds: 650));
+    await tester.pump();
+
+    expect(find.byKey(const Key('recordingCountdownOverlay')), findsNothing);
+    expect(find.byKey(const Key('stopRecordingButton')), findsOneWidget);
+  });
+}
+
+void _setDesktopSurface(WidgetTester tester) {
+  tester.view.devicePixelRatio = 1;
+  tester.view.physicalSize = const Size(1440, 1400);
+  addTearDown(tester.view.resetDevicePixelRatio);
+  addTearDown(tester.view.resetPhysicalSize);
 }
 
 class FakeVideoController extends VideoController {
@@ -122,7 +174,7 @@ class FakeVideoController extends VideoController {
   Future<void> load() async {}
 
   @override
-  void openRecordingFlow() {
+  Future<void> openRecordingFlow() async {
     state = state.copyWith(
       isRecordingFlowVisible: true,
       clearFeedbackMessage: true,
@@ -200,6 +252,35 @@ class FailingSavedRecordingsRepository extends LocalVideoRepository {
   }
 }
 
+class CountdownVideoController extends VideoController {
+  CountdownVideoController() : super(CountdownVideoRepository()) {
+    state = state.copyWith(
+      isLoading: false,
+      flow: LocalVideoRepository().loadVideoRecordingFlowSync(),
+      isRecordingFlowVisible: true,
+      savedRecordingsStorageLocationLabel: 'Browser local storage',
+    );
+  }
+
+  @override
+  Future<void> load() async {}
+}
+
+class CountdownVideoRepository extends LocalVideoRepository {
+  CountdownVideoRepository();
+
+  @override
+  Future<List<CameraDescription>> getAvailableCameras() async {
+    return const <CameraDescription>[];
+  }
+
+  @override
+  Future<void> startRecording(
+    CameraController? controller, {
+    required VideoRecordingMode mode,
+  }) async {}
+}
+
 class FakeAuthRepository implements AuthRepository {
   @override
   Stream<AppUser?> authStateChanges() {
@@ -219,6 +300,9 @@ class FakeAuthRepository implements AuthRepository {
   }) async {
     return _user;
   }
+
+  @override
+  Future<void> deleteCurrentUser() async {}
 
   @override
   Future<void> sendPasswordResetEmail({required String email}) async {}
@@ -252,6 +336,9 @@ class FakeLoggedOutAuthRepository implements AuthRepository {
   Stream<AppUser?> authStateChanges() {
     return Stream<AppUser?>.value(null);
   }
+
+  @override
+  Future<void> deleteCurrentUser() async {}
 
   @override
   Future<AppUser?> getCurrentUser() async {

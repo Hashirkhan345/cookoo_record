@@ -13,6 +13,7 @@ class VideoState {
     this.flow,
     this.isRecordingFlowVisible = false,
     this.recordingStatus = VideoRecordingStatus.idle,
+    this.countdownLabel,
     this.isPreparingCameraPreview = false,
     this.cameraController,
     this.availableCameras = const <CameraDescription>[],
@@ -30,6 +31,7 @@ class VideoState {
   final VideoRecordingFlowModel? flow;
   final bool isRecordingFlowVisible;
   final VideoRecordingStatus recordingStatus;
+  final String? countdownLabel;
   final bool isPreparingCameraPreview;
   final CameraController? cameraController;
   final List<CameraDescription> availableCameras;
@@ -45,6 +47,8 @@ class VideoState {
   bool get isPreparingRecording =>
       recordingStatus == VideoRecordingStatus.preparing;
 
+  bool get isCountingDown => countdownLabel != null;
+
   bool get isRecording => recordingStatus == VideoRecordingStatus.recording;
 
   bool get isPaused => recordingStatus == VideoRecordingStatus.paused;
@@ -59,6 +63,7 @@ class VideoState {
     VideoRecordingFlowModel? flow,
     bool? isRecordingFlowVisible,
     VideoRecordingStatus? recordingStatus,
+    String? countdownLabel,
     bool? isPreparingCameraPreview,
     CameraController? cameraController,
     List<CameraDescription>? availableCameras,
@@ -74,6 +79,7 @@ class VideoState {
     bool clearCameraController = false,
     bool clearActiveCamera = false,
     bool clearRecordedVideo = false,
+    bool clearCountdownLabel = false,
   }) {
     return VideoState(
       isLoading: isLoading ?? this.isLoading,
@@ -81,6 +87,9 @@ class VideoState {
       isRecordingFlowVisible:
           isRecordingFlowVisible ?? this.isRecordingFlowVisible,
       recordingStatus: recordingStatus ?? this.recordingStatus,
+      countdownLabel: clearCountdownLabel
+          ? null
+          : countdownLabel ?? this.countdownLabel,
       isPreparingCameraPreview:
           isPreparingCameraPreview ?? this.isPreparingCameraPreview,
       cameraController: clearCameraController

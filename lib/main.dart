@@ -83,6 +83,7 @@ class MyApp extends StatelessWidget {
         useMaterial3: true,
         colorScheme: colorScheme,
         scaffoldBackgroundColor: VideoFeatureTheme.canvas,
+        pageTransitionsTheme: AppRouter.pageTransitionsTheme,
         textTheme: ThemeData.light().textTheme.apply(
           bodyColor: VideoFeatureTheme.ink,
           displayColor: VideoFeatureTheme.ink,

@@ -28,6 +28,12 @@ abstract class VideoRepository {
 
   Future<void> initializeCameraController(CameraController controller);
 
+  Future<void> prepareDisplayCapture({required VideoRecordingMode mode});
+
+  Future<void> startPreparedDisplayCapture();
+
+  Future<void> cancelPreparedDisplayCapture();
+
   Future<void> startRecording(
     CameraController? controller, {
     required VideoRecordingMode mode,
@@ -148,13 +154,8 @@ class LocalVideoRepository implements VideoRepository {
     required VideoRecordingMode mode,
   }) async {
     if (kIsWeb && mode.capturesDisplay) {
-      _isBrowserRecordingActive = true;
-      try {
-        await _browserRecorder.startRecording(mode: mode);
-      } catch (_) {
-        _isBrowserRecordingActive = false;
-        rethrow;
-      }
+      await prepareDisplayCapture(mode: mode);
+      await startPreparedDisplayCapture();
       return;
     }
 
@@ -163,6 +164,51 @@ class LocalVideoRepository implements VideoRepository {
         controller ??
         (throw StateError('A camera controller is required for this mode.'));
     await activeController.startVideoRecording();
+  }
+
+  @override
+  Future<void> prepareDisplayCapture({required VideoRecordingMode mode}) async {
+    if (!mode.capturesDisplay) {
+      throw StateError('Camera-only mode does not prepare display capture.');
+    }
+    if (!kIsWeb) {
+      throw StateError('Display capture preparation is only available on web.');
+    }
+
+    _isBrowserRecordingActive = true;
+    try {
+      await _browserRecorder.prepareRecording(mode: mode);
+    } catch (_) {
+      _isBrowserRecordingActive = false;
+      rethrow;
+    }
+  }
+
+  @override
+  Future<void> startPreparedDisplayCapture() async {
+    if (!kIsWeb) {
+      throw StateError('Prepared display capture is only available on web.');
+    }
+    if (!_isBrowserRecordingActive) {
+      throw StateError('No prepared display capture is available to start.');
+    }
+
+    try {
+      await _browserRecorder.startPreparedRecording();
+    } catch (_) {
+      _isBrowserRecordingActive = false;
+      rethrow;
+    }
+  }
+
+  @override
+  Future<void> cancelPreparedDisplayCapture() async {
+    if (!kIsWeb || !_isBrowserRecordingActive) {
+      return;
+    }
+
+    await _browserRecorder.cancelPreparedRecording();
+    _isBrowserRecordingActive = false;
   }
 
   @override

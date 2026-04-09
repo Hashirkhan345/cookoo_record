@@ -25,9 +25,19 @@ class VideoController extends StateNotifier<VideoState> {
     _repository.setExternalStopListener(_handleExternalRecordingStop);
   }
 
+  static const List<String> _recordingCountdownLabels = <String>[
+    '3',
+    '2',
+    '1',
+    'Go',
+  ];
+  static const Duration _countdownTick = Duration(seconds: 1);
+  static const Duration _countdownGoTick = Duration(milliseconds: 650);
+
   final VideoRepository _repository;
   Timer? _recordingTimer;
   Future<CameraController>? _cameraControllerInitialization;
+  int _countdownRunId = 0;
 
   Future<void> load() async {
     state = state.copyWith(isLoading: true, clearFeedbackMessage: true);
@@ -71,10 +81,12 @@ class VideoController extends StateNotifier<VideoState> {
       return;
     }
 
+    _cancelCountdown();
     state = state.copyWith(
       isRecordingFlowVisible: false,
       clearFeedbackMessage: true,
       recordingStatus: VideoRecordingStatus.idle,
+      clearCountdownLabel: true,
       isPreparingCameraPreview: true,
       recordingDuration: Duration.zero,
       clearRecordedVideo: true,
@@ -107,7 +119,11 @@ class VideoController extends StateNotifier<VideoState> {
   }
 
   void dismissRecordingFlow() {
-    state = state.copyWith(isRecordingFlowVisible: false);
+    _cancelCountdown();
+    state = state.copyWith(
+      isRecordingFlowVisible: false,
+      clearCountdownLabel: true,
+    );
   }
 
   void selectRecordingMode(VideoRecordingMode mode) {
@@ -122,17 +138,36 @@ class VideoController extends StateNotifier<VideoState> {
   }
 
   Future<void> startRecordingSession() async {
-    if (state.isPreparingRecording || state.isRecording || state.isPaused) {
+    if (state.isPreparingRecording ||
+        state.isRecording ||
+        state.isPaused ||
+        state.isCountingDown) {
       return;
     }
 
     final VideoRecordingMode selectedMode = state.selectedRecordingMode;
+    if (_usesWebDisplayCaptureHandshake(selectedMode)) {
+      await _startWebDisplayRecordingSession(selectedMode);
+      return;
+    }
 
+    final bool didCompleteCountdown = await _runRecordingCountdown();
+    if (!didCompleteCountdown || !mounted) {
+      return;
+    }
+
+    await _startRecordingSessionNow(selectedMode: selectedMode);
+  }
+
+  Future<void> _startRecordingSessionNow({
+    required VideoRecordingMode selectedMode,
+  }) async {
     state = state.copyWith(
       recordingStatus: VideoRecordingStatus.preparing,
       recordingDuration: Duration.zero,
       clearFeedbackMessage: true,
       clearRecordedVideo: true,
+      clearCountdownLabel: true,
     );
 
     try {
@@ -157,6 +192,64 @@ class VideoController extends StateNotifier<VideoState> {
       );
       state = state.copyWith(
         recordingStatus: VideoRecordingStatus.idle,
+        clearCountdownLabel: true,
+        feedbackMessage: _describeRecordingError(error),
+      );
+    }
+  }
+
+  Future<void> _startWebDisplayRecordingSession(
+    VideoRecordingMode selectedMode,
+  ) async {
+    state = state.copyWith(
+      recordingStatus: VideoRecordingStatus.preparing,
+      recordingDuration: Duration.zero,
+      clearFeedbackMessage: true,
+      clearRecordedVideo: true,
+      clearCountdownLabel: true,
+    );
+
+    try {
+      await _ensureOptionalCameraController();
+      await _repository.prepareDisplayCapture(mode: selectedMode);
+      if (!mounted) {
+        await _repository.cancelPreparedDisplayCapture();
+        return;
+      }
+
+      await _refreshWebCameraPreviewAfterDisplayCapture();
+
+      final bool didCompleteCountdown = await _runRecordingCountdown();
+      if (!didCompleteCountdown || !mounted) {
+        await _repository.cancelPreparedDisplayCapture();
+        if (mounted) {
+          state = state.copyWith(
+            recordingStatus: VideoRecordingStatus.idle,
+            clearCountdownLabel: true,
+          );
+        }
+        return;
+      }
+
+      await _repository.startPreparedDisplayCapture();
+      await _refreshWebCameraPreviewAfterDisplayCapture();
+      unawaited(_refreshWebCameraPreviewAfterRecordingStart());
+      _startTimer();
+      state = state.copyWith(
+        recordingStatus: VideoRecordingStatus.recording,
+        supportsPauseResume: _repository.supportsPauseResume(),
+        clearCountdownLabel: true,
+      );
+    } catch (error, stackTrace) {
+      await _repository.cancelPreparedDisplayCapture();
+      debugPrint('[video] startRecordingSession failed: $error');
+      debugPrintStack(
+        label: '[video] startRecordingSession stack',
+        stackTrace: stackTrace,
+      );
+      state = state.copyWith(
+        recordingStatus: VideoRecordingStatus.idle,
+        clearCountdownLabel: true,
         feedbackMessage: _describeRecordingError(error),
       );
     }
@@ -194,6 +287,7 @@ class VideoController extends StateNotifier<VideoState> {
       return;
     }
 
+    _cancelCountdown();
     state = state.copyWith(recordingStatus: VideoRecordingStatus.finalizing);
     _recordingTimer?.cancel();
     final Duration completedDuration = state.recordingDuration;
@@ -252,6 +346,7 @@ class VideoController extends StateNotifier<VideoState> {
       return;
     }
 
+    _cancelCountdown();
     state = state.copyWith(recordingStatus: VideoRecordingStatus.finalizing);
     _recordingTimer?.cancel();
 
@@ -282,6 +377,7 @@ class VideoController extends StateNotifier<VideoState> {
       return;
     }
 
+    _cancelCountdown();
     state = state.copyWith(
       recordingStatus: VideoRecordingStatus.finalizing,
       clearFeedbackMessage: true,
@@ -311,12 +407,15 @@ class VideoController extends StateNotifier<VideoState> {
   }
 
   Future<void> closeRecordingFlow() async {
+    _cancelCountdown();
     _recordingTimer?.cancel();
+    await _repository.cancelPreparedDisplayCapture();
     await _disposeCameraController();
     state = state.copyWith(
       isRecordingFlowVisible: false,
       recordingStatus: VideoRecordingStatus.idle,
       recordingDuration: Duration.zero,
+      clearCountdownLabel: true,
     );
   }
 
@@ -439,6 +538,50 @@ class VideoController extends StateNotifier<VideoState> {
     }
   }
 
+  bool _usesWebDisplayCaptureHandshake(VideoRecordingMode mode) {
+    return kIsWeb && mode.capturesDisplay;
+  }
+
+  Future<bool> _runRecordingCountdown() async {
+    final int runId = ++_countdownRunId;
+
+    state = state.copyWith(
+      countdownLabel: _recordingCountdownLabels.first,
+      recordingDuration: Duration.zero,
+      clearFeedbackMessage: true,
+      clearRecordedVideo: true,
+    );
+
+    for (int index = 0; index < _recordingCountdownLabels.length; index++) {
+      if (!_isCountdownRunActive(runId)) {
+        return false;
+      }
+
+      state = state.copyWith(countdownLabel: _recordingCountdownLabels[index]);
+      await Future<void>.delayed(
+        index == _recordingCountdownLabels.length - 1
+            ? _countdownGoTick
+            : _countdownTick,
+      );
+    }
+
+    return _isCountdownRunActive(runId);
+  }
+
+  bool _isCountdownRunActive(int runId) {
+    return mounted &&
+        runId == _countdownRunId &&
+        state.isRecordingFlowVisible &&
+        state.isCountingDown;
+  }
+
+  void _cancelCountdown() {
+    _countdownRunId++;
+    if (state.isCountingDown) {
+      state = state.copyWith(clearCountdownLabel: true);
+    }
+  }
+
   void _startTimer() {
     _recordingTimer?.cancel();
     _recordingTimer = Timer.periodic(const Duration(seconds: 1), (_) {
@@ -527,6 +670,19 @@ class VideoController extends StateNotifier<VideoState> {
     }
   }
 
+  Future<void> _refreshWebCameraPreviewAfterRecordingStart() async {
+    if (!mounted || !kIsWeb) {
+      return;
+    }
+
+    await Future<void>.delayed(const Duration(milliseconds: 180));
+    if (!mounted || !state.isRecordingFlowVisible) {
+      return;
+    }
+
+    await _refreshWebCameraPreviewAfterDisplayCapture();
+  }
+
   String _describeRecordingError(Object error) {
     if (error is CameraException) {
       switch (error.code) {
@@ -577,6 +733,8 @@ class VideoController extends StateNotifier<VideoState> {
   @override
   void dispose() {
     _recordingTimer?.cancel();
+    _cancelCountdown();
+    unawaited(_repository.cancelPreparedDisplayCapture());
     _repository.setExternalStopListener(null);
     final CameraController? controller = state.cameraController;
     if (controller != null) {

@@ -86,7 +86,7 @@ class BrowserVideoRecorderWeb implements BrowserVideoRecorder {
   }
 
   @override
-  Future<void> startRecording({required VideoRecordingMode mode}) async {
+  Future<void> prepareRecording({required VideoRecordingMode mode}) async {
     if (!mode.capturesDisplay) {
       throw StateError('Camera-only mode must use the camera recorder.');
     }
@@ -115,7 +115,17 @@ class BrowserVideoRecorderWeb implements BrowserVideoRecorder {
     }
 
     _mimeType = _resolveMimeType();
+  }
+
+  @override
+  Future<void> startPreparedRecording() async {
+    final MediaStreamJs recordingStream =
+        _recordingStream ??
+        (throw StateError('No browser display capture is prepared.'));
     _stopCompleter = Completer<XFile>();
+    _stopRequestedByApp = false;
+    _stopTriggeredExternally = false;
+    _chunks.clear();
 
     try {
       final MediaRecorderJs recorder = _createMediaRecorder(
@@ -129,6 +139,20 @@ class BrowserVideoRecorderWeb implements BrowserVideoRecorder {
       _cleanupRecorderState();
       rethrow;
     }
+  }
+
+  @override
+  Future<void> cancelPreparedRecording() async {
+    _stopCompleter = null;
+    _stopRequestedByApp = false;
+    _stopTriggeredExternally = false;
+    _cleanupRecorderState();
+  }
+
+  @override
+  Future<void> startRecording({required VideoRecordingMode mode}) async {
+    await prepareRecording(mode: mode);
+    await startPreparedRecording();
   }
 
   @override
