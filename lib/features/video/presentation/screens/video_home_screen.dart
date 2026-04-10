@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../app/router/app_routes.dart';
 import '../../../auth/provider/auth_provider.dart';
 import '../../../auth/provider/auth_state.dart';
+import '../../data/enums/video_recording_mode.dart';
 import '../../provider/video_provider.dart';
 import '../../provider/video_state.dart';
 import '../controller/record_video_flow_controller.dart';
@@ -222,6 +223,10 @@ class _VideoHomeScreenState extends ConsumerState<VideoHomeScreen> {
 
     final Size screenSize = MediaQuery.sizeOf(context);
     final bool isDesktop = screenSize.width >= 980;
+    final bool supportsDisplayCapture =
+        supportedRecordingModesForCurrentPlatform().any(
+          (VideoRecordingMode mode) => mode.capturesDisplay,
+        );
     final double headlineSize = screenSize.width < 640 ? 36 : 48;
     final double contentHorizontalPadding = isDesktop ? 112 : 20;
 
@@ -359,8 +364,10 @@ class _VideoHomeScreenState extends ConsumerState<VideoHomeScreen> {
                                       crossAxisAlignment:
                                           WrapCrossAlignment.center,
                                       children: <Widget>[
-                                        const Icon(
-                                          Icons.desktop_mac_outlined,
+                                        Icon(
+                                          supportsDisplayCapture
+                                              ? Icons.desktop_mac_outlined
+                                              : Icons.phone_iphone_rounded,
                                           color: VideoFeatureTheme.primary,
                                         ),
                                         Text(

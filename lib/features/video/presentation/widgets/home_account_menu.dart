@@ -168,79 +168,81 @@ class _AccountPanel extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             children: <Widget>[
               Padding(
-                padding: const EdgeInsets.fromLTRB(28, 22, 18, 24),
-                child: Stack(
+                padding: const EdgeInsets.fromLTRB(28, 24, 18, 28),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: <Widget>[
-                    Align(
-                      alignment: Alignment.topRight,
-                      child: IconButton(
-                        onPressed: onClose,
-                        tooltip: 'Close account panel',
-                        icon: const Icon(
-                          Icons.close_rounded,
-                          color: VideoFeatureTheme.ink,
-                          size: 34,
-                        ),
-                      ),
-                    ),
-                    Padding(
-                      padding: const EdgeInsets.only(top: 4),
-                      child: Column(
-                        children: <Widget>[
-                          Container(
-                            width: 96,
-                            height: 96,
-                            decoration: const BoxDecoration(
-                              color: Color(0xFF18A7C5),
-                              shape: BoxShape.circle,
-                            ),
-                            child: Center(
-                              child: Text(
-                                user.initials,
-                                style: const TextStyle(
-                                  color: Color(0xFF11335B),
-                                  fontSize: 34,
-                                  fontWeight: FontWeight.w800,
-                                  letterSpacing: -0.8,
+                    Expanded(
+                      child: Padding(
+                        padding: const EdgeInsets.only(top: 4),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: <Widget>[
+                            Container(
+                              width: 96,
+                              height: 96,
+                              decoration: const BoxDecoration(
+                                color: Color(0xFF18A7C5),
+                                shape: BoxShape.circle,
+                              ),
+                              child: Center(
+                                child: Text(
+                                  user.initials,
+                                  style: const TextStyle(
+                                    color: Color(0xFF11335B),
+                                    fontSize: 34,
+                                    fontWeight: FontWeight.w800,
+                                    letterSpacing: -0.8,
+                                  ),
                                 ),
                               ),
                             ),
-                          ),
-                          const SizedBox(height: 20),
-                          Text(
-                            user.name,
-                            textAlign: TextAlign.center,
-                            style: const TextStyle(
-                              color: VideoFeatureTheme.ink,
-                              fontSize: 24,
-                              fontWeight: FontWeight.w800,
-                              letterSpacing: -0.7,
-                            ),
-                          ),
-                          const SizedBox(height: 16),
-                          OutlinedButton(
-                            onPressed: () =>
-                                onActionSelected(HomeAccountMenuAction.profile),
-                            style: OutlinedButton.styleFrom(
-                              foregroundColor: VideoFeatureTheme.ink,
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 22,
-                                vertical: 14,
-                              ),
-                              side: const BorderSide(
-                                color: VideoFeatureTheme.line,
-                              ),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(22),
-                              ),
-                              textStyle: const TextStyle(
-                                fontSize: 15,
-                                fontWeight: FontWeight.w700,
+                            const SizedBox(height: 20),
+                            Text(
+                              user.name,
+                              style: const TextStyle(
+                                color: VideoFeatureTheme.ink,
+                                fontSize: 24,
+                                fontWeight: FontWeight.w800,
+                                letterSpacing: -0.7,
                               ),
                             ),
-                            child: const Text('Edit profile'),
-                          ),
-                        ],
+                            const SizedBox(height: 16),
+                            OutlinedButton(
+                              onPressed: () =>
+                                  onActionSelected(HomeAccountMenuAction.profile),
+                              style: OutlinedButton.styleFrom(
+                                foregroundColor: VideoFeatureTheme.ink,
+                                minimumSize: const Size(0, 52),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 22,
+                                  vertical: 14,
+                                ),
+                                side: const BorderSide(
+                                  color: VideoFeatureTheme.line,
+                                ),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(22),
+                                ),
+                                textStyle: const TextStyle(
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                              child: const Text('Edit profile'),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    IconButton(
+                      onPressed: onClose,
+                      tooltip: 'Close account panel',
+                      icon: const Icon(
+                        Icons.close_rounded,
+                        color: VideoFeatureTheme.ink,
+                        size: 34,
                       ),
                     ),
                   ],

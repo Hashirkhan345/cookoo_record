@@ -178,6 +178,12 @@ class RecorderPanel extends StatelessWidget {
   }
 
   Future<void> _showRecordingModeMenu(BuildContext context) async {
+    final List<VideoRecordingMode> supportedModes =
+        supportedRecordingModesForCurrentPlatform();
+    if (supportedModes.length <= 1) {
+      return;
+    }
+
     final RenderBox button = context.findRenderObject()! as RenderBox;
     final RenderBox overlay =
         Overlay.of(context).context.findRenderObject()! as RenderBox;
@@ -197,7 +203,7 @@ class RecorderPanel extends StatelessWidget {
       position: position,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(26)),
       color: Colors.white,
-      items: VideoRecordingMode.values
+      items: supportedModes
           .map((VideoRecordingMode mode) {
             return PopupMenuItem<VideoRecordingMode>(
               value: mode,

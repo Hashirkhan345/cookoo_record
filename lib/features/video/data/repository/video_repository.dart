@@ -74,36 +74,57 @@ class LocalVideoRepository implements VideoRepository {
   }
 
   VideoRecordingFlowModel loadVideoRecordingFlowSync() {
-    return const VideoRecordingFlowModel(
+    final bool isMobileNative =
+        !kIsWeb &&
+        (defaultTargetPlatform == TargetPlatform.android ||
+            defaultTargetPlatform == TargetPlatform.iOS);
+
+    return VideoRecordingFlowModel(
       brandLabel: 'bloop',
       heroTitle: 'Record your video',
-      heroDescription:
-          'Launch a polished recording flow directly from the home screen and keep the presenter visible in the lower section.',
+      heroDescription: isMobileNative
+          ? 'Record polished camera videos directly from your phone and keep your presenter visible throughout the session.'
+          : 'Launch a polished recording flow directly from the home screen and keep the presenter visible in the lower section.',
       heroActionLabel: 'Record a Video',
-      helperMessage:
-          'For the best recording experience, open this flow on a larger screen.',
+      helperMessage: isMobileNative
+          ? 'Camera and microphone recording are available on this device.'
+          : 'For the best recording experience, open this flow on a larger screen.',
       previewTitle: 'Ways to use bloop for education',
       startRecordingLabel: 'Start recording',
       recordingLimitLabel: '5 minute recording limit',
       tutorialLabel: 'Start a 1 minute tutorial',
       successMessage: 'Recording setup opened successfully.',
-      panelOptions: <VideoRecordingOptionModel>[
-        VideoRecordingOptionModel(
-          kind: VideoRecordingOptionKind.display,
-          label: 'Full Screen',
-        ),
-        VideoRecordingOptionModel(
-          kind: VideoRecordingOptionKind.camera,
-          label: 'FaceTime HD Camera',
-          status: 'On',
-        ),
-        VideoRecordingOptionModel(
-          kind: VideoRecordingOptionKind.microphone,
-          label: 'Default - MacBook Microphone',
-          status: 'On',
-          highlighted: true,
-        ),
-      ],
+      panelOptions: isMobileNative
+          ? const <VideoRecordingOptionModel>[
+              VideoRecordingOptionModel(
+                kind: VideoRecordingOptionKind.camera,
+                label: 'Front Camera',
+                status: 'On',
+              ),
+              VideoRecordingOptionModel(
+                kind: VideoRecordingOptionKind.microphone,
+                label: 'Device Microphone',
+                status: 'On',
+                highlighted: true,
+              ),
+            ]
+          : const <VideoRecordingOptionModel>[
+              VideoRecordingOptionModel(
+                kind: VideoRecordingOptionKind.display,
+                label: 'Full Screen',
+              ),
+              VideoRecordingOptionModel(
+                kind: VideoRecordingOptionKind.camera,
+                label: 'FaceTime HD Camera',
+                status: 'On',
+              ),
+              VideoRecordingOptionModel(
+                kind: VideoRecordingOptionKind.microphone,
+                label: 'Default - MacBook Microphone',
+                status: 'On',
+                highlighted: true,
+              ),
+            ],
       shortcuts: <VideoShortcutModel>[
         VideoShortcutModel(
           type: VideoShortcutType.brainstorm,

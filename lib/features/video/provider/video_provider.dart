@@ -64,6 +64,7 @@ class VideoController extends StateNotifier<VideoState> {
         flow: flow,
         savedRecordings: savedRecordings,
         savedRecordingsStorageLocationLabel: storageLocationLabel,
+        selectedRecordingMode: defaultRecordingModeForCurrentPlatform(),
         feedbackMessage: feedbackMessage,
       );
     } catch (_) {
@@ -90,7 +91,7 @@ class VideoController extends StateNotifier<VideoState> {
       isPreparingCameraPreview: true,
       recordingDuration: Duration.zero,
       clearRecordedVideo: true,
-      selectedRecordingMode: VideoRecordingMode.fullScreen,
+      selectedRecordingMode: defaultRecordingModeForCurrentPlatform(),
     );
 
     String? feedbackMessage;
@@ -127,7 +128,8 @@ class VideoController extends StateNotifier<VideoState> {
   }
 
   void selectRecordingMode(VideoRecordingMode mode) {
-    if (state.hasActiveRecording) {
+    if (state.hasActiveRecording ||
+        !supportedRecordingModesForCurrentPlatform().contains(mode)) {
       return;
     }
 

@@ -236,6 +236,17 @@ class AuthController extends StateNotifier<AuthState> {
     if (rawMessage.contains('Google Sign-In was cancelled')) {
       return 'Google Sign-In was cancelled.';
     }
+    if (rawMessage.contains('serverClientId must be provided on Android') ||
+        rawMessage.contains('clientConfigurationError')) {
+      return 'Google Sign-In is not fully configured for mobile. Add the Android SHA fingerprints in Firebase, enable Google Sign-In, and download updated Firebase config files.';
+    }
+    if (rawMessage.contains(
+          'Your app is missing support for the following URL schemes',
+        ) ||
+        rawMessage.contains('GIDClientID') ||
+        rawMessage.contains('REVERSED_CLIENT_ID')) {
+      return 'Google Sign-In is not fully configured for iOS. Download a new GoogleService-Info.plist from Firebase and add the required iOS Google Sign-In keys to Info.plist.';
+    }
     return rawMessage;
   }
 

@@ -1,3 +1,5 @@
+import 'package:flutter/foundation.dart';
+
 enum VideoRecordingMode { fullScreen, window, currentTab, cameraOnly }
 
 extension VideoRecordingModeX on VideoRecordingMode {
@@ -15,4 +17,23 @@ extension VideoRecordingModeX on VideoRecordingMode {
   }
 
   bool get capturesDisplay => this != VideoRecordingMode.cameraOnly;
+
+  bool get isSupportedOnCurrentPlatform =>
+      supportedRecordingModesForCurrentPlatform().contains(this);
+}
+
+List<VideoRecordingMode> supportedRecordingModesForCurrentPlatform() {
+  if (kIsWeb) {
+    return VideoRecordingMode.values;
+  }
+
+  return const <VideoRecordingMode>[VideoRecordingMode.cameraOnly];
+}
+
+VideoRecordingMode defaultRecordingModeForCurrentPlatform() {
+  if (kIsWeb) {
+    return VideoRecordingMode.fullScreen;
+  }
+
+  return VideoRecordingMode.cameraOnly;
 }

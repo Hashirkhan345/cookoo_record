@@ -1,3 +1,5 @@
+import 'package:flutter/foundation.dart';
+
 import 'package:camera/camera.dart';
 
 import '../../data/enums/video_recording_mode.dart';
@@ -14,6 +16,10 @@ List<VideoRecordingOptionModel> resolveRecordingPanelOptions({
       state.cameraController?.value.isInitialized ?? state.activeCamera != null;
 
   return flow.panelOptions
+      .where(
+        (VideoRecordingOptionModel option) =>
+            kIsWeb || option.kind != VideoRecordingOptionKind.display,
+      )
       .map((VideoRecordingOptionModel option) {
         switch (option.kind) {
           case VideoRecordingOptionKind.display:
