@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../app/router/app_routes.dart';
 import '../../../video/presentation/controller/video_feature_theme.dart';
+import '../../../video/presentation/widgets/brand_lockup.dart';
 import '../../provider/auth_provider.dart';
 import '../../provider/auth_state.dart';
 
@@ -19,14 +20,7 @@ class _AuthGateScreenState extends ConsumerState<AuthGateScreen> {
     final AuthState authState = ref.watch(authControllerProvider);
 
     if (authState.isLoading) {
-      return const Scaffold(
-        body: DecoratedBox(
-          decoration: BoxDecoration(
-            gradient: VideoFeatureTheme.screenBackground,
-          ),
-          child: Center(child: CircularProgressIndicator()),
-        ),
-      );
+      return const _LoadingSplash();
     }
 
     final String targetRoute = authState.isAuthenticated
@@ -41,10 +35,55 @@ class _AuthGateScreenState extends ConsumerState<AuthGateScreen> {
       Navigator.of(context).pushReplacementNamed(targetRoute);
     });
 
-    return const Scaffold(
-      body: DecoratedBox(
-        decoration: BoxDecoration(gradient: VideoFeatureTheme.screenBackground),
-        child: Center(child: CircularProgressIndicator()),
+    return const _LoadingSplash();
+  }
+}
+
+class _LoadingSplash extends StatelessWidget {
+  const _LoadingSplash();
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: Stack(
+        children: <Widget>[
+          const Positioned.fill(
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                gradient: VideoFeatureTheme.screenBackground,
+              ),
+            ),
+          ),
+          Center(
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 28),
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.78),
+                borderRadius: BorderRadius.circular(32),
+                border: Border.all(color: VideoFeatureTheme.line),
+                boxShadow: VideoFeatureTheme.floatingShadow,
+              ),
+              child: const Column(
+                mainAxisSize: MainAxisSize.min,
+                children: <Widget>[
+                  BrandMark(size: 56),
+                  SizedBox(height: 18),
+                  Text(
+                    'Loading your studio',
+                    style: TextStyle(
+                      color: VideoFeatureTheme.ink,
+                      fontSize: 22,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: -0.6,
+                    ),
+                  ),
+                  SizedBox(height: 16),
+                  CircularProgressIndicator(color: VideoFeatureTheme.primary),
+                ],
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

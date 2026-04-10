@@ -48,15 +48,9 @@ class _RecorderControlRailState extends State<RecorderControlRail>
             width: 78,
             padding: const EdgeInsets.symmetric(vertical: 18),
             decoration: BoxDecoration(
-              color: const Color(0xEE151922),
+              color: VideoFeatureTheme.ink.withValues(alpha: 0.9),
               borderRadius: BorderRadius.circular(28),
-              boxShadow: const <BoxShadow>[
-                BoxShadow(
-                  color: Color(0x220B1326),
-                  blurRadius: 24,
-                  offset: Offset(0, 12),
-                ),
-              ],
+              boxShadow: VideoFeatureTheme.panelShadow,
             ),
             child: AnimatedSize(
               duration: const Duration(milliseconds: 180),
@@ -117,7 +111,7 @@ class _RecorderControlRailState extends State<RecorderControlRail>
             width: 62,
             height: 62,
             decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.9),
+              color: Colors.white.withValues(alpha: 0.92),
               borderRadius: BorderRadius.circular(20),
               border: Border.all(color: VideoFeatureTheme.line),
             ),
@@ -158,7 +152,7 @@ class _RailAction extends StatelessWidget {
         decoration: BoxDecoration(
           color: outlined
               ? Colors.transparent
-              : Colors.white.withValues(alpha: enabled ? 0.12 : 0.06),
+              : Colors.white.withValues(alpha: enabled ? 0.16 : 0.08),
           borderRadius: BorderRadius.circular(16),
           border: outlined
               ? Border.all(

@@ -79,8 +79,8 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: VideoFeatureTheme.canvas,
-                borderRadius: BorderRadius.circular(20),
+                color: VideoFeatureTheme.panelMuted.withValues(alpha: 0.58),
+                borderRadius: BorderRadius.circular(24),
                 border: Border.all(color: VideoFeatureTheme.line),
               ),
               child: const Row(
@@ -139,8 +139,8 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
             FilledButton(
               onPressed: authState.isSubmitting ? null : _submitResetRequest,
               style: FilledButton.styleFrom(
-                minimumSize: const Size.fromHeight(58),
-                backgroundColor: VideoFeatureTheme.primary,
+                minimumSize: const Size.fromHeight(60),
+                backgroundColor: VideoFeatureTheme.accent,
                 foregroundColor: Colors.white,
                 textStyle: const TextStyle(
                   fontSize: 16,

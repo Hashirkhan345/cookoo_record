@@ -46,8 +46,10 @@ class _AuthTextFieldState extends State<AuthTextField> {
       validator: widget.validator,
       decoration: InputDecoration(
         labelText: widget.label,
-        filled: true,
-        fillColor: Colors.white,
+        floatingLabelStyle: const TextStyle(
+          color: VideoFeatureTheme.primary,
+          fontWeight: FontWeight.w700,
+        ),
         suffixIcon: widget.obscureText
             ? IconButton(
                 onPressed: () {
@@ -64,18 +66,7 @@ class _AuthTextFieldState extends State<AuthTextField> {
                 tooltip: _isTextObscured ? 'Show password' : 'Hide password',
               )
             : null,
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(18),
-          borderSide: const BorderSide(color: VideoFeatureTheme.line),
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(18),
-          borderSide: const BorderSide(color: VideoFeatureTheme.line),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(18),
-          borderSide: const BorderSide(color: VideoFeatureTheme.primary),
-        ),
+        helperStyle: const TextStyle(color: VideoFeatureTheme.muted),
       ),
     );
   }

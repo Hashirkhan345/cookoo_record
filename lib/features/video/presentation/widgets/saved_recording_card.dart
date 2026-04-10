@@ -41,16 +41,10 @@ class _SavedRecordingCardState extends State<SavedRecordingCard> {
       duration: const Duration(milliseconds: 220),
       curve: Curves.easeOutCubic,
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.94),
-        borderRadius: BorderRadius.circular(30),
+        color: VideoFeatureTheme.panel,
+        borderRadius: BorderRadius.circular(32),
         border: Border.all(color: VideoFeatureTheme.line),
-        boxShadow: const <BoxShadow>[
-          BoxShadow(
-            color: Color(0x150B1326),
-            blurRadius: 26,
-            offset: Offset(0, 14),
-          ),
-        ],
+        boxShadow: VideoFeatureTheme.floatingShadow,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -86,7 +80,7 @@ class _SavedRecordingCardState extends State<SavedRecordingCard> {
                               color: VideoFeatureTheme.ink,
                               fontSize: 15,
                               fontWeight: FontWeight.w800,
-                              letterSpacing: -0.2,
+                              letterSpacing: -0.4,
                             ),
                           ),
                           const SizedBox(height: 2),
@@ -110,10 +104,10 @@ class _SavedRecordingCardState extends State<SavedRecordingCard> {
                   overflow: TextOverflow.ellipsis,
                   style: const TextStyle(
                     color: VideoFeatureTheme.ink,
-                    fontSize: 22,
-                    fontWeight: FontWeight.w800,
-                    height: 1.15,
-                    letterSpacing: -0.5,
+                    fontSize: 24,
+                    fontWeight: FontWeight.w700,
+                    height: 1.12,
+                    letterSpacing: -0.7,
                   ),
                 ),
                 const SizedBox(height: 8),
@@ -143,11 +137,11 @@ class _SavedRecordingCardState extends State<SavedRecordingCard> {
                         ),
                         label: const Text('Watch recording'),
                         style: FilledButton.styleFrom(
-                          backgroundColor: VideoFeatureTheme.primary,
+                          backgroundColor: VideoFeatureTheme.accent,
                           foregroundColor: Colors.white,
                           padding: const EdgeInsets.symmetric(vertical: 15),
                           shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(18),
+                            borderRadius: BorderRadius.circular(20),
                           ),
                           textStyle: const TextStyle(
                             fontWeight: FontWeight.w700,
@@ -174,10 +168,12 @@ class _SavedRecordingCardState extends State<SavedRecordingCard> {
                         label: const Text('Download'),
                         style: OutlinedButton.styleFrom(
                           foregroundColor: VideoFeatureTheme.ink,
+                          backgroundColor: VideoFeatureTheme.panelMuted
+                              .withValues(alpha: 0.36),
                           side: const BorderSide(color: VideoFeatureTheme.line),
                           padding: const EdgeInsets.symmetric(vertical: 15),
                           shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(18),
+                            borderRadius: BorderRadius.circular(20),
                           ),
                           textStyle: const TextStyle(
                             fontWeight: FontWeight.w700,
@@ -544,7 +540,10 @@ class _SavedRecordingThumbnailState extends State<_SavedRecordingThumbnail> {
             gradient: LinearGradient(
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
-              colors: <Color>[Color(0xFF24314D), Color(0xFF121B2F)],
+              colors: <Color>[
+                VideoFeatureTheme.primaryDeep,
+                VideoFeatureTheme.primary,
+              ],
             ),
           ),
           child: Center(
@@ -623,7 +622,7 @@ class _PreviewMenuButton extends StatelessWidget {
         width: 42,
         height: 42,
         decoration: BoxDecoration(
-          color: Colors.black.withValues(alpha: 0.46),
+          color: VideoFeatureTheme.ink.withValues(alpha: 0.42),
           borderRadius: BorderRadius.circular(16),
           border: Border.all(color: Colors.white.withValues(alpha: 0.16)),
         ),
@@ -648,8 +647,8 @@ class _PreviewLabel extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
-        color: Colors.black.withValues(alpha: 0.34),
-        borderRadius: BorderRadius.circular(18),
+        color: VideoFeatureTheme.ink.withValues(alpha: 0.34),
+        borderRadius: BorderRadius.circular(999),
         border: Border.all(color: Colors.white.withValues(alpha: 0.14)),
       ),
       child: Row(
@@ -688,7 +687,7 @@ class _PreviewActionPill extends StatelessWidget {
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             decoration: BoxDecoration(
-              color: Colors.black.withValues(alpha: 0.48),
+              color: VideoFeatureTheme.ink.withValues(alpha: 0.5),
               borderRadius: BorderRadius.circular(999),
               border: Border.all(color: Colors.white.withValues(alpha: 0.14)),
             ),
@@ -734,7 +733,7 @@ class _MenuActionLabel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final Color iconColor = isDestructive
-        ? const Color(0xFFAF2D2D)
+        ? VideoFeatureTheme.danger
         : VideoFeatureTheme.ink;
 
     return Row(
@@ -763,8 +762,8 @@ class _PreviewDurationBadge extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
-        color: Colors.black.withValues(alpha: 0.62),
-        borderRadius: BorderRadius.circular(18),
+        color: VideoFeatureTheme.ink.withValues(alpha: 0.62),
+        borderRadius: BorderRadius.circular(999),
       ),
       child: Text(
         label,
@@ -853,7 +852,7 @@ class _FallbackOwnerAvatar extends StatelessWidget {
   Widget build(BuildContext context) {
     return DecoratedBox(
       decoration: const BoxDecoration(
-        color: VideoFeatureTheme.primary,
+        gradient: VideoFeatureTheme.primaryGradient,
         shape: BoxShape.circle,
       ),
       child: Center(

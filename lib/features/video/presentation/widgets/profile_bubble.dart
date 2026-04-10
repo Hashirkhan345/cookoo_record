@@ -23,13 +23,7 @@ class ProfileBubble extends StatelessWidget {
           decoration: BoxDecoration(
             shape: BoxShape.circle,
             border: Border.all(color: Colors.white, width: 6),
-            boxShadow: const <BoxShadow>[
-              BoxShadow(
-                color: Color(0x2A0B1326),
-                blurRadius: 24,
-                offset: Offset(0, 12),
-              ),
-            ],
+            boxShadow: VideoFeatureTheme.panelShadow,
           ),
           child: ClipOval(
             child: _ProfileBubbleContent(
@@ -45,7 +39,7 @@ class ProfileBubble extends StatelessWidget {
             width: badgeSize,
             height: badgeSize,
             decoration: BoxDecoration(
-              color: VideoFeatureTheme.primary,
+              gradient: VideoFeatureTheme.accentGradient,
               borderRadius: BorderRadius.circular(badgeSize * 0.35),
               border: Border.all(color: Colors.white, width: 3),
             ),

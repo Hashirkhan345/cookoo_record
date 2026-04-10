@@ -36,25 +36,19 @@ class HomeAccountMenu extends StatelessWidget {
           onTap: isBusy ? null : () => _showAccountPanel(context),
           borderRadius: BorderRadius.circular(999),
           child: Container(
-            width: 50,
-            height: 50,
+            width: 56,
+            height: 56,
             decoration: BoxDecoration(
-              color: Colors.white,
+              gradient: VideoFeatureTheme.primaryGradient,
               borderRadius: BorderRadius.circular(999),
-              border: Border.all(color: VideoFeatureTheme.line),
-              boxShadow: const <BoxShadow>[
-                BoxShadow(
-                  color: Color(0x0E0B1326),
-                  blurRadius: 14,
-                  offset: Offset(0, 6),
-                ),
-              ],
+              border: Border.all(color: Colors.white.withValues(alpha: 0.8)),
+              boxShadow: VideoFeatureTheme.floatingShadow,
             ),
             child: Center(
               child: Text(
                 user.initials,
                 style: const TextStyle(
-                  color: VideoFeatureTheme.primary,
+                  color: Colors.white,
                   fontWeight: FontWeight.w800,
                   fontSize: 22,
                   letterSpacing: -0.4,
@@ -150,25 +144,19 @@ class _AccountPanel extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(34),
+        color: Colors.white.withValues(alpha: 0.94),
+        borderRadius: BorderRadius.circular(36),
         border: Border.all(color: VideoFeatureTheme.line),
-        boxShadow: const <BoxShadow>[
-          BoxShadow(
-            color: Color(0x180B1326),
-            blurRadius: 36,
-            offset: Offset(0, 18),
-          ),
-        ],
+        boxShadow: VideoFeatureTheme.panelShadow,
       ),
       child: ClipRRect(
-        borderRadius: BorderRadius.circular(34),
+        borderRadius: BorderRadius.circular(36),
         child: SingleChildScrollView(
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: <Widget>[
               Padding(
-                padding: const EdgeInsets.fromLTRB(28, 24, 18, 28),
+                padding: const EdgeInsets.fromLTRB(24, 24, 18, 24),
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: <Widget>[
@@ -179,50 +167,88 @@ class _AccountPanel extends StatelessWidget {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: <Widget>[
                             Container(
-                              width: 96,
-                              height: 96,
-                              decoration: const BoxDecoration(
-                                color: Color(0xFF18A7C5),
-                                shape: BoxShape.circle,
+                              width: double.infinity,
+                              padding: const EdgeInsets.all(20),
+                              decoration: BoxDecoration(
+                                gradient: VideoFeatureTheme.heroGradient,
+                                borderRadius: BorderRadius.circular(28),
                               ),
-                              child: Center(
-                                child: Text(
-                                  user.initials,
-                                  style: const TextStyle(
-                                    color: Color(0xFF11335B),
-                                    fontSize: 34,
-                                    fontWeight: FontWeight.w800,
-                                    letterSpacing: -0.8,
+                              child: Row(
+                                children: <Widget>[
+                                  Container(
+                                    width: 74,
+                                    height: 74,
+                                    decoration: BoxDecoration(
+                                      color: Colors.white.withValues(
+                                        alpha: 0.12,
+                                      ),
+                                      shape: BoxShape.circle,
+                                      border: Border.all(
+                                        color: Colors.white.withValues(
+                                          alpha: 0.16,
+                                        ),
+                                      ),
+                                    ),
+                                    child: Center(
+                                      child: Text(
+                                        user.initials,
+                                        style: const TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 26,
+                                          fontWeight: FontWeight.w800,
+                                          letterSpacing: -0.7,
+                                        ),
+                                      ),
+                                    ),
                                   ),
-                                ),
-                              ),
-                            ),
-                            const SizedBox(height: 20),
-                            Text(
-                              user.name,
-                              style: const TextStyle(
-                                color: VideoFeatureTheme.ink,
-                                fontSize: 24,
-                                fontWeight: FontWeight.w800,
-                                letterSpacing: -0.7,
+                                  const SizedBox(width: 18),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: <Widget>[
+                                        Text(
+                                          user.name,
+                                          style: const TextStyle(
+                                            color: Colors.white,
+                                            fontSize: 22,
+                                            fontWeight: FontWeight.w700,
+                                            letterSpacing: -0.6,
+                                          ),
+                                        ),
+                                        const SizedBox(height: 8),
+                                        Text(
+                                          'Owner',
+                                          style: TextStyle(
+                                            color: Colors.white.withValues(
+                                              alpha: 0.76,
+                                            ),
+                                            fontSize: 14,
+                                            fontWeight: FontWeight.w600,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
                               ),
                             ),
                             const SizedBox(height: 16),
                             OutlinedButton(
-                              onPressed: () =>
-                                  onActionSelected(HomeAccountMenuAction.profile),
+                              onPressed: () => onActionSelected(
+                                HomeAccountMenuAction.profile,
+                              ),
                               style: OutlinedButton.styleFrom(
                                 foregroundColor: VideoFeatureTheme.ink,
-                                minimumSize: const Size(0, 52),
+                                backgroundColor: VideoFeatureTheme.panelMuted
+                                    .withValues(alpha: 0.45),
+                                minimumSize: const Size(0, 54),
                                 padding: const EdgeInsets.symmetric(
                                   horizontal: 22,
                                   vertical: 14,
                                 ),
-                                side: const BorderSide(
-                                  color: VideoFeatureTheme.line,
-                                ),
                                 shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(22),
+                                  borderRadius: BorderRadius.circular(999),
                                 ),
                                 textStyle: const TextStyle(
                                   fontSize: 15,
@@ -252,7 +278,7 @@ class _AccountPanel extends StatelessWidget {
               Padding(
                 padding: const EdgeInsets.symmetric(
                   horizontal: 18,
-                  vertical: 10,
+                  vertical: 14,
                 ),
                 child: Column(
                   children: <Widget>[
@@ -292,7 +318,7 @@ class _AccountPanel extends StatelessWidget {
               ),
               const Divider(height: 1, color: VideoFeatureTheme.line),
               Padding(
-                padding: const EdgeInsets.fromLTRB(18, 10, 18, 18),
+                padding: const EdgeInsets.fromLTRB(18, 14, 18, 18),
                 child: _AccountActionTile(
                   label: 'Sign Out',
                   onTap: () => onActionSelected(HomeAccountMenuAction.signOut),
@@ -324,9 +350,21 @@ class _AccountActionTile extends StatelessWidget {
       color: Colors.transparent,
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(18),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 14),
+        borderRadius: BorderRadius.circular(22),
+        child: Container(
+          margin: const EdgeInsets.symmetric(vertical: 6),
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 16),
+          decoration: BoxDecoration(
+            color: isDestructive
+                ? VideoFeatureTheme.accentSoft.withValues(alpha: 0.5)
+                : VideoFeatureTheme.panel,
+            borderRadius: BorderRadius.circular(22),
+            border: Border.all(
+              color: isDestructive
+                  ? VideoFeatureTheme.accent.withValues(alpha: 0.18)
+                  : VideoFeatureTheme.line,
+            ),
+          ),
           child: Row(
             children: <Widget>[
               Expanded(
@@ -334,7 +372,7 @@ class _AccountActionTile extends StatelessWidget {
                   label,
                   style: TextStyle(
                     color: isDestructive
-                        ? const Color(0xFFAF2D2D)
+                        ? VideoFeatureTheme.danger
                         : VideoFeatureTheme.ink,
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
@@ -343,9 +381,9 @@ class _AccountActionTile extends StatelessWidget {
               ),
               if (!isDestructive)
                 const Icon(
-                  Icons.chevron_right_rounded,
+                  Icons.arrow_forward_rounded,
                   color: VideoFeatureTheme.muted,
-                  size: 22,
+                  size: 20,
                 ),
             ],
           ),

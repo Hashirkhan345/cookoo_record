@@ -88,8 +88,8 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: VideoFeatureTheme.canvas,
-                borderRadius: BorderRadius.circular(20),
+                color: VideoFeatureTheme.panelMuted.withValues(alpha: 0.58),
+                borderRadius: BorderRadius.circular(24),
                 border: Border.all(color: VideoFeatureTheme.line),
               ),
               child: const Row(
@@ -201,8 +201,8 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
             FilledButton(
               onPressed: authState.isSubmitting ? null : _submitRegistration,
               style: FilledButton.styleFrom(
-                minimumSize: const Size.fromHeight(58),
-                backgroundColor: VideoFeatureTheme.primary,
+                minimumSize: const Size.fromHeight(60),
+                backgroundColor: VideoFeatureTheme.accent,
                 foregroundColor: Colors.white,
                 textStyle: const TextStyle(
                   fontSize: 16,
@@ -217,19 +217,42 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                     )
                   : const Text('Create account'),
             ),
-            const SizedBox(height: 14),
+            const SizedBox(height: 18),
+            Row(
+              children: <Widget>[
+                Expanded(
+                  child: Container(height: 1, color: VideoFeatureTheme.line),
+                ),
+                const Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 12),
+                  child: Text(
+                    'or',
+                    style: TextStyle(
+                      color: VideoFeatureTheme.muted,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
+                Expanded(
+                  child: Container(height: 1, color: VideoFeatureTheme.line),
+                ),
+              ],
+            ),
+            const SizedBox(height: 18),
             OutlinedButton.icon(
               onPressed: authState.isSubmitting
                   ? null
                   : ref.read(authControllerProvider.notifier).signInWithGoogle,
               style: OutlinedButton.styleFrom(
-                minimumSize: const Size.fromHeight(56),
-                backgroundColor: Colors.white,
+                minimumSize: const Size.fromHeight(58),
+                backgroundColor: VideoFeatureTheme.panelMuted.withValues(
+                  alpha: 0.4,
+                ),
                 foregroundColor: VideoFeatureTheme.ink,
                 side: const BorderSide(color: VideoFeatureTheme.line),
                 padding: const EdgeInsets.symmetric(horizontal: 18),
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(18),
+                  borderRadius: BorderRadius.circular(22),
                 ),
                 textStyle: const TextStyle(
                   fontSize: 16,

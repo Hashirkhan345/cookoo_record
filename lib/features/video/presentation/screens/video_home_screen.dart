@@ -11,9 +11,8 @@ import '../../provider/video_provider.dart';
 import '../../provider/video_state.dart';
 import '../controller/record_video_flow_controller.dart';
 import '../controller/video_feature_theme.dart';
+import '../widgets/brand_lockup.dart';
 import '../widgets/home_account_menu.dart';
-import '../widgets/home_sidebar.dart';
-// import '../widgets/home_top_bar.dart';
 import '../widgets/saved_recordings_section.dart';
 
 class VideoHomeScreen extends ConsumerStatefulWidget {
@@ -227,182 +226,159 @@ class _VideoHomeScreenState extends ConsumerState<VideoHomeScreen> {
         supportedRecordingModesForCurrentPlatform().any(
           (VideoRecordingMode mode) => mode.capturesDisplay,
         );
-    final double headlineSize = screenSize.width < 640 ? 36 : 48;
-    final double contentHorizontalPadding = isDesktop ? 112 : 20;
+    final double contentHorizontalPadding = isDesktop ? 36 : 20;
+    final int savedCount = state.savedRecordings.length;
 
     return Scaffold(
-      body: DecoratedBox(
-        decoration: const BoxDecoration(
-          gradient: VideoFeatureTheme.screenBackground,
-        ),
-        child: SafeArea(
-          child: Stack(
-            children: <Widget>[
-              Positioned.fill(
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(0, 18, 0, 24),
-                  child: ScrollConfiguration(
-                    behavior: const MaterialScrollBehavior().copyWith(
-                      scrollbars: false,
-                    ),
-                    child: Scrollbar(
-                      controller: _pageScrollController,
-                      thumbVisibility: isDesktop,
-                      trackVisibility: false,
-                      interactive: true,
-                      radius: const Radius.circular(999),
-                      thickness: 10,
-                      child: SingleChildScrollView(
-                        controller: _pageScrollController,
-                        child: Padding(
-                          padding: EdgeInsets.symmetric(
-                            horizontal: contentHorizontalPadding,
-                          ),
-                          child: Align(
-                            alignment: Alignment.topCenter,
-                            child: ConstrainedBox(
-                              constraints: const BoxConstraints(maxWidth: 980),
-                              child: Column(
+      body: Stack(
+        children: <Widget>[
+          const Positioned.fill(
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                gradient: VideoFeatureTheme.screenBackground,
+              ),
+            ),
+          ),
+          Positioned(
+            left: -120,
+            top: -80,
+            child: _AmbientGlow(
+              size: screenSize.width * 0.42,
+              color: const Color(0x33E8BC67),
+            ),
+          ),
+          Positioned(
+            right: -140,
+            top: 120,
+            child: _AmbientGlow(
+              size: screenSize.width * 0.48,
+              color: const Color(0x26147A73),
+            ),
+          ),
+          SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(0, 18, 0, 24),
+              child: ScrollConfiguration(
+                behavior: const MaterialScrollBehavior().copyWith(
+                  scrollbars: false,
+                ),
+                child: Scrollbar(
+                  controller: _pageScrollController,
+                  thumbVisibility: isDesktop,
+                  trackVisibility: false,
+                  interactive: true,
+                  radius: const Radius.circular(999),
+                  thickness: 10,
+                  child: SingleChildScrollView(
+                    controller: _pageScrollController,
+                    child: Padding(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: contentHorizontalPadding,
+                      ),
+                      child: Align(
+                        alignment: Alignment.topCenter,
+                        child: ConstrainedBox(
+                          constraints: const BoxConstraints(maxWidth: 1240),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: <Widget>[
+                              Row(
                                 children: <Widget>[
-                                  if (!isDesktop &&
-                                      !state.isRecordingFlowVisible &&
-                                      authState.user != null)
-                                    Align(
-                                      alignment: Alignment.centerRight,
-                                      child: HomeAccountMenu(
-                                        user: authState.user!,
-                                        isBusy: authState.isSubmitting,
-                                        onSelected:
-                                            (HomeAccountMenuAction action) {
-                                              unawaited(
-                                                _handleAccountMenuSelection(
-                                                  action,
-                                                  authState,
-                                                ),
-                                              );
-                                            },
-                                      ),
-                                    ),
-                                  // HomeTopBar(isDesktop: isDesktop),
-                                  const SizedBox(height: 28),
-                                  Text(
-                                    flow.heroTitle,
-                                    textAlign: TextAlign.center,
-                                    style: TextStyle(
-                                      fontSize: headlineSize,
-                                      fontWeight: FontWeight.w800,
-                                      letterSpacing: -1.5,
-                                    ),
+                                  const Expanded(
+                                    child: BrandLockup(brandLabel: 'bloop'),
                                   ),
-                                  const SizedBox(height: 16),
-                                  ConstrainedBox(
-                                    constraints: const BoxConstraints(
-                                      maxWidth: 620,
+                                  if (screenSize.width >= 620 &&
+                                      supportsDisplayCapture)
+                                    const _TopPill(
+                                      icon: Icons.desktop_windows_rounded,
+                                      label: 'Studio Web',
+                                    )
+                                  else if (screenSize.width >= 620)
+                                    const _TopPill(
+                                      icon: Icons.phone_iphone_rounded,
+                                      label: 'Mobile Capture',
                                     ),
-                                    child: Text(
-                                      flow.heroDescription,
-                                      textAlign: TextAlign.center,
-                                      style: const TextStyle(
-                                        color: VideoFeatureTheme.muted,
-                                        fontSize: 18,
-                                        height: 1.5,
-                                      ),
+                                  if (authState.user != null) ...<Widget>[
+                                    const SizedBox(width: 14),
+                                    HomeAccountMenu(
+                                      user: authState.user!,
+                                      isBusy: authState.isSubmitting,
+                                      onSelected:
+                                          (HomeAccountMenuAction action) {
+                                            unawaited(
+                                              _handleAccountMenuSelection(
+                                                action,
+                                                authState,
+                                              ),
+                                            );
+                                          },
                                     ),
-                                  ),
-                                  const SizedBox(height: 28),
-                                  FilledButton.icon(
-                                    key: const Key('recordVideoButton'),
-                                    onPressed: state.isPreparingCameraPreview
-                                        ? null
-                                        : ref
-                                              .read(
-                                                videoControllerProvider
-                                                    .notifier,
-                                              )
-                                              .openRecordingFlow,
-                                    icon: const Icon(
-                                      Icons.videocam_outlined,
-                                      size: 28,
-                                    ),
-                                    label: Text(flow.heroActionLabel),
-                                    style: FilledButton.styleFrom(
-                                      backgroundColor:
-                                          VideoFeatureTheme.primary,
-                                      foregroundColor: Colors.white,
-                                      padding: const EdgeInsets.symmetric(
-                                        horizontal: 34,
-                                        vertical: 24,
-                                      ),
-                                      textStyle: const TextStyle(
-                                        fontSize: 20,
-                                        fontWeight: FontWeight.w700,
-                                      ),
-                                      shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(24),
-                                      ),
-                                    ),
-                                  ),
-                                  const SizedBox(height: 28),
-                                  Container(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 22,
-                                      vertical: 14,
-                                    ),
-                                    decoration: BoxDecoration(
-                                      color: Colors.white.withValues(
-                                        alpha: 0.86,
-                                      ),
-                                      borderRadius: BorderRadius.circular(18),
-                                      border: Border.all(
-                                        color: VideoFeatureTheme.line,
-                                      ),
-                                    ),
-                                    child: Wrap(
-                                      spacing: 12,
-                                      runSpacing: 12,
-                                      alignment: WrapAlignment.center,
-                                      crossAxisAlignment:
-                                          WrapCrossAlignment.center,
-                                      children: <Widget>[
-                                        Icon(
-                                          supportsDisplayCapture
-                                              ? Icons.desktop_mac_outlined
-                                              : Icons.phone_iphone_rounded,
-                                          color: VideoFeatureTheme.primary,
-                                        ),
-                                        Text(
-                                          flow.helperMessage,
-                                          style: const TextStyle(
-                                            color: VideoFeatureTheme.muted,
-                                            fontSize: 16,
-                                            fontWeight: FontWeight.w500,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                  const SizedBox(height: 28),
-                                  ConstrainedBox(
-                                    constraints: const BoxConstraints(
-                                      maxWidth: 520,
-                                    ),
-                                    child: const Divider(
-                                      color: VideoFeatureTheme.line,
-                                      thickness: 1.2,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 34),
-                                  SavedRecordingsSection(
-                                    recordings: state.savedRecordings,
-                                    currentUser: authState.user,
-                                    onDeleteRecording: ref
-                                        .read(videoControllerProvider.notifier)
-                                        .deleteSavedRecording,
-                                  ),
-                                  const SizedBox(height: 40),
+                                  ],
                                 ],
                               ),
-                            ),
+                              const SizedBox(height: 26),
+                              LayoutBuilder(
+                                builder:
+                                    (
+                                      BuildContext context,
+                                      BoxConstraints constraints,
+                                    ) {
+                                      final bool useSplit =
+                                          constraints.maxWidth >= 1020;
+                                      final Widget hero = _HomeHeroCard(
+                                        title: flow.heroTitle,
+                                        description: flow.heroDescription,
+                                        buttonLabel: flow.heroActionLabel,
+                                        recordingLimitLabel:
+                                            flow.recordingLimitLabel,
+                                        supportsDisplayCapture:
+                                            supportsDisplayCapture,
+                                        savedCount: savedCount,
+                                        isBusy: state.isPreparingCameraPreview,
+                                        onStart: ref
+                                            .read(
+                                              videoControllerProvider.notifier,
+                                            )
+                                            .openRecordingFlow,
+                                      );
+                                      final Widget sideCard = _WorkspaceCard(
+                                        savedCount: savedCount,
+                                        recordingLimitLabel:
+                                            flow.recordingLimitLabel,
+                                        isDesktop: isDesktop,
+                                      );
+
+                                      if (!useSplit) {
+                                        return Column(
+                                          children: <Widget>[
+                                            hero,
+                                            const SizedBox(height: 20),
+                                            sideCard,
+                                          ],
+                                        );
+                                      }
+
+                                      return Row(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: <Widget>[
+                                          Expanded(flex: 7, child: hero),
+                                          const SizedBox(width: 20),
+                                          Expanded(flex: 4, child: sideCard),
+                                        ],
+                                      );
+                                    },
+                              ),
+                              const SizedBox(height: 26),
+                              SavedRecordingsSection(
+                                recordings: state.savedRecordings,
+                                currentUser: authState.user,
+                                onDeleteRecording: ref
+                                    .read(videoControllerProvider.notifier)
+                                    .deleteSavedRecording,
+                              ),
+                              const SizedBox(height: 40),
+                            ],
                           ),
                         ),
                       ),
@@ -410,28 +386,442 @@ class _VideoHomeScreenState extends ConsumerState<VideoHomeScreen> {
                   ),
                 ),
               ),
-              if (isDesktop && !state.isRecordingFlowVisible)
-                Positioned(
-                  right: 28,
-                  top: 12,
-                  bottom: 18,
-                  child: HomeSidebar(
-                    accountMenu: authState.user != null
-                        ? HomeAccountMenu(
-                            user: authState.user!,
-                            isBusy: authState.isSubmitting,
-                            onSelected: (HomeAccountMenuAction action) {
-                              unawaited(
-                                _handleAccountMenuSelection(action, authState),
-                              );
-                            },
-                          )
-                        : null,
-                  ),
-                ),
-            ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _AmbientGlow extends StatelessWidget {
+  const _AmbientGlow({required this.size, required this.color});
+
+  final double size;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    return IgnorePointer(
+      child: Container(
+        width: size,
+        height: size,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          gradient: RadialGradient(
+            colors: <Color>[color, color.withValues(alpha: 0)],
           ),
         ),
+      ),
+    );
+  }
+}
+
+class _TopPill extends StatelessWidget {
+  const _TopPill({required this.icon, required this.label});
+
+  final IconData icon;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.76),
+        borderRadius: BorderRadius.circular(999),
+        border: Border.all(color: VideoFeatureTheme.line),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: <Widget>[
+          Icon(icon, color: VideoFeatureTheme.primary, size: 18),
+          const SizedBox(width: 8),
+          Text(
+            label,
+            style: const TextStyle(
+              color: VideoFeatureTheme.ink,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _HomeHeroCard extends StatelessWidget {
+  const _HomeHeroCard({
+    required this.title,
+    required this.description,
+    required this.buttonLabel,
+    required this.recordingLimitLabel,
+    required this.supportsDisplayCapture,
+    required this.savedCount,
+    required this.isBusy,
+    required this.onStart,
+  });
+
+  final String title;
+  final String description;
+  final String buttonLabel;
+  final String recordingLimitLabel;
+  final bool supportsDisplayCapture;
+  final int savedCount;
+  final bool isBusy;
+  final Future<void> Function() onStart;
+
+  @override
+  Widget build(BuildContext context) {
+    final bool isCompact = MediaQuery.sizeOf(context).width < 760;
+
+    return Container(
+      width: double.infinity,
+      decoration: BoxDecoration(
+        gradient: VideoFeatureTheme.heroGradient,
+        borderRadius: BorderRadius.circular(40),
+        boxShadow: VideoFeatureTheme.panelShadow,
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(40),
+        child: Stack(
+          children: <Widget>[
+            Positioned(
+              right: -40,
+              top: -20,
+              child: Container(
+                width: 220,
+                height: 220,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: Colors.white.withValues(alpha: 0.08),
+                ),
+              ),
+            ),
+            Positioned(
+              right: 32,
+              bottom: 22,
+              child: Container(
+                width: 138,
+                height: 138,
+                decoration: BoxDecoration(
+                  color: VideoFeatureTheme.focus.withValues(alpha: 0.16),
+                  borderRadius: BorderRadius.circular(38),
+                  border: Border.all(
+                    color: Colors.white.withValues(alpha: 0.18),
+                  ),
+                ),
+              ),
+            ),
+            Padding(
+              padding: EdgeInsets.fromLTRB(
+                isCompact ? 24 : 34,
+                isCompact ? 24 : 34,
+                isCompact ? 24 : 34,
+                isCompact ? 24 : 34,
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: <Widget>[
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 14,
+                      vertical: 10,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.12),
+                      borderRadius: BorderRadius.circular(999),
+                      border: Border.all(
+                        color: Colors.white.withValues(alpha: 0.15),
+                      ),
+                    ),
+                    child: Text(
+                      'Recorder',
+                      style: TextStyle(
+                        color: Colors.white.withValues(alpha: 0.92),
+                        fontSize: 13,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: 0.2,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 22),
+                  Text(
+                    title,
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: isCompact ? 38 : 56,
+                      fontWeight: FontWeight.w700,
+                      height: 1.02,
+                      letterSpacing: -1.8,
+                    ),
+                  ),
+                  const SizedBox(height: 14),
+                  if (!isCompact) ...<Widget>[
+                    ConstrainedBox(
+                      constraints: const BoxConstraints(maxWidth: 560),
+                      child: Text(
+                        description,
+                        style: TextStyle(
+                          color: Colors.white.withValues(alpha: 0.82),
+                          fontSize: 16,
+                          height: 1.6,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+                  ] else
+                    const SizedBox(height: 8),
+                  Wrap(
+                    spacing: 14,
+                    runSpacing: 14,
+                    crossAxisAlignment: WrapCrossAlignment.center,
+                    children: <Widget>[
+                      FilledButton.icon(
+                        key: const Key('recordVideoButton'),
+                        onPressed: isBusy ? null : () => onStart(),
+                        icon: const Icon(Icons.fiber_manual_record_rounded),
+                        label: Text(buttonLabel),
+                        style: FilledButton.styleFrom(
+                          backgroundColor: VideoFeatureTheme.accent,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 24,
+                            vertical: 22,
+                          ),
+                          textStyle: const TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 14,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(999),
+                          border: Border.all(
+                            color: Colors.white.withValues(alpha: 0.14),
+                          ),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: <Widget>[
+                            Icon(
+                              supportsDisplayCapture
+                                  ? Icons.web_asset_rounded
+                                  : Icons.videocam_rounded,
+                              color: VideoFeatureTheme.focus,
+                              size: 18,
+                            ),
+                            const SizedBox(width: 10),
+                            Text(
+                              supportsDisplayCapture ? 'Web capture' : 'Camera',
+                              style: TextStyle(
+                                color: Colors.white.withValues(alpha: 0.88),
+                                fontSize: 14,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 30),
+                  Wrap(
+                    spacing: 12,
+                    runSpacing: 12,
+                    children: <Widget>[
+                      _HeroMetric(
+                        label: 'Saved clips',
+                        value: '$savedCount',
+                        icon: Icons.video_library_rounded,
+                      ),
+                      _HeroMetric(
+                        label: 'Capture type',
+                        value: supportsDisplayCapture
+                            ? 'Screen + cam'
+                            : 'Camera',
+                        icon: Icons.stacked_line_chart_rounded,
+                      ),
+                      _HeroMetric(
+                        label: 'Limit',
+                        value: recordingLimitLabel,
+                        icon: Icons.timer_outlined,
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _HeroMetric extends StatelessWidget {
+  const _HeroMetric({
+    required this.label,
+    required this.value,
+    required this.icon,
+  });
+
+  final String label;
+  final String value;
+  final IconData icon;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.12)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: <Widget>[
+          Icon(icon, color: VideoFeatureTheme.focus, size: 18),
+          const SizedBox(width: 10),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: <Widget>[
+              Text(
+                label,
+                style: TextStyle(
+                  color: Colors.white.withValues(alpha: 0.7),
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                value,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _WorkspaceCard extends StatelessWidget {
+  const _WorkspaceCard({
+    required this.savedCount,
+    required this.recordingLimitLabel,
+    required this.isDesktop,
+  });
+
+  final int savedCount;
+  final String recordingLimitLabel;
+  final bool isDesktop;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(26),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.76),
+        borderRadius: BorderRadius.circular(34),
+        border: Border.all(color: VideoFeatureTheme.line),
+        boxShadow: VideoFeatureTheme.floatingShadow,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: <Widget>[
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            decoration: BoxDecoration(
+              color: VideoFeatureTheme.accentSoft,
+              borderRadius: BorderRadius.circular(999),
+            ),
+            child: const Text(
+              'Overview',
+              style: TextStyle(
+                color: VideoFeatureTheme.accent,
+                fontSize: 12,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+          ),
+          const SizedBox(height: 18),
+          const Text(
+            'Quick stats',
+            style: TextStyle(
+              color: VideoFeatureTheme.ink,
+              fontSize: 26,
+              fontWeight: FontWeight.w700,
+              height: 1.08,
+              letterSpacing: -0.9,
+            ),
+          ),
+          const SizedBox(height: 12),
+          const SizedBox(height: 4),
+          _WorkspaceStat(label: 'Recordings saved', value: '$savedCount'),
+          const SizedBox(height: 14),
+          _WorkspaceStat(label: 'Session limit', value: recordingLimitLabel),
+          const SizedBox(height: 14),
+          _WorkspaceStat(
+            label: 'Best on',
+            value: isDesktop ? 'Desktop workspace' : 'Compact screen',
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _WorkspaceStat extends StatelessWidget {
+  const _WorkspaceStat({required this.label, required this.value});
+
+  final String label;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
+      decoration: BoxDecoration(
+        color: VideoFeatureTheme.panel,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: VideoFeatureTheme.line),
+      ),
+      child: Row(
+        children: <Widget>[
+          Expanded(
+            child: Text(
+              label,
+              style: const TextStyle(
+                color: VideoFeatureTheme.muted,
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+          Text(
+            value,
+            style: const TextStyle(
+              color: VideoFeatureTheme.ink,
+              fontSize: 15,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+        ],
       ),
     );
   }

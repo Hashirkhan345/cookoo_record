@@ -47,9 +47,9 @@ class RecordingCancelDialog extends StatelessWidget {
       child: ConstrainedBox(
         constraints: const BoxConstraints(maxWidth: 760),
         child: ClipRRect(
-          borderRadius: BorderRadius.circular(34),
+          borderRadius: BorderRadius.circular(36),
           child: Material(
-            color: Colors.white,
+            color: VideoFeatureTheme.panel,
             child: Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -71,7 +71,7 @@ class RecordingCancelDialog extends StatelessWidget {
                                   style: const TextStyle(
                                     color: VideoFeatureTheme.ink,
                                     fontSize: 24,
-                                    fontWeight: FontWeight.w800,
+                                    fontWeight: FontWeight.w700,
                                     height: 1.15,
                                     letterSpacing: -0.6,
                                   ),
@@ -80,7 +80,7 @@ class RecordingCancelDialog extends StatelessWidget {
                                 const Text(
                                   'Your current video progress will be lost.',
                                   style: TextStyle(
-                                    color: VideoFeatureTheme.ink,
+                                    color: VideoFeatureTheme.muted,
                                     fontSize: 18,
                                     fontWeight: FontWeight.w500,
                                     height: 1.35,
@@ -205,6 +205,7 @@ class _ActionButtons extends StatelessWidget {
         onPressed: onResume,
         style: OutlinedButton.styleFrom(
           foregroundColor: VideoFeatureTheme.ink,
+          backgroundColor: VideoFeatureTheme.panelMuted.withValues(alpha: 0.35),
           side: const BorderSide(color: VideoFeatureTheme.line),
           padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 18),
           shape: RoundedRectangleBorder(
@@ -217,7 +218,7 @@ class _ActionButtons extends StatelessWidget {
       FilledButton(
         onPressed: onPrimaryAction,
         style: FilledButton.styleFrom(
-          backgroundColor: const Color(0xFFD9412C),
+          backgroundColor: VideoFeatureTheme.accent,
           foregroundColor: Colors.white,
           padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 18),
           shape: RoundedRectangleBorder(

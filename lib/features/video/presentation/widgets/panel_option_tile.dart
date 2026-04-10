@@ -15,22 +15,35 @@ class PanelOptionTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final Widget content = Container(
       key: Key('panelOption_${option.kind.name}'),
-      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 20),
+      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 18),
       decoration: BoxDecoration(
-        color: const Color(0xFFF4F4F5),
-        borderRadius: BorderRadius.circular(22),
-        border: option.highlighted
-            ? const Border(
-                bottom: BorderSide(color: Color(0xFFD2E2FF), width: 6),
-              )
-            : null,
+        color: option.highlighted
+            ? VideoFeatureTheme.panelMuted.withValues(alpha: 0.72)
+            : VideoFeatureTheme.panel,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(
+          color: option.highlighted
+              ? VideoFeatureTheme.lineStrong
+              : VideoFeatureTheme.line,
+        ),
       ),
       child: Row(
         children: <Widget>[
-          Icon(
-            _iconForKind(option.kind),
-            color: VideoFeatureTheme.ink,
-            size: 30,
+          Container(
+            width: 48,
+            height: 48,
+            decoration: BoxDecoration(
+              gradient: option.highlighted
+                  ? VideoFeatureTheme.primaryGradient
+                  : null,
+              color: option.highlighted ? null : VideoFeatureTheme.panelMuted,
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: Icon(
+              _iconForKind(option.kind),
+              color: option.highlighted ? Colors.white : VideoFeatureTheme.ink,
+              size: 24,
+            ),
           ),
           const SizedBox(width: 16),
           Expanded(
@@ -38,10 +51,12 @@ class PanelOptionTile extends StatelessWidget {
               option.label,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: const TextStyle(
+              style: TextStyle(
                 color: VideoFeatureTheme.ink,
                 fontSize: 17,
-                fontWeight: FontWeight.w700,
+                fontWeight: option.highlighted
+                    ? FontWeight.w800
+                    : FontWeight.w700,
               ),
             ),
           ),
@@ -51,7 +66,7 @@ class PanelOptionTile extends StatelessWidget {
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
               decoration: BoxDecoration(
                 color: VideoFeatureTheme.success,
-                borderRadius: BorderRadius.circular(14),
+                borderRadius: BorderRadius.circular(999),
               ),
               child: Text(
                 option.status!,
@@ -77,7 +92,7 @@ class PanelOptionTile extends StatelessWidget {
         onTap: () {
           onTap!();
         },
-        borderRadius: BorderRadius.circular(22),
+        borderRadius: BorderRadius.circular(24),
         child: content,
       ),
     );

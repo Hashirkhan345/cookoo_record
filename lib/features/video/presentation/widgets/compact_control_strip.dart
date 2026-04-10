@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
+import '../controller/video_feature_theme.dart';
+
 class CompactControlStrip extends StatelessWidget {
   const CompactControlStrip({
     super.key,
@@ -28,8 +30,9 @@ class CompactControlStrip extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       decoration: BoxDecoration(
-        color: const Color(0xEE151922),
+        color: VideoFeatureTheme.ink.withValues(alpha: 0.9),
         borderRadius: BorderRadius.circular(24),
+        boxShadow: VideoFeatureTheme.floatingShadow,
       ),
       child: Row(
         children: <Widget>[
