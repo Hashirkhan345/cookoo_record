@@ -73,12 +73,7 @@ class RecorderPanel extends StatelessWidget {
                           Expanded(child: BrandLockup(brandLabel: brandLabel)),
                           const SizedBox(width: 12),
                           _PanelIconButton(
-                            icon: Icons.help_outline_rounded,
-                            onPressed: () async {},
-                          ),
-                          const SizedBox(width: 10),
-                          _PanelIconButton(
-                            icon: Icons.home_outlined,
+                            icon: Icons.close_rounded,
                             onPressed: onClose,
                           ),
                         ],

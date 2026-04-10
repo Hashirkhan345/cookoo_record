@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:camera/camera.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/scheduler.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../data/enums/video_recording_mode.dart';
@@ -33,6 +34,7 @@ class VideoController extends StateNotifier<VideoState> {
   ];
   static const Duration _countdownTick = Duration(seconds: 1);
   static const Duration _countdownGoTick = Duration(milliseconds: 650);
+  static const Duration _countdownDismissDelay = Duration(milliseconds: 240);
 
   final VideoRepository _repository;
   Timer? _recordingTimer;
@@ -220,7 +222,6 @@ class VideoController extends StateNotifier<VideoState> {
       }
 
       await _refreshWebCameraPreviewAfterDisplayCapture();
-
       final bool didCompleteCountdown = await _runRecordingCountdown();
       if (!didCompleteCountdown || !mounted) {
         await _repository.cancelPreparedDisplayCapture();
@@ -230,6 +231,14 @@ class VideoController extends StateNotifier<VideoState> {
             clearCountdownLabel: true,
           );
         }
+        return;
+      }
+
+      state = state.copyWith(clearCountdownLabel: true);
+      final bool didDismissOverlay =
+          await _waitForCountdownOverlayToDisappear();
+      if (!didDismissOverlay) {
+        await _repository.cancelPreparedDisplayCapture();
         return;
       }
 
@@ -542,6 +551,13 @@ class VideoController extends StateNotifier<VideoState> {
 
   bool _usesWebDisplayCaptureHandshake(VideoRecordingMode mode) {
     return kIsWeb && mode.capturesDisplay;
+  }
+
+  Future<bool> _waitForCountdownOverlayToDisappear() async {
+    await Future<void>.delayed(Duration.zero);
+    await SchedulerBinding.instance.endOfFrame;
+    await Future<void>.delayed(_countdownDismissDelay);
+    return mounted && state.isRecordingFlowVisible && !state.isCountingDown;
   }
 
   Future<bool> _runRecordingCountdown() async {
