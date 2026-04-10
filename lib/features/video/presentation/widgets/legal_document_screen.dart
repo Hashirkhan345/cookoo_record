@@ -35,6 +35,12 @@ class LegalDocumentScreen extends StatelessWidget {
     final double screenWidth = MediaQuery.sizeOf(context).width;
     final bool isDesktop = screenWidth >= 1100;
     final bool isTablet = screenWidth >= 760;
+    const double sideRailWidth = 280;
+    const double sideRailGap = 34;
+    final List<GlobalKey> sectionKeys = List<GlobalKey>.generate(
+      sections.length,
+      (_) => GlobalKey(),
+    );
 
     return Scaffold(
       body: DecoratedBox(
@@ -56,72 +62,90 @@ class LegalDocumentScreen extends StatelessWidget {
                           24,
                           18,
                           24,
-                          isTablet ? 44 : 32,
+                          isTablet ? 52 : 36,
                         ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: <Widget>[
-                            OutlinedButton.icon(
-                              onPressed: () => Navigator.of(context).pop(),
-                              icon: const Icon(Icons.arrow_back_rounded),
-                              label: const Text('Back'),
-                              style: OutlinedButton.styleFrom(
-                                foregroundColor: Colors.white,
-                                side: const BorderSide(
-                                  color: Color(0x4DFFFFFF),
+                        child: Align(
+                          alignment: Alignment.centerLeft,
+                          child: ConstrainedBox(
+                            constraints: BoxConstraints(
+                              maxWidth: isDesktop ? 760 : 840,
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: <Widget>[
+                                OutlinedButton.icon(
+                                  onPressed: () => Navigator.of(context).pop(),
+                                  icon: const Icon(Icons.arrow_back_rounded),
+                                  label: const Text('Back'),
+                                  style: OutlinedButton.styleFrom(
+                                    foregroundColor: Colors.white,
+                                    side: const BorderSide(
+                                      color: Color(0x4DFFFFFF),
+                                    ),
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 18,
+                                      vertical: 14,
+                                    ),
+                                    textStyle: const TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w700,
+                                    ),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(18),
+                                    ),
+                                  ),
                                 ),
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 18,
-                                  vertical: 14,
+                                SizedBox(height: isTablet ? 40 : 26),
+                                Container(
+                                  width: 72,
+                                  height: 72,
+                                  decoration: BoxDecoration(
+                                    color: Colors.white.withValues(alpha: 0.18),
+                                    borderRadius: BorderRadius.circular(22),
+                                    border: Border.all(
+                                      color: Colors.white.withValues(
+                                        alpha: 0.24,
+                                      ),
+                                    ),
+                                  ),
+                                  child: Icon(
+                                    icon,
+                                    color: Colors.white,
+                                    size: 34,
+                                  ),
                                 ),
-                              ),
-                            ),
-                            SizedBox(height: isTablet ? 40 : 26),
-                            Container(
-                              width: 72,
-                              height: 72,
-                              decoration: BoxDecoration(
-                                color: Colors.white.withValues(alpha: 0.18),
-                                borderRadius: BorderRadius.circular(22),
-                                border: Border.all(
-                                  color: Colors.white.withValues(alpha: 0.24),
+                                const SizedBox(height: 22),
+                                Text(
+                                  title,
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: isTablet ? 46 : 34,
+                                    fontWeight: FontWeight.w800,
+                                    letterSpacing: -1.4,
+                                    height: 1.04,
+                                  ),
                                 ),
-                              ),
-                              child: Icon(icon, color: Colors.white, size: 34),
-                            ),
-                            const SizedBox(height: 22),
-                            Text(
-                              title,
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: isTablet ? 46 : 34,
-                                fontWeight: FontWeight.w800,
-                                letterSpacing: -1.4,
-                                height: 1.04,
-                              ),
-                            ),
-                            const SizedBox(height: 12),
-                            Text(
-                              effectiveDateLabel,
-                              style: const TextStyle(
-                                color: Color(0xE6FFFFFF),
-                                fontSize: 15,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                            const SizedBox(height: 18),
-                            ConstrainedBox(
-                              constraints: const BoxConstraints(maxWidth: 760),
-                              child: Text(
-                                subtitle,
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 17,
-                                  height: 1.7,
+                                const SizedBox(height: 12),
+                                Text(
+                                  effectiveDateLabel,
+                                  style: const TextStyle(
+                                    color: Color(0xE6FFFFFF),
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.w600,
+                                  ),
                                 ),
-                              ),
+                                const SizedBox(height: 18),
+                                Text(
+                                  subtitle,
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 17,
+                                    height: 1.7,
+                                  ),
+                                ),
+                              ],
                             ),
-                          ],
+                          ),
                         ),
                       ),
                     ),
@@ -138,19 +162,21 @@ class LegalDocumentScreen extends StatelessWidget {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: <Widget>[
                                 SizedBox(
-                                  width: 260,
+                                  width: sideRailWidth,
                                   child: _LegalSideRail(
                                     title: title,
                                     effectiveDateLabel: effectiveDateLabel,
                                     highlights: highlights,
                                     sections: sections,
+                                    onSectionTap: (int index) =>
+                                        _scrollToSection(sectionKeys[index]),
                                   ),
                                 ),
-                                const SizedBox(width: 34),
+                                const SizedBox(width: sideRailGap),
                                 Expanded(
                                   child: _LegalDocumentCard(
-                                    title: title,
                                     sections: sections,
+                                    sectionKeys: sectionKeys,
                                   ),
                                 ),
                               ],
@@ -164,11 +190,13 @@ class LegalDocumentScreen extends StatelessWidget {
                                   highlights: highlights,
                                   sections: sections,
                                   compact: true,
+                                  onSectionTap: (int index) =>
+                                      _scrollToSection(sectionKeys[index]),
                                 ),
                                 const SizedBox(height: 20),
                                 _LegalDocumentCard(
-                                  title: title,
                                   sections: sections,
+                                  sectionKeys: sectionKeys,
                                 ),
                               ],
                             ),
@@ -182,6 +210,20 @@ class LegalDocumentScreen extends StatelessWidget {
       ),
     );
   }
+
+  Future<void> _scrollToSection(GlobalKey key) async {
+    final BuildContext? targetContext = key.currentContext;
+    if (targetContext == null) {
+      return;
+    }
+
+    await Scrollable.ensureVisible(
+      targetContext,
+      duration: const Duration(milliseconds: 280),
+      curve: Curves.easeOutCubic,
+      alignment: 0.06,
+    );
+  }
 }
 
 class _LegalSideRail extends StatelessWidget {
@@ -190,6 +232,7 @@ class _LegalSideRail extends StatelessWidget {
     required this.effectiveDateLabel,
     required this.highlights,
     required this.sections,
+    required this.onSectionTap,
     this.compact = false,
   });
 
@@ -197,6 +240,7 @@ class _LegalSideRail extends StatelessWidget {
   final String effectiveDateLabel;
   final List<String> highlights;
   final List<LegalDocumentSection> sections;
+  final ValueChanged<int> onSectionTap;
   final bool compact;
 
   @override
@@ -270,7 +314,7 @@ class _LegalSideRail extends StatelessWidget {
         ),
         SizedBox(height: compact ? 16 : 18),
         _SideRailCard(
-          title: 'On this page',
+          title: 'Table of contents',
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: sections.asMap().entries.map((
@@ -279,12 +323,48 @@ class _LegalSideRail extends StatelessWidget {
               final int index = entry.key + 1;
               return Padding(
                 padding: const EdgeInsets.only(bottom: 12),
-                child: Text(
-                  '$index. ${entry.value.heading}',
-                  style: const TextStyle(
-                    color: VideoFeatureTheme.muted,
-                    fontSize: 14,
-                    height: 1.45,
+                child: InkWell(
+                  onTap: () => onSectionTap(entry.key),
+                  borderRadius: BorderRadius.circular(16),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 4,
+                      vertical: 6,
+                    ),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: <Widget>[
+                        Container(
+                          width: 24,
+                          height: 24,
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFEAF1FF),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          alignment: Alignment.center,
+                          child: Text(
+                            '$index',
+                            style: const TextStyle(
+                              color: VideoFeatureTheme.primary,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w800,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Text(
+                            entry.value.heading,
+                            style: const TextStyle(
+                              color: VideoFeatureTheme.muted,
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                              height: 1.45,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               );
@@ -333,16 +413,18 @@ class _SideRailCard extends StatelessWidget {
 }
 
 class _LegalDocumentCard extends StatelessWidget {
-  const _LegalDocumentCard({required this.title, required this.sections});
+  const _LegalDocumentCard({required this.sections, required this.sectionKeys});
 
-  final String title;
   final List<LegalDocumentSection> sections;
+  final List<GlobalKey> sectionKeys;
 
   @override
   Widget build(BuildContext context) {
+    final bool isTablet = MediaQuery.sizeOf(context).width >= 760;
+
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(30),
+      padding: EdgeInsets.all(isTablet ? 34 : 24),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(30),
@@ -358,16 +440,6 @@ class _LegalDocumentCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
-          Text(
-            title,
-            style: const TextStyle(
-              color: VideoFeatureTheme.ink,
-              fontSize: 34,
-              fontWeight: FontWeight.w800,
-              letterSpacing: -0.9,
-            ),
-          ),
-          const SizedBox(height: 20),
           ...sections.asMap().entries.map((
             MapEntry<int, LegalDocumentSection> entry,
           ) {
@@ -375,6 +447,7 @@ class _LegalDocumentCard extends StatelessWidget {
             final LegalDocumentSection section = entry.value;
 
             return Padding(
+              key: sectionKeys[entry.key],
               padding: EdgeInsets.only(
                 bottom: index == sections.length ? 0 : 30,
               ),
