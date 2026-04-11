@@ -23,6 +23,8 @@ class RecordVideoFlowScreen extends ConsumerStatefulWidget {
 }
 
 class _RecordVideoFlowScreenState extends ConsumerState<RecordVideoFlowScreen> {
+  Offset? _bubblePosition;
+
   @override
   Widget build(BuildContext context) {
     ref.listen<VideoState>(videoControllerProvider, (previous, next) {
@@ -66,100 +68,143 @@ class _RecordVideoFlowScreenState extends ConsumerState<RecordVideoFlowScreen> {
           child: LayoutBuilder(
             builder: (BuildContext context, BoxConstraints constraints) {
               final double horizontalPadding = isCompact ? 12 : 24;
+              final bool canMoveBubble =
+                  hasActiveRecording && !state.isCountingDown;
+              final double bubbleSize = isCompact ? 132 : 220;
+              final Offset bubblePosition =
+                  _bubblePosition ??
+                  _defaultBubblePosition(
+                    constraints: constraints,
+                    bubbleSize: bubbleSize,
+                    isCompact: isCompact,
+                  );
 
-              return Stack(
-                children: <Widget>[
-                  if (!isCompact && showLiveControls)
-                    Positioned(
-                      left: 22,
-                      top: 120,
-                      child: RecorderControlRail(
-                        durationLabel: _formatDuration(state.recordingDuration),
-                        isPaused: state.isPaused,
-                        canPauseResume: canPauseResume,
-                        isBusy: isBusy,
-                        onStop: videoController.stopRecordingSession,
-                        onPauseResume:
-                            videoController.togglePauseResumeRecording,
-                        onRestart: () => _handleRestartRequest(videoController),
-                        onDelete: () => _handleDeleteRequest(videoController),
-                      ),
-                    ),
-                  if (isCompact && showLiveControls)
-                    Positioned(
-                      top: 32,
-                      left: 20,
-                      right: 20,
-                      child: CompactControlStrip(
-                        durationLabel: _formatDuration(state.recordingDuration),
-                        isPaused: state.isPaused,
-                        canPauseResume: canPauseResume,
-                        isBusy: isBusy,
-                        onStop: videoController.stopRecordingSession,
-                        onPauseResume:
-                            videoController.togglePauseResumeRecording,
-                        onRestart: () => _handleRestartRequest(videoController),
-                        onDelete: () => _handleDeleteRequest(videoController),
-                      ),
-                    ),
-                  if (isCompact)
-                    Positioned(
-                      left: 16,
-                      bottom: 18,
-                      child: ProfileBubble(
-                        size: 132,
-                        cameraController: state.cameraController,
-                      ),
-                    )
-                  else
-                    Positioned(
-                      left: 18,
-                      bottom: 18,
-                      child: ProfileBubble(
-                        size: 220,
-                        cameraController: state.cameraController,
-                      ),
-                    ),
-                  if (!hasActiveRecording)
-                    Align(
-                      alignment: isCompact
-                          ? Alignment.bottomCenter
-                          : Alignment.center,
-                      child: Padding(
-                        padding: EdgeInsets.fromLTRB(
-                          horizontalPadding,
-                          isCompact ? 106 : 24,
-                          horizontalPadding,
-                          24,
-                        ),
-                        child: RecorderPanel(
-                          brandLabel: flow.brandLabel,
-                          options: panelOptions,
-                          statusLabel: _panelStatusLabel(flow, state),
-                          recordingLimitLabel: flow.recordingLimitLabel,
-                          tutorialLabel: flow.tutorialLabel,
-                          onClose: videoController.closeRecordingFlow,
-                          selectedRecordingMode: state.selectedRecordingMode,
-                          onSelectRecordingMode: (selectedRecordingMode) async {
-                            videoController.selectRecordingMode(
-                              selectedRecordingMode,
-                            );
-                          },
-                          onStartRecording:
-                              videoController.startRecordingSession,
-                          isRecordingActive: hasActiveRecording,
+              return GestureDetector(
+                behavior: HitTestBehavior.translucent,
+                onTapDown: canMoveBubble
+                    ? (TapDownDetails details) {
+                        setState(() {
+                          _bubblePosition = _clampBubblePosition(
+                            desiredPosition: Offset(
+                              details.localPosition.dx - (bubbleSize / 2),
+                              details.localPosition.dy - (bubbleSize / 2),
+                            ),
+                            constraints: constraints,
+                            bubbleSize: bubbleSize,
+                            isCompact: isCompact,
+                          );
+                        });
+                      }
+                    : null,
+                child: Stack(
+                  children: <Widget>[
+                    if (!isCompact && showLiveControls)
+                      Positioned(
+                        left: 22,
+                        top: 120,
+                        child: RecorderControlRail(
+                          durationLabel: _formatDuration(
+                            state.recordingDuration,
+                          ),
+                          isPaused: state.isPaused,
+                          canPauseResume: canPauseResume,
                           isBusy: isBusy,
+                          onStop: videoController.stopRecordingSession,
+                          onPauseResume:
+                              videoController.togglePauseResumeRecording,
+                          onRestart: () =>
+                              _handleRestartRequest(videoController),
+                          onDelete: () => _handleDeleteRequest(videoController),
+                        ),
+                      ),
+                    if (isCompact && showLiveControls)
+                      Positioned(
+                        top: 32,
+                        left: 20,
+                        right: 20,
+                        child: CompactControlStrip(
+                          durationLabel: _formatDuration(
+                            state.recordingDuration,
+                          ),
+                          isPaused: state.isPaused,
+                          canPauseResume: canPauseResume,
+                          isBusy: isBusy,
+                          onStop: videoController.stopRecordingSession,
+                          onPauseResume:
+                              videoController.togglePauseResumeRecording,
+                          onRestart: () =>
+                              _handleRestartRequest(videoController),
+                          onDelete: () => _handleDeleteRequest(videoController),
+                        ),
+                      ),
+                    AnimatedPositioned(
+                      duration: const Duration(milliseconds: 220),
+                      curve: Curves.easeOutCubic,
+                      left: bubblePosition.dx,
+                      top: bubblePosition.dy,
+                      child: GestureDetector(
+                        onPanUpdate: canMoveBubble
+                            ? (DragUpdateDetails details) {
+                                setState(() {
+                                  _bubblePosition = _clampBubblePosition(
+                                    desiredPosition:
+                                        (_bubblePosition ?? bubblePosition) +
+                                        details.delta,
+                                    constraints: constraints,
+                                    bubbleSize: bubbleSize,
+                                    isCompact: isCompact,
+                                  );
+                                });
+                              }
+                            : null,
+                        child: ProfileBubble(
+                          size: bubbleSize,
+                          cameraController: state.cameraController,
                         ),
                       ),
                     ),
-                  if (state.isCountingDown)
-                    Positioned.fill(
-                      child: _RecordingCountdownOverlay(
-                        label: state.countdownLabel!,
-                        isCompact: isCompact,
+                    if (!hasActiveRecording)
+                      Align(
+                        alignment: isCompact
+                            ? Alignment.bottomCenter
+                            : Alignment.center,
+                        child: Padding(
+                          padding: EdgeInsets.fromLTRB(
+                            horizontalPadding,
+                            isCompact ? 106 : 24,
+                            horizontalPadding,
+                            24,
+                          ),
+                          child: RecorderPanel(
+                            brandLabel: flow.brandLabel,
+                            options: panelOptions,
+                            statusLabel: _panelStatusLabel(flow, state),
+                            recordingLimitLabel: flow.recordingLimitLabel,
+                            tutorialLabel: flow.tutorialLabel,
+                            onClose: videoController.closeRecordingFlow,
+                            selectedRecordingMode: state.selectedRecordingMode,
+                            onSelectRecordingMode:
+                                (selectedRecordingMode) async {
+                                  videoController.selectRecordingMode(
+                                    selectedRecordingMode,
+                                  );
+                                },
+                            onStartRecording:
+                                videoController.startRecordingSession,
+                            isRecordingActive: hasActiveRecording,
+                            isBusy: isBusy,
+                          ),
+                        ),
                       ),
-                    ),
-                ],
+                    if (state.isCountingDown)
+                      Positioned.fill(
+                        child: _RecordingCountdownOverlay(
+                          label: state.countdownLabel!,
+                          isCompact: isCompact,
+                        ),
+                      ),
+                  ],
+                ),
               );
             },
           ),
@@ -233,6 +278,44 @@ class _RecordVideoFlowScreenState extends ConsumerState<RecordVideoFlowScreen> {
     if (action == RecordingCancelAction.restart) {
       await videoController.restartRecordingSession();
     }
+  }
+
+  Offset _defaultBubblePosition({
+    required BoxConstraints constraints,
+    required double bubbleSize,
+    required bool isCompact,
+  }) {
+    const double sideMargin = 18;
+    const double bottomMargin = 18;
+
+    return _clampBubblePosition(
+      desiredPosition: Offset(
+        isCompact ? 16 : sideMargin,
+        constraints.maxHeight - bubbleSize - bottomMargin,
+      ),
+      constraints: constraints,
+      bubbleSize: bubbleSize,
+      isCompact: isCompact,
+    );
+  }
+
+  Offset _clampBubblePosition({
+    required Offset desiredPosition,
+    required BoxConstraints constraints,
+    required double bubbleSize,
+    required bool isCompact,
+  }) {
+    const double sideMargin = 18;
+    const double bottomMargin = 18;
+    final double minLeft = sideMargin;
+    final double maxLeft = constraints.maxWidth - bubbleSize - sideMargin;
+    final double minTop = isCompact ? 112 : 18;
+    final double maxTop = constraints.maxHeight - bubbleSize - bottomMargin;
+
+    return Offset(
+      desiredPosition.dx.clamp(minLeft, maxLeft),
+      desiredPosition.dy.clamp(minTop, maxTop),
+    );
   }
 }
 

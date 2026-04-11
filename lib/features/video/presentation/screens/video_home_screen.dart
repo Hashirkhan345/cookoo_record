@@ -6,7 +6,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../app/router/app_routes.dart';
 import '../../../auth/provider/auth_provider.dart';
 import '../../../auth/provider/auth_state.dart';
-import '../../data/enums/video_recording_mode.dart';
 import '../../provider/video_provider.dart';
 import '../../provider/video_state.dart';
 import '../controller/record_video_flow_controller.dart';
@@ -199,12 +198,7 @@ class _VideoHomeScreenState extends ConsumerState<VideoHomeScreen> {
 
     final Size screenSize = MediaQuery.sizeOf(context);
     final bool isDesktop = screenSize.width >= 980;
-    final bool supportsDisplayCapture =
-        supportedRecordingModesForCurrentPlatform().any(
-          (VideoRecordingMode mode) => mode.capturesDisplay,
-        );
     final double contentHorizontalPadding = isDesktop ? 36 : 20;
-    final int savedCount = state.savedRecordings.length;
 
     return Scaffold(
       body: Stack(
@@ -288,16 +282,9 @@ class _VideoHomeScreenState extends ConsumerState<VideoHomeScreen> {
                                       BuildContext context,
                                       BoxConstraints constraints,
                                     ) {
-                                      final bool useSplit =
-                                          constraints.maxWidth >= 1020;
                                       final Widget hero = _HomeHeroCard(
                                         title: flow.heroTitle,
                                         buttonLabel: flow.heroActionLabel,
-                                        recordingLimitLabel:
-                                            flow.recordingLimitLabel,
-                                        supportsDisplayCapture:
-                                            supportsDisplayCapture,
-                                        savedCount: savedCount,
                                         isBusy: state.isPreparingCameraPreview,
                                         onStart: ref
                                             .read(
@@ -305,32 +292,8 @@ class _VideoHomeScreenState extends ConsumerState<VideoHomeScreen> {
                                             )
                                             .openRecordingFlow,
                                       );
-                                      final Widget sideCard = _WorkspaceCard(
-                                        savedCount: savedCount,
-                                        recordingLimitLabel:
-                                            flow.recordingLimitLabel,
-                                        isDesktop: isDesktop,
-                                      );
 
-                                      if (!useSplit) {
-                                        return Column(
-                                          children: <Widget>[
-                                            hero,
-                                            const SizedBox(height: 20),
-                                            sideCard,
-                                          ],
-                                        );
-                                      }
-
-                                      return Row(
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.start,
-                                        children: <Widget>[
-                                          Expanded(flex: 7, child: hero),
-                                          const SizedBox(width: 20),
-                                          Expanded(flex: 4, child: sideCard),
-                                        ],
-                                      );
+                                      return hero;
                                     },
                               ),
                               const SizedBox(height: 26),
@@ -385,18 +348,12 @@ class _HomeHeroCard extends StatelessWidget {
   const _HomeHeroCard({
     required this.title,
     required this.buttonLabel,
-    required this.recordingLimitLabel,
-    required this.supportsDisplayCapture,
-    required this.savedCount,
     required this.isBusy,
     required this.onStart,
   });
 
   final String title;
   final String buttonLabel;
-  final String recordingLimitLabel;
-  final bool supportsDisplayCapture;
-  final int savedCount;
   final bool isBusy;
   final Future<void> Function() onStart;
 
@@ -450,265 +407,45 @@ class _HomeHeroCard extends StatelessWidget {
                 isCompact ? 24 : 34,
               ),
               child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+                crossAxisAlignment: CrossAxisAlignment.center,
                 children: <Widget>[
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 14,
-                      vertical: 10,
-                    ),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.12),
-                      borderRadius: BorderRadius.circular(999),
-                      border: Border.all(
-                        color: Colors.white.withValues(alpha: 0.15),
-                      ),
-                    ),
-                    child: Text(
-                      'Ready',
-                      style: TextStyle(
-                        color: Colors.white.withValues(alpha: 0.92),
-                        fontSize: 13,
-                        fontWeight: FontWeight.w700,
-                        letterSpacing: 0.2,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 22),
                   Text(
                     title,
+                    textAlign: TextAlign.center,
                     style: TextStyle(
                       color: Colors.white,
-                      fontSize: isCompact ? 38 : 56,
+                      fontSize: isCompact ? 32 : 44,
                       fontWeight: FontWeight.w700,
-                      height: 1.02,
-                      letterSpacing: -1.8,
+                      height: 1.06,
+                      letterSpacing: -1.2,
                     ),
                   ),
-                  SizedBox(height: isCompact ? 18 : 24),
-                  Wrap(
-                    spacing: 14,
-                    runSpacing: 14,
-                    crossAxisAlignment: WrapCrossAlignment.center,
-                    children: <Widget>[
-                      FilledButton.icon(
-                        key: const Key('recordVideoButton'),
-                        onPressed: isBusy ? null : () => onStart(),
-                        icon: const Icon(Icons.fiber_manual_record_rounded),
-                        label: Text(buttonLabel),
-                        style: FilledButton.styleFrom(
-                          backgroundColor: VideoFeatureTheme.accent,
-                          foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 24,
-                            vertical: 22,
-                          ),
-                          textStyle: const TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
-                      ),
-                      Container(
+                  SizedBox(height: isCompact ? 16 : 20),
+                  Center(
+                    child: FilledButton.icon(
+                      key: const Key('recordVideoButton'),
+                      onPressed: isBusy ? null : () => onStart(),
+                      icon: const Icon(Icons.fiber_manual_record_rounded),
+                      label: Text(buttonLabel),
+                      style: FilledButton.styleFrom(
+                        backgroundColor: VideoFeatureTheme.accent,
+                        foregroundColor: Colors.white,
                         padding: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 14,
+                          horizontal: 22,
+                          vertical: 18,
                         ),
-                        decoration: BoxDecoration(
-                          color: Colors.white.withValues(alpha: 0.1),
-                          borderRadius: BorderRadius.circular(999),
-                          border: Border.all(
-                            color: Colors.white.withValues(alpha: 0.14),
-                          ),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: <Widget>[
-                            Icon(
-                              supportsDisplayCapture
-                                  ? Icons.web_asset_rounded
-                                  : Icons.videocam_rounded,
-                              color: VideoFeatureTheme.focus,
-                              size: 18,
-                            ),
-                            const SizedBox(width: 10),
-                            Text(
-                              supportsDisplayCapture ? 'Screen' : 'Camera',
-                              style: TextStyle(
-                                color: Colors.white.withValues(alpha: 0.88),
-                                fontSize: 14,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                          ],
+                        textStyle: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w700,
                         ),
                       ),
-                    ],
-                  ),
-                  const SizedBox(height: 30),
-                  Wrap(
-                    spacing: 12,
-                    runSpacing: 12,
-                    children: <Widget>[
-                      _HeroMetric(
-                        label: 'Saved',
-                        value: '$savedCount',
-                        icon: Icons.video_library_rounded,
-                      ),
-                      _HeroMetric(
-                        label: 'Mode',
-                        value: supportsDisplayCapture
-                            ? 'Screen + cam'
-                            : 'Camera',
-                        icon: Icons.stacked_line_chart_rounded,
-                      ),
-                      _HeroMetric(
-                        label: 'Limit',
-                        value: recordingLimitLabel,
-                        icon: Icons.timer_outlined,
-                      ),
-                    ],
+                    ),
                   ),
                 ],
               ),
             ),
           ],
         ),
-      ),
-    );
-  }
-}
-
-class _HeroMetric extends StatelessWidget {
-  const _HeroMetric({
-    required this.label,
-    required this.value,
-    required this.icon,
-  });
-
-  final String label;
-  final String value;
-  final IconData icon;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
-      decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.12)),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: <Widget>[
-          Icon(icon, color: VideoFeatureTheme.focus, size: 18),
-          const SizedBox(width: 10),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: <Widget>[
-              Text(
-                label,
-                style: TextStyle(
-                  color: Colors.white.withValues(alpha: 0.7),
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-              const SizedBox(height: 2),
-              Text(
-                value,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 14,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _WorkspaceCard extends StatelessWidget {
-  const _WorkspaceCard({
-    required this.savedCount,
-    required this.recordingLimitLabel,
-    required this.isDesktop,
-  });
-
-  final int savedCount;
-  final String recordingLimitLabel;
-  final bool isDesktop;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(26),
-      decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.76),
-        borderRadius: BorderRadius.circular(34),
-        border: Border.all(color: VideoFeatureTheme.line),
-        boxShadow: VideoFeatureTheme.floatingShadow,
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: <Widget>[
-          _WorkspaceStat(label: 'Saved', value: '$savedCount'),
-          const SizedBox(height: 12),
-          _WorkspaceStat(label: 'Limit', value: recordingLimitLabel),
-          const SizedBox(height: 12),
-          _WorkspaceStat(
-            label: 'Layout',
-            value: isDesktop ? 'Desktop' : 'Compact',
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _WorkspaceStat extends StatelessWidget {
-  const _WorkspaceStat({required this.label, required this.value});
-
-  final String label;
-  final String value;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 18),
-      decoration: BoxDecoration(
-        color: VideoFeatureTheme.panel,
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: VideoFeatureTheme.line),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: <Widget>[
-          Text(
-            label,
-            style: const TextStyle(
-              color: VideoFeatureTheme.muted,
-              fontSize: 13,
-              fontWeight: FontWeight.w700,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            value,
-            style: const TextStyle(
-              color: VideoFeatureTheme.ink,
-              fontSize: 21,
-              fontWeight: FontWeight.w800,
-              letterSpacing: -0.5,
-            ),
-          ),
-        ],
       ),
     );
   }
