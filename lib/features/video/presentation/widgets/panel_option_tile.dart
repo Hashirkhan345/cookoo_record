@@ -13,16 +13,26 @@ class PanelOptionTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final bool isInteractive = onTap != null;
+    final bool isHighlighted = option.highlighted;
     final Widget content = Container(
       key: Key('panelOption_${option.kind.name}'),
-      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 18),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
       decoration: BoxDecoration(
-        color: option.highlighted
-            ? VideoFeatureTheme.panelMuted.withValues(alpha: 0.72)
-            : VideoFeatureTheme.panel,
+        gradient: isHighlighted
+            ? LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: <Color>[
+                  VideoFeatureTheme.panelMuted.withValues(alpha: 0.92),
+                  Colors.white,
+                ],
+              )
+            : null,
+        color: isHighlighted ? null : Colors.white,
         borderRadius: BorderRadius.circular(24),
         border: Border.all(
-          color: option.highlighted
+          color: isHighlighted
               ? VideoFeatureTheme.lineStrong
               : VideoFeatureTheme.line,
         ),
@@ -30,40 +40,57 @@ class PanelOptionTile extends StatelessWidget {
       child: Row(
         children: <Widget>[
           Container(
-            width: 48,
-            height: 48,
+            width: 52,
+            height: 52,
             decoration: BoxDecoration(
-              gradient: option.highlighted
-                  ? VideoFeatureTheme.primaryGradient
-                  : null,
-              color: option.highlighted ? null : VideoFeatureTheme.panelMuted,
-              borderRadius: BorderRadius.circular(16),
+              color: isHighlighted
+                  ? VideoFeatureTheme.primary.withValues(alpha: 0.12)
+                  : VideoFeatureTheme.panelMuted.withValues(alpha: 0.62),
+              borderRadius: BorderRadius.circular(18),
             ),
             child: Icon(
               _iconForKind(option.kind),
-              color: option.highlighted ? Colors.white : VideoFeatureTheme.ink,
+              color: isHighlighted
+                  ? VideoFeatureTheme.primaryDeep
+                  : VideoFeatureTheme.ink,
               size: 24,
             ),
           ),
-          const SizedBox(width: 16),
+          const SizedBox(width: 14),
           Expanded(
-            child: Text(
-              option.label,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: TextStyle(
-                color: VideoFeatureTheme.ink,
-                fontSize: 17,
-                fontWeight: option.highlighted
-                    ? FontWeight.w800
-                    : FontWeight.w700,
-              ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
+                Text(
+                  _titleForKind(option.kind),
+                  style: const TextStyle(
+                    color: VideoFeatureTheme.muted,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: 0.3,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  option.label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: VideoFeatureTheme.ink,
+                    fontSize: 17,
+                    fontWeight: isHighlighted
+                        ? FontWeight.w800
+                        : FontWeight.w700,
+                    letterSpacing: -0.2,
+                  ),
+                ),
+              ],
             ),
           ),
-          if (option.status != null) ...<Widget>[
-            const SizedBox(width: 14),
+          const SizedBox(width: 12),
+          if (option.status != null)
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
               decoration: BoxDecoration(
                 color: VideoFeatureTheme.success,
                 borderRadius: BorderRadius.circular(999),
@@ -72,30 +99,44 @@ class PanelOptionTile extends StatelessWidget {
                 option.status!,
                 style: const TextStyle(
                   color: Colors.white,
-                  fontWeight: FontWeight.w700,
-                  fontSize: 16,
+                  fontWeight: FontWeight.w800,
+                  fontSize: 14,
                 ),
               ),
+            )
+          else if (isInteractive)
+            const Icon(
+              Icons.keyboard_arrow_down_rounded,
+              color: VideoFeatureTheme.muted,
+              size: 24,
             ),
-          ],
         ],
       ),
     );
 
-    if (onTap == null) {
+    if (!isInteractive) {
       return content;
     }
 
     return Material(
       color: Colors.transparent,
       child: InkWell(
-        onTap: () {
-          onTap!();
-        },
+        onTap: () => onTap!(),
         borderRadius: BorderRadius.circular(24),
         child: content,
       ),
     );
+  }
+
+  String _titleForKind(VideoRecordingOptionKind kind) {
+    switch (kind) {
+      case VideoRecordingOptionKind.display:
+        return 'Capture mode';
+      case VideoRecordingOptionKind.camera:
+        return 'Camera';
+      case VideoRecordingOptionKind.microphone:
+        return 'Microphone';
+    }
   }
 
   IconData _iconForKind(VideoRecordingOptionKind kind) {

@@ -73,6 +73,7 @@ class AuthScreenScaffold extends StatelessWidget {
                                 Expanded(
                                   flex: 10,
                                   child: _AuthFormPanel(
+                                    compact: false,
                                     title: title,
                                     subtitle: subtitle,
                                     footer: footer,
@@ -85,6 +86,7 @@ class AuthScreenScaffold extends StatelessWidget {
                               children: <Widget>[
                                 const _AuthFeaturePanel(compact: true),
                                 _AuthFormPanel(
+                                  compact: true,
                                   title: title,
                                   subtitle: subtitle,
                                   footer: footer,
@@ -135,10 +137,10 @@ class _AuthFeaturePanel extends StatelessWidget {
     return Container(
       width: double.infinity,
       padding: EdgeInsets.fromLTRB(
-        compact ? 24 : 36,
-        compact ? 24 : 36,
-        compact ? 24 : 36,
-        compact ? 28 : 36,
+        compact ? 24 : 40,
+        compact ? 24 : 40,
+        compact ? 24 : 40,
+        compact ? 28 : 40,
       ),
       decoration: const BoxDecoration(gradient: VideoFeatureTheme.heroGradient),
       child: Column(
@@ -149,7 +151,7 @@ class _AuthFeaturePanel extends StatelessWidget {
               const BrandMark(size: 54),
               const SizedBox(width: 14),
               Text(
-                'bloop studio',
+                'bloop',
                 style: TextStyle(
                   color: Colors.white.withValues(alpha: 0.96),
                   fontSize: compact ? 22 : 24,
@@ -161,10 +163,10 @@ class _AuthFeaturePanel extends StatelessWidget {
           ),
           SizedBox(height: compact ? 26 : 40),
           Text(
-            'Screen, camera, and voice capture in one place.',
+            'Record with clarity.',
             style: TextStyle(
               color: Colors.white,
-              fontSize: compact ? 28 : 40,
+              fontSize: compact ? 28 : 42,
               fontWeight: FontWeight.w700,
               height: 1.06,
               letterSpacing: -1.3,
@@ -172,35 +174,151 @@ class _AuthFeaturePanel extends StatelessWidget {
           ),
           const SizedBox(height: 16),
           Text(
-            'Start fast. Save locally. Share when ready.',
+            'Screen, camera, mic.',
             style: TextStyle(
               color: Colors.white.withValues(alpha: 0.82),
-              fontSize: 16,
-              height: 1.6,
+              fontSize: 15,
+              fontWeight: FontWeight.w600,
             ),
           ),
-          SizedBox(height: compact ? 20 : 28),
-          Wrap(
-            spacing: 12,
-            runSpacing: 12,
-            children: const <Widget>[
-              _FeatureChip(
-                icon: Icons.screen_share_rounded,
-                label: 'Screen + camera',
+          SizedBox(height: compact ? 24 : 34),
+          _AuthPreviewPanel(compact: compact),
+          if (!compact) ...<Widget>[
+            const SizedBox(height: 22),
+            Text(
+              'Fast setup. Clean capture.',
+              style: TextStyle(
+                color: Colors.white.withValues(alpha: 0.76),
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
               ),
-              _FeatureChip(
-                icon: Icons.folder_open_rounded,
-                label: 'Saved library',
-              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _AuthPreviewPanel extends StatelessWidget {
+  const _AuthPreviewPanel({required this.compact});
+
+  final bool compact;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: EdgeInsets.all(compact ? 18 : 22),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(32),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.14)),
+      ),
+      child: Column(
+        children: <Widget>[
+          Row(
+            children: <Widget>[
+              const _PreviewDot(color: Color(0xFFFF7A59)),
+              const SizedBox(width: 8),
+              const _PreviewDot(color: Color(0xFFE8BC67)),
+              const SizedBox(width: 8),
+              const _PreviewDot(color: Color(0xFF3DDC97)),
+              const Spacer(),
+              _PreviewBadge(label: compact ? 'REC' : 'LIVE'),
             ],
           ),
-          SizedBox(height: compact ? 20 : 28),
-          const Wrap(
-            spacing: 18,
-            runSpacing: 12,
-            children: <Widget>[
-              _StoryMetric(value: '1 click', label: 'to record'),
-              _StoryMetric(value: '5 min', label: 'default limit'),
+          SizedBox(height: compact ? 16 : 18),
+          Container(
+            height: compact ? 132 : 188,
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: 0.08),
+              borderRadius: BorderRadius.circular(28),
+              border: Border.all(color: Colors.white.withValues(alpha: 0.12)),
+            ),
+            child: Stack(
+              children: <Widget>[
+                Positioned(
+                  right: -10,
+                  top: -16,
+                  child: Container(
+                    width: compact ? 90 : 118,
+                    height: compact ? 90 : 118,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: Colors.white.withValues(alpha: 0.08),
+                    ),
+                  ),
+                ),
+                Align(
+                  alignment: Alignment.center,
+                  child: Container(
+                    width: compact ? 70 : 84,
+                    height: compact ? 70 : 84,
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.14),
+                      shape: BoxShape.circle,
+                      border: Border.all(
+                        color: Colors.white.withValues(alpha: 0.2),
+                      ),
+                    ),
+                    child: const Icon(
+                      Icons.play_arrow_rounded,
+                      color: Colors.white,
+                      size: 34,
+                    ),
+                  ),
+                ),
+                Positioned(
+                  left: 16,
+                  right: 16,
+                  bottom: 16,
+                  child: Row(
+                    children: <Widget>[
+                      Expanded(
+                        child: Container(
+                          height: 10,
+                          decoration: BoxDecoration(
+                            color: Colors.white.withValues(alpha: 0.16),
+                            borderRadius: BorderRadius.circular(999),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      Container(
+                        width: compact ? 34 : 42,
+                        height: 10,
+                        decoration: BoxDecoration(
+                          color: VideoFeatureTheme.focus.withValues(alpha: 0.9),
+                          borderRadius: BorderRadius.circular(999),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+          SizedBox(height: compact ? 14 : 16),
+          Row(
+            children: const <Widget>[
+              Expanded(
+                child: _PreviewToggle(
+                  icon: Icons.web_asset_rounded,
+                  label: 'Screen',
+                ),
+              ),
+              SizedBox(width: 10),
+              Expanded(
+                child: _PreviewToggle(
+                  icon: Icons.videocam_rounded,
+                  label: 'Cam',
+                ),
+              ),
+              SizedBox(width: 10),
+              Expanded(
+                child: _PreviewToggle(icon: Icons.mic_rounded, label: 'Mic'),
+              ),
             ],
           ),
         ],
@@ -209,8 +327,50 @@ class _AuthFeaturePanel extends StatelessWidget {
   }
 }
 
-class _FeatureChip extends StatelessWidget {
-  const _FeatureChip({required this.icon, required this.label});
+class _PreviewDot extends StatelessWidget {
+  const _PreviewDot({required this.color});
+
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 10,
+      height: 10,
+      decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+    );
+  }
+}
+
+class _PreviewBadge extends StatelessWidget {
+  const _PreviewBadge({required this.label});
+
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.14),
+        borderRadius: BorderRadius.circular(999),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.18)),
+      ),
+      child: Text(
+        label,
+        style: const TextStyle(
+          color: Colors.white,
+          fontSize: 12,
+          fontWeight: FontWeight.w800,
+          letterSpacing: 0.4,
+        ),
+      ),
+    );
+  }
+}
+
+class _PreviewToggle extends StatelessWidget {
+  const _PreviewToggle({required this.icon, required this.label});
 
   final IconData icon;
   final String label;
@@ -218,14 +378,14 @@ class _FeatureChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.12),
-        borderRadius: BorderRadius.circular(999),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.16)),
+        color: Colors.white.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.12)),
       ),
       child: Row(
-        mainAxisSize: MainAxisSize.min,
+        mainAxisAlignment: MainAxisAlignment.center,
         children: <Widget>[
           Icon(icon, color: Colors.white, size: 18),
           const SizedBox(width: 8),
@@ -233,6 +393,7 @@ class _FeatureChip extends StatelessWidget {
             label,
             style: const TextStyle(
               color: Colors.white,
+              fontSize: 13,
               fontWeight: FontWeight.w700,
             ),
           ),
@@ -242,54 +403,16 @@ class _FeatureChip extends StatelessWidget {
   }
 }
 
-class _StoryMetric extends StatelessWidget {
-  const _StoryMetric({required this.value, required this.label});
-
-  final String value;
-  final String label;
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      children: <Widget>[
-        Container(
-          width: 12,
-          height: 12,
-          decoration: const BoxDecoration(
-            color: VideoFeatureTheme.focus,
-            shape: BoxShape.circle,
-          ),
-        ),
-        const SizedBox(width: 12),
-        RichText(
-          text: TextSpan(
-            style: TextStyle(
-              color: Colors.white.withValues(alpha: 0.9),
-              fontSize: 14,
-              height: 1.5,
-            ),
-            children: <TextSpan>[
-              TextSpan(
-                text: '$value ',
-                style: const TextStyle(fontWeight: FontWeight.w700),
-              ),
-              TextSpan(text: label),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-}
-
 class _AuthFormPanel extends StatelessWidget {
   const _AuthFormPanel({
+    required this.compact,
     required this.title,
     required this.subtitle,
     required this.child,
     required this.footer,
   });
 
+  final bool compact;
   final String title;
   final String subtitle;
   final Widget child;
@@ -300,47 +423,32 @@ class _AuthFormPanel extends StatelessWidget {
     return Container(
       width: double.infinity,
       color: VideoFeatureTheme.panel,
-      padding: const EdgeInsets.all(32),
+      padding: EdgeInsets.all(compact ? 24 : 32),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-            decoration: BoxDecoration(
-              color: VideoFeatureTheme.accentSoft,
-              borderRadius: BorderRadius.circular(999),
-            ),
-            child: const Text(
-              'bloop',
-              style: TextStyle(
-                color: VideoFeatureTheme.accent,
-                fontSize: 12,
-                fontWeight: FontWeight.w800,
-                letterSpacing: 0.2,
-              ),
-            ),
-          ),
-          const SizedBox(height: 18),
+          const BrandMark(size: 28),
+          const SizedBox(height: 20),
           Text(
             title,
-            style: const TextStyle(
+            style: TextStyle(
               color: VideoFeatureTheme.ink,
-              fontSize: 34,
+              fontSize: compact ? 30 : 34,
               fontWeight: FontWeight.w700,
               height: 1.05,
               letterSpacing: -1.2,
             ),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 10),
           Text(
             subtitle,
             style: const TextStyle(
               color: VideoFeatureTheme.muted,
-              fontSize: 16,
-              height: 1.65,
+              fontSize: 15,
+              height: 1.5,
             ),
           ),
-          const SizedBox(height: 30),
+          SizedBox(height: compact ? 24 : 28),
           child,
           const SizedBox(height: 24),
           Align(alignment: Alignment.center, child: footer),

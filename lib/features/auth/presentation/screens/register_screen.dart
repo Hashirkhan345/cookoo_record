@@ -62,8 +62,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
 
     return AuthScreenScaffold(
       title: 'Create account',
-      subtitle:
-          'Set up your bloop workspace to keep recordings, drafts, and account access in one place.',
+      subtitle: 'Create your bloop account.',
       footer: Wrap(
         alignment: WrapAlignment.center,
         crossAxisAlignment: WrapCrossAlignment.center,
@@ -71,7 +70,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
         runSpacing: 4,
         children: <Widget>[
           const Text(
-            'Already have an account?',
+            'Have an account?',
             style: TextStyle(color: VideoFeatureTheme.muted),
           ),
           TextButton(
@@ -85,49 +84,6 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: <Widget>[
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: VideoFeatureTheme.panelMuted.withValues(alpha: 0.58),
-                borderRadius: BorderRadius.circular(24),
-                border: Border.all(color: VideoFeatureTheme.line),
-              ),
-              child: const Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: <Widget>[
-                  Icon(
-                    Icons.verified_user_outlined,
-                    color: VideoFeatureTheme.primary,
-                    size: 20,
-                  ),
-                  SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: <Widget>[
-                        Text(
-                          'Create your main account',
-                          style: TextStyle(
-                            color: VideoFeatureTheme.ink,
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
-                        SizedBox(height: 4),
-                        Text(
-                          'Use the email you want connected to saved recordings and account recovery.',
-                          style: TextStyle(
-                            color: VideoFeatureTheme.muted,
-                            fontSize: 13,
-                            height: 1.45,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 20),
             AuthTextField(
               controller: _nameController,
               label: 'Full name',
@@ -187,15 +143,6 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                 }
                 return null;
               },
-            ),
-            const SizedBox(height: 10),
-            const Text(
-              'Use at least 6 characters. A longer password is safer.',
-              style: TextStyle(
-                color: VideoFeatureTheme.muted,
-                fontSize: 13,
-                height: 1.4,
-              ),
             ),
             const SizedBox(height: 24),
             FilledButton(
@@ -260,16 +207,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                 ),
               ),
               icon: const GoogleBrandIcon(size: 20),
-              label: const Text('Continue with Google'),
-            ),
-            const SizedBox(height: 14),
-            const Text(
-              'By continuing, you are creating a bloop account for this workspace.',
-              style: TextStyle(
-                color: VideoFeatureTheme.muted,
-                fontSize: 12,
-                height: 1.45,
-              ),
+              label: const Text('Use Google'),
             ),
           ],
         ),

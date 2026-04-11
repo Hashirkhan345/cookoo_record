@@ -124,13 +124,13 @@ class _RecordVideoFlowScreenState extends ConsumerState<RecordVideoFlowScreen> {
                     Align(
                       alignment: isCompact
                           ? Alignment.bottomCenter
-                          : Alignment.centerRight,
+                          : Alignment.center,
                       child: Padding(
                         padding: EdgeInsets.fromLTRB(
                           horizontalPadding,
-                          isCompact ? 106 : 16,
+                          isCompact ? 106 : 24,
                           horizontalPadding,
-                          16,
+                          24,
                         ),
                         child: RecorderPanel(
                           brandLabel: flow.brandLabel,

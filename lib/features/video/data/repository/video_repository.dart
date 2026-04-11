@@ -91,8 +91,8 @@ class LocalVideoRepository implements VideoRepository {
           : 'For the best recording experience, open this flow on a larger screen.',
       previewTitle: 'Ways to use bloop for education',
       startRecordingLabel: 'Start recording',
-      recordingLimitLabel: '5 minute recording limit',
-      tutorialLabel: 'Start a 1 minute tutorial',
+      recordingLimitLabel: '5 min limit',
+      tutorialLabel: '1 minute tutorial',
       successMessage: 'Recording setup opened successfully.',
       panelOptions: isMobileNative
           ? const <VideoRecordingOptionModel>[

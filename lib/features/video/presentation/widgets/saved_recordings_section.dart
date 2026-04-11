@@ -55,7 +55,7 @@ class SavedRecordingsSection extends StatelessWidget {
                     ),
                     SizedBox(height: 8),
                     Text(
-                      'Saved clips and quick actions.',
+                      'Saved clips.',
                       style: TextStyle(
                         color: VideoFeatureTheme.muted,
                         fontSize: 15,
@@ -124,7 +124,7 @@ class SavedRecordingsSection extends StatelessWidget {
                         ),
                         SizedBox(height: 8),
                         Text(
-                          'Your next recording will show up here.',
+                          'Your next clip appears here.',
                           style: TextStyle(
                             color: VideoFeatureTheme.muted,
                             fontSize: 15,

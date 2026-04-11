@@ -51,6 +51,13 @@ class MyApp extends StatelessWidget {
           ),
           behavior: SnackBarBehavior.floating,
         ),
+        dialogTheme: DialogThemeData(
+          backgroundColor: Colors.transparent,
+          surfaceTintColor: Colors.transparent,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(34),
+          ),
+        ),
         filledButtonTheme: FilledButtonThemeData(
           style: FilledButton.styleFrom(
             foregroundColor: Colors.white,

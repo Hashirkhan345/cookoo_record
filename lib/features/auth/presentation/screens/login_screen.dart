@@ -57,7 +57,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
     return AuthScreenScaffold(
       title: 'Sign in',
-      subtitle: 'Access bloop with your Google account or email/password.',
+      subtitle: 'Email or Google access.',
       footer: Wrap(
         alignment: WrapAlignment.center,
         crossAxisAlignment: WrapCrossAlignment.center,
@@ -65,7 +65,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         runSpacing: 4,
         children: <Widget>[
           const Text(
-            'New to bloop?',
+            'No account?',
             style: TextStyle(color: VideoFeatureTheme.muted),
           ),
           TextButton(
@@ -184,7 +184,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 ),
               ),
               icon: const GoogleBrandIcon(size: 20),
-              label: const Text('Continue with Google'),
+              label: const Text('Use Google'),
             ),
           ],
         ),
