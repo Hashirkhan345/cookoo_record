@@ -407,24 +407,25 @@ class _HomeHeroCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final bool isCompact = MediaQuery.sizeOf(context).width < 760;
+    final double cardRadius = isCompact ? 32 : 40;
 
     return Container(
       width: double.infinity,
       decoration: BoxDecoration(
         gradient: VideoFeatureTheme.heroGradient,
-        borderRadius: BorderRadius.circular(40),
+        borderRadius: BorderRadius.circular(cardRadius),
         boxShadow: VideoFeatureTheme.panelShadow,
       ),
       child: ClipRRect(
-        borderRadius: BorderRadius.circular(40),
+        borderRadius: BorderRadius.circular(cardRadius),
         child: Stack(
           children: <Widget>[
             Positioned(
-              right: -40,
-              top: -20,
+              right: isCompact ? -34 : -40,
+              top: isCompact ? -28 : -20,
               child: Container(
-                width: 220,
-                height: 220,
+                width: isCompact ? 160 : 220,
+                height: isCompact ? 160 : 220,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
                   color: Colors.white.withValues(alpha: 0.08),
@@ -432,63 +433,82 @@ class _HomeHeroCard extends StatelessWidget {
               ),
             ),
             Positioned(
-              right: 32,
-              bottom: 22,
+              right: isCompact ? 18 : 32,
+              bottom: isCompact ? 18 : 22,
               child: Container(
-                width: 138,
-                height: 138,
+                width: isCompact ? 92 : 138,
+                height: isCompact ? 92 : 138,
                 decoration: BoxDecoration(
                   color: VideoFeatureTheme.focus.withValues(alpha: 0.16),
-                  borderRadius: BorderRadius.circular(38),
+                  borderRadius: BorderRadius.circular(isCompact ? 28 : 38),
                   border: Border.all(
                     color: Colors.white.withValues(alpha: 0.18),
                   ),
                 ),
               ),
             ),
-            Padding(
-              padding: EdgeInsets.fromLTRB(
-                isCompact ? 24 : 34,
-                isCompact ? 24 : 34,
-                isCompact ? 24 : 34,
-                isCompact ? 24 : 34,
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: <Widget>[
-                  Text(
-                    title,
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: isCompact ? 32 : 44,
-                      fontWeight: FontWeight.w700,
-                      height: 1.06,
-                      letterSpacing: -1.2,
+            ConstrainedBox(
+              constraints: BoxConstraints(minHeight: isCompact ? 210 : 248),
+              child: Padding(
+                padding: EdgeInsets.fromLTRB(
+                  isCompact ? 24 : 42,
+                  isCompact ? 24 : 34,
+                  isCompact ? 24 : 42,
+                  isCompact ? 24 : 34,
+                ),
+                child: Align(
+                  alignment: Alignment.center,
+                  child: ConstrainedBox(
+                    constraints: BoxConstraints(
+                      maxWidth: isCompact ? 320 : 560,
+                    ),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: <Widget>[
+                        Container(
+                          width: isCompact ? 56 : 72,
+                          height: 4,
+                          decoration: BoxDecoration(
+                            color: VideoFeatureTheme.focus,
+                            borderRadius: BorderRadius.circular(999),
+                          ),
+                        ),
+                        SizedBox(height: isCompact ? 18 : 20),
+                        Text(
+                          title,
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: isCompact ? 30 : 42,
+                            fontWeight: FontWeight.w700,
+                            height: 1.04,
+                            letterSpacing: -1.2,
+                          ),
+                        ),
+                        SizedBox(height: isCompact ? 18 : 22),
+                        FilledButton.icon(
+                          key: const Key('recordVideoButton'),
+                          onPressed: isBusy ? null : () => onStart(),
+                          icon: const Icon(Icons.fiber_manual_record_rounded),
+                          label: Text(buttonLabel),
+                          style: FilledButton.styleFrom(
+                            backgroundColor: VideoFeatureTheme.accent,
+                            foregroundColor: Colors.white,
+                            padding: EdgeInsets.symmetric(
+                              horizontal: isCompact ? 22 : 24,
+                              vertical: isCompact ? 16 : 18,
+                            ),
+                            textStyle: const TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
-                  SizedBox(height: isCompact ? 16 : 20),
-                  Center(
-                    child: FilledButton.icon(
-                      key: const Key('recordVideoButton'),
-                      onPressed: isBusy ? null : () => onStart(),
-                      icon: const Icon(Icons.fiber_manual_record_rounded),
-                      label: Text(buttonLabel),
-                      style: FilledButton.styleFrom(
-                        backgroundColor: VideoFeatureTheme.accent,
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 22,
-                          vertical: 18,
-                        ),
-                        textStyle: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
+                ),
               ),
             ),
           ],
