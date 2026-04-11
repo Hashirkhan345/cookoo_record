@@ -23,9 +23,7 @@ class _AuthGateScreenState extends ConsumerState<AuthGateScreen> {
       return const _LoadingSplash();
     }
 
-    final String targetRoute = authState.isAuthenticated
-        ? AppRoute.home
-        : AppRoute.login;
+    const String targetRoute = AppRoute.home;
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) {

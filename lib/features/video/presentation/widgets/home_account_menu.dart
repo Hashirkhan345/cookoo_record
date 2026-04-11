@@ -7,6 +7,7 @@ enum HomeAccountMenuAction {
   profile,
   // integrations,
   settings,
+  login,
   guide,
   helpCenter,
   privacyPolicy,
@@ -17,14 +18,18 @@ enum HomeAccountMenuAction {
 class HomeAccountMenu extends StatelessWidget {
   const HomeAccountMenu({
     super.key,
-    required this.user,
     required this.isBusy,
     required this.onSelected,
+    this.user,
+    this.guestLabel = 'Guest user',
   });
 
-  final AppUser user;
+  final AppUser? user;
   final bool isBusy;
   final ValueChanged<HomeAccountMenuAction> onSelected;
+  final String guestLabel;
+
+  bool get isGuest => user == null;
 
   @override
   Widget build(BuildContext context) {
@@ -45,15 +50,21 @@ class HomeAccountMenu extends StatelessWidget {
               boxShadow: VideoFeatureTheme.floatingShadow,
             ),
             child: Center(
-              child: Text(
-                user.initials,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.w800,
-                  fontSize: 22,
-                  letterSpacing: -0.4,
-                ),
-              ),
+              child: isGuest
+                  ? const Icon(
+                      Icons.person_outline_rounded,
+                      color: Colors.white,
+                      size: 26,
+                    )
+                  : Text(
+                      user!.initials,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w800,
+                        fontSize: 22,
+                        letterSpacing: -0.4,
+                      ),
+                    ),
             ),
           ),
         ),
@@ -91,6 +102,7 @@ class HomeAccountMenu extends StatelessWidget {
                       color: Colors.transparent,
                       child: _AccountPanel(
                         user: user,
+                        guestLabel: guestLabel,
                         onClose: () => Navigator.of(dialogContext).pop(),
                         onActionSelected: (HomeAccountMenuAction action) {
                           Navigator.of(dialogContext).pop();
@@ -132,13 +144,17 @@ class HomeAccountMenu extends StatelessWidget {
 class _AccountPanel extends StatelessWidget {
   const _AccountPanel({
     required this.user,
+    required this.guestLabel,
     required this.onClose,
     required this.onActionSelected,
   });
 
-  final AppUser user;
+  final AppUser? user;
+  final String guestLabel;
   final VoidCallback onClose;
   final ValueChanged<HomeAccountMenuAction> onActionSelected;
+
+  bool get isGuest => user == null;
 
   @override
   Widget build(BuildContext context) {
@@ -190,15 +206,21 @@ class _AccountPanel extends StatelessWidget {
                                       ),
                                     ),
                                     child: Center(
-                                      child: Text(
-                                        user.initials,
-                                        style: const TextStyle(
-                                          color: Colors.white,
-                                          fontSize: 26,
-                                          fontWeight: FontWeight.w800,
-                                          letterSpacing: -0.7,
-                                        ),
-                                      ),
+                                      child: isGuest
+                                          ? const Icon(
+                                              Icons.person_outline_rounded,
+                                              color: Colors.white,
+                                              size: 34,
+                                            )
+                                          : Text(
+                                              user!.initials,
+                                              style: const TextStyle(
+                                                color: Colors.white,
+                                                fontSize: 26,
+                                                fontWeight: FontWeight.w800,
+                                                letterSpacing: -0.7,
+                                              ),
+                                            ),
                                     ),
                                   ),
                                   const SizedBox(width: 18),
@@ -208,7 +230,7 @@ class _AccountPanel extends StatelessWidget {
                                           CrossAxisAlignment.start,
                                       children: <Widget>[
                                         Text(
-                                          user.name,
+                                          user?.name ?? guestLabel,
                                           style: const TextStyle(
                                             color: Colors.white,
                                             fontSize: 22,
@@ -218,7 +240,7 @@ class _AccountPanel extends StatelessWidget {
                                         ),
                                         const SizedBox(height: 8),
                                         Text(
-                                          'Owner',
+                                          isGuest ? 'Browse first' : 'Owner',
                                           style: TextStyle(
                                             color: Colors.white.withValues(
                                               alpha: 0.76,
@@ -236,7 +258,9 @@ class _AccountPanel extends StatelessWidget {
                             const SizedBox(height: 16),
                             OutlinedButton(
                               onPressed: () => onActionSelected(
-                                HomeAccountMenuAction.profile,
+                                isGuest
+                                    ? HomeAccountMenuAction.login
+                                    : HomeAccountMenuAction.profile,
                               ),
                               style: OutlinedButton.styleFrom(
                                 foregroundColor: VideoFeatureTheme.ink,
@@ -255,7 +279,7 @@ class _AccountPanel extends StatelessWidget {
                                   fontWeight: FontWeight.w700,
                                 ),
                               ),
-                              child: const Text('Edit profile'),
+                              child: Text(isGuest ? 'Login' : 'Edit profile'),
                             ),
                           ],
                         ),
@@ -283,15 +307,22 @@ class _AccountPanel extends StatelessWidget {
                 child: Column(
                   children: <Widget>[
                     _AccountActionTile(
-                      label: 'View profile',
-                      onTap: () =>
-                          onActionSelected(HomeAccountMenuAction.profile),
-                    ),
-                    _AccountActionTile(
                       label: 'Settings',
                       onTap: () =>
                           onActionSelected(HomeAccountMenuAction.settings),
                     ),
+                    if (!isGuest)
+                      _AccountActionTile(
+                        label: 'View profile',
+                        onTap: () =>
+                            onActionSelected(HomeAccountMenuAction.profile),
+                      ),
+                    if (isGuest)
+                      _AccountActionTile(
+                        label: 'Login',
+                        onTap: () =>
+                            onActionSelected(HomeAccountMenuAction.login),
+                      ),
                     _AccountActionTile(
                       label: 'Guide',
                       onTap: () =>
@@ -317,14 +348,16 @@ class _AccountPanel extends StatelessWidget {
                 ),
               ),
               const Divider(height: 1, color: VideoFeatureTheme.line),
-              Padding(
-                padding: const EdgeInsets.fromLTRB(18, 14, 18, 18),
-                child: _AccountActionTile(
-                  label: 'Sign Out',
-                  onTap: () => onActionSelected(HomeAccountMenuAction.signOut),
-                  isDestructive: true,
+              if (!isGuest)
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(18, 14, 18, 18),
+                  child: _AccountActionTile(
+                    label: 'Sign Out',
+                    onTap: () =>
+                        onActionSelected(HomeAccountMenuAction.signOut),
+                    isDestructive: true,
+                  ),
                 ),
-              ),
             ],
           ),
         ),

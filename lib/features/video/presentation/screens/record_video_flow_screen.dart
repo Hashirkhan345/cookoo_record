@@ -24,6 +24,9 @@ class RecordVideoFlowScreen extends ConsumerStatefulWidget {
 
 class _RecordVideoFlowScreenState extends ConsumerState<RecordVideoFlowScreen> {
   Offset? _bubblePosition;
+  int _bubbleSizeIndex = 0;
+  bool _showBubbleSizeControls = false;
+  bool _isBubbleHovered = false;
 
   @override
   Widget build(BuildContext context) {
@@ -70,7 +73,9 @@ class _RecordVideoFlowScreenState extends ConsumerState<RecordVideoFlowScreen> {
               final double horizontalPadding = isCompact ? 12 : 24;
               final bool canMoveBubble =
                   hasActiveRecording && !state.isCountingDown;
-              final double bubbleSize = isCompact ? 132 : 220;
+              final double bubbleBaseSize = isCompact ? 132 : 220;
+              final double bubbleSize =
+                  bubbleBaseSize * _bubbleSizeMultiplierFor(_bubbleSizeIndex);
               final Offset bubblePosition =
                   _bubblePosition ??
                   _defaultBubblePosition(
@@ -83,7 +88,16 @@ class _RecordVideoFlowScreenState extends ConsumerState<RecordVideoFlowScreen> {
                 behavior: HitTestBehavior.translucent,
                 onTapDown: canMoveBubble
                     ? (TapDownDetails details) {
+                        if (_isPointInsideBubbleRegion(
+                          point: details.localPosition,
+                          bubblePosition: bubblePosition,
+                          bubbleSize: bubbleSize,
+                        )) {
+                          return;
+                        }
+
                         setState(() {
+                          _showBubbleSizeControls = false;
                           _bubblePosition = _clampBubblePosition(
                             desiredPosition: Offset(
                               details.localPosition.dx - (bubbleSize / 2),
@@ -157,9 +171,78 @@ class _RecordVideoFlowScreenState extends ConsumerState<RecordVideoFlowScreen> {
                                 });
                               }
                             : null,
-                        child: ProfileBubble(
-                          size: bubbleSize,
-                          cameraController: state.cameraController,
+                        child: MouseRegion(
+                          onEnter: (_) {
+                            setState(() {
+                              _isBubbleHovered = true;
+                            });
+                          },
+                          onExit: (_) {
+                            setState(() {
+                              _isBubbleHovered = false;
+                            });
+                          },
+                          child: Stack(
+                            clipBehavior: Clip.none,
+                            children: <Widget>[
+                              if (canMoveBubble &&
+                                  (_showBubbleSizeControls ||
+                                      _isBubbleHovered)) ...<Widget>[
+                                Positioned(
+                                  top: -54,
+                                  left: 0,
+                                  right: 0,
+                                  child: MouseRegion(
+                                    onEnter: (_) {
+                                      setState(() {
+                                        _isBubbleHovered = true;
+                                      });
+                                    },
+                                    onExit: (_) {
+                                      setState(() {
+                                        _isBubbleHovered = false;
+                                      });
+                                    },
+                                    child: _BubbleSizeControls(
+                                      selectedIndex: _bubbleSizeIndex,
+                                      onSelected: (int index) {
+                                        setState(() {
+                                          _bubbleSizeIndex = index;
+                                          _showBubbleSizeControls = true;
+                                          final Offset currentPosition =
+                                              _bubblePosition ?? bubblePosition;
+                                          final double nextBubbleSize =
+                                              bubbleBaseSize *
+                                              _bubbleSizeMultiplierFor(index);
+                                          _bubblePosition =
+                                              _clampBubblePosition(
+                                                desiredPosition:
+                                                    currentPosition,
+                                                constraints: constraints,
+                                                bubbleSize: nextBubbleSize,
+                                                isCompact: isCompact,
+                                              );
+                                        });
+                                      },
+                                    ),
+                                  ),
+                                ),
+                              ],
+                              GestureDetector(
+                                onTap: canMoveBubble
+                                    ? () {
+                                        setState(() {
+                                          _showBubbleSizeControls = true;
+                                        });
+                                      }
+                                    : null,
+                                child: ProfileBubble(
+                                  size: bubbleSize,
+                                  cameraController: state.cameraController,
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
                       ),
                     ),
@@ -315,6 +398,84 @@ class _RecordVideoFlowScreenState extends ConsumerState<RecordVideoFlowScreen> {
     return Offset(
       desiredPosition.dx.clamp(minLeft, maxLeft),
       desiredPosition.dy.clamp(minTop, maxTop),
+    );
+  }
+
+  bool _isPointInsideBubbleRegion({
+    required Offset point,
+    required Offset bubblePosition,
+    required double bubbleSize,
+  }) {
+    final Rect bubbleRect = Rect.fromLTWH(
+      bubblePosition.dx,
+      bubblePosition.dy - 58,
+      bubbleSize,
+      bubbleSize + 72,
+    );
+    return bubbleRect.contains(point);
+  }
+
+  double _bubbleSizeMultiplierFor(int index) {
+    switch (index) {
+      case 0:
+        return 1.0;
+      case 1:
+        return 1.18;
+      case 2:
+        return 1.36;
+    }
+    return 1.0;
+  }
+}
+
+class _BubbleSizeControls extends StatelessWidget {
+  const _BubbleSizeControls({
+    required this.selectedIndex,
+    required this.onSelected,
+  });
+
+  final int selectedIndex;
+  final ValueChanged<int> onSelected;
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+        decoration: BoxDecoration(
+          color: VideoFeatureTheme.ink.withValues(alpha: 0.84),
+          borderRadius: BorderRadius.circular(999),
+          border: Border.all(color: Colors.white.withValues(alpha: 0.14)),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: List<Widget>.generate(3, (int index) {
+            final bool isSelected = index == selectedIndex;
+            final double dotSize = 8 + (index * 4);
+
+            return Padding(
+              padding: EdgeInsets.only(right: index == 2 ? 0 : 10),
+              child: GestureDetector(
+                onTap: () => onSelected(index),
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 160),
+                  width: dotSize,
+                  height: dotSize,
+                  decoration: BoxDecoration(
+                    color: isSelected
+                        ? VideoFeatureTheme.accent
+                        : Colors.white.withValues(alpha: 0.74),
+                    shape: BoxShape.circle,
+                    boxShadow: isSelected
+                        ? VideoFeatureTheme.glowShadow
+                        : const <BoxShadow>[],
+                  ),
+                ),
+              ),
+            );
+          }),
+        ),
+      ),
     );
   }
 }

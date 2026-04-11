@@ -72,12 +72,10 @@ class _VideoHomeScreenState extends ConsumerState<VideoHomeScreen> {
       //   );
       //   return;
       case HomeAccountMenuAction.settings:
-        await _showMenuDialog(
-          title: 'Settings',
-          icon: Icons.settings_outlined,
-          body:
-              'Workspace settings and recording preferences will appear here.',
-        );
+        await _showSettingsDialog(authState);
+        return;
+      case HomeAccountMenuAction.login:
+        await Navigator.of(context).pushNamed(AppRoute.login);
         return;
       case HomeAccountMenuAction.guide:
         await _showMenuDialog(
@@ -136,6 +134,58 @@ class _VideoHomeScreenState extends ConsumerState<VideoHomeScreen> {
     );
   }
 
+  Future<void> _showSettingsDialog(AuthState authState) {
+    final bool isGuest = !authState.isAuthenticated;
+
+    return showStudioDialog<void>(
+      context: context,
+      builder: (BuildContext context) {
+        return StudioDialogShell(
+          icon: Icons.settings_outlined,
+          badge: 'Settings',
+          title: isGuest ? 'Guest mode' : 'Workspace settings',
+          message: isGuest
+              ? 'You are using bloop without signing in. You can keep browsing in guest mode, or sign in to access account features.'
+              : 'Workspace settings and recording preferences will appear here.',
+          maxWidth: 640,
+          actions: Wrap(
+            alignment: WrapAlignment.end,
+            spacing: 12,
+            runSpacing: 12,
+            children: <Widget>[
+              if (isGuest)
+                OutlinedButton(
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                    Navigator.of(this.context).pushNamed(AppRoute.login);
+                  },
+                  style: OutlinedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 22,
+                      vertical: 16,
+                    ),
+                  ),
+                  child: const Text('Login'),
+                ),
+              FilledButton(
+                onPressed: () => Navigator.of(context).pop(),
+                style: FilledButton.styleFrom(
+                  backgroundColor: VideoFeatureTheme.primary,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 22,
+                    vertical: 16,
+                  ),
+                ),
+                child: Text(isGuest ? 'Continue as guest' : 'Close'),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     ref.listen<VideoState>(videoControllerProvider, (previous, next) {
@@ -162,7 +212,7 @@ class _VideoHomeScreenState extends ConsumerState<VideoHomeScreen> {
       if ((previous?.isAuthenticated ?? false) && !next.isAuthenticated) {
         Navigator.of(
           context,
-        ).pushNamedAndRemoveUntil(AppRoute.login, (Route<dynamic> _) => false);
+        ).pushNamedAndRemoveUntil(AppRoute.home, (Route<dynamic> _) => false);
         return;
       }
 
@@ -258,21 +308,18 @@ class _VideoHomeScreenState extends ConsumerState<VideoHomeScreen> {
                                   const Expanded(
                                     child: BrandLockup(brandLabel: 'bloop'),
                                   ),
-                                  if (authState.user != null) ...<Widget>[
-                                    HomeAccountMenu(
-                                      user: authState.user!,
-                                      isBusy: authState.isSubmitting,
-                                      onSelected:
-                                          (HomeAccountMenuAction action) {
-                                            unawaited(
-                                              _handleAccountMenuSelection(
-                                                action,
-                                                authState,
-                                              ),
-                                            );
-                                          },
-                                    ),
-                                  ],
+                                  HomeAccountMenu(
+                                    user: authState.user,
+                                    isBusy: authState.isSubmitting,
+                                    onSelected: (HomeAccountMenuAction action) {
+                                      unawaited(
+                                        _handleAccountMenuSelection(
+                                          action,
+                                          authState,
+                                        ),
+                                      );
+                                    },
+                                  ),
                                 ],
                               ),
                               const SizedBox(height: 26),
