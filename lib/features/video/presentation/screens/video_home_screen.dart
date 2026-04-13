@@ -230,6 +230,7 @@ class _VideoHomeScreenState extends ConsumerState<VideoHomeScreen> {
 
     final VideoState state = ref.watch(videoControllerProvider);
     final AuthState authState = ref.watch(authControllerProvider);
+    final videoController = ref.read(videoControllerProvider.notifier);
     if (state.isLoading) {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
@@ -323,33 +324,32 @@ class _VideoHomeScreenState extends ConsumerState<VideoHomeScreen> {
                                 ],
                               ),
                               const SizedBox(height: 26),
-                              LayoutBuilder(
-                                builder:
-                                    (
-                                      BuildContext context,
-                                      BoxConstraints constraints,
-                                    ) {
-                                      final Widget hero = _HomeHeroCard(
-                                        title: flow.heroTitle,
-                                        buttonLabel: flow.heroActionLabel,
-                                        isBusy: state.isPreparingCameraPreview,
-                                        onStart: ref
-                                            .read(
-                                              videoControllerProvider.notifier,
-                                            )
-                                            .openRecordingFlow,
-                                      );
-
-                                      return hero;
-                                    },
-                              ),
-                              const SizedBox(height: 26),
+                              if (state.savedRecordings.isNotEmpty) ...<Widget>[
+                                LayoutBuilder(
+                                  builder:
+                                      (
+                                        BuildContext context,
+                                        BoxConstraints constraints,
+                                      ) {
+                                        return _HomeHeroCard(
+                                          title: flow.heroTitle,
+                                          buttonLabel: flow.heroActionLabel,
+                                          isBusy:
+                                              state.isPreparingCameraPreview,
+                                          onStart:
+                                              videoController.openRecordingFlow,
+                                        );
+                                      },
+                                ),
+                                const SizedBox(height: 26),
+                              ],
                               SavedRecordingsSection(
                                 recordings: state.savedRecordings,
                                 currentUser: authState.user,
-                                onDeleteRecording: ref
-                                    .read(videoControllerProvider.notifier)
-                                    .deleteSavedRecording,
+                                onDeleteRecording:
+                                    videoController.deleteSavedRecording,
+                                onStartRecording:
+                                    videoController.openRecordingFlow,
                               ),
                               const SizedBox(height: 40),
                             ],

@@ -35,14 +35,11 @@ class MyApp extends StatelessWidget {
         scaffoldBackgroundColor: VideoFeatureTheme.canvas,
         pageTransitionsTheme: AppRouter.pageTransitionsTheme,
         dividerColor: VideoFeatureTheme.line,
-        textTheme: baseTheme.textTheme.apply(
-          bodyColor: VideoFeatureTheme.ink,
-          displayColor: VideoFeatureTheme.ink,
-          fontFamily: 'Georgia',
-        ),
+        textTheme: VideoFeatureTheme.buildTextTheme(baseTheme.textTheme),
         snackBarTheme: SnackBarThemeData(
           backgroundColor: VideoFeatureTheme.ink,
           contentTextStyle: const TextStyle(
+            fontFamily: VideoFeatureTheme.fontFamily,
             color: Colors.white,
             fontWeight: FontWeight.w600,
           ),
@@ -64,7 +61,11 @@ class MyApp extends StatelessWidget {
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(24),
             ),
-            textStyle: const TextStyle(fontWeight: FontWeight.w700),
+            textStyle: const TextStyle(
+              fontFamily: VideoFeatureTheme.fontFamily,
+              fontWeight: FontWeight.w700,
+              letterSpacing: -0.1,
+            ),
           ),
         ),
         outlinedButtonTheme: OutlinedButtonThemeData(
@@ -74,13 +75,21 @@ class MyApp extends StatelessWidget {
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(24),
             ),
-            textStyle: const TextStyle(fontWeight: FontWeight.w700),
+            textStyle: const TextStyle(
+              fontFamily: VideoFeatureTheme.fontFamily,
+              fontWeight: FontWeight.w700,
+              letterSpacing: -0.1,
+            ),
           ),
         ),
         inputDecorationTheme: InputDecorationTheme(
           filled: true,
           fillColor: VideoFeatureTheme.panelMuted.withValues(alpha: 0.5),
-          labelStyle: const TextStyle(color: VideoFeatureTheme.muted),
+          labelStyle: const TextStyle(
+            fontFamily: VideoFeatureTheme.fontFamily,
+            color: VideoFeatureTheme.muted,
+            fontWeight: FontWeight.w500,
+          ),
           contentPadding: const EdgeInsets.symmetric(
             horizontal: 18,
             vertical: 18,
