@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../app/router/app_routes.dart';
 import '../../../auth/provider/auth_provider.dart';
 import '../../../auth/provider/auth_state.dart';
+import '../../provider/admin_config_provider.dart';
 import '../../provider/video_provider.dart';
 import '../../provider/video_state.dart';
 import '../controller/record_video_flow_controller.dart';
@@ -230,6 +231,7 @@ class _VideoHomeScreenState extends ConsumerState<VideoHomeScreen> {
 
     final VideoState state = ref.watch(videoControllerProvider);
     final AuthState authState = ref.watch(authControllerProvider);
+    final AsyncValue adminConfigAsync = ref.watch(adminConfigProvider);
     final videoController = ref.read(videoControllerProvider.notifier);
     if (state.isLoading) {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
@@ -346,6 +348,7 @@ class _VideoHomeScreenState extends ConsumerState<VideoHomeScreen> {
                               SavedRecordingsSection(
                                 recordings: state.savedRecordings,
                                 currentUser: authState.user,
+                                adminConfig: adminConfigAsync.valueOrNull,
                                 onDeleteRecording:
                                     videoController.deleteSavedRecording,
                                 onStartRecording:

@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 
 import '../../../auth/data/models/app_user.dart';
+import '../../data/models/admin_config_model.dart';
 import '../../data/models/saved_video_recording_model.dart';
 import '../controller/video_feature_theme.dart';
+import 'saved_recording_player.dart';
 import 'saved_recording_card.dart';
 
 class SavedRecordingsSection extends StatelessWidget {
@@ -10,12 +12,14 @@ class SavedRecordingsSection extends StatelessWidget {
     super.key,
     required this.recordings,
     required this.currentUser,
+    required this.adminConfig,
     required this.onDeleteRecording,
     required this.onStartRecording,
   });
 
   final List<SavedVideoRecordingModel> recordings;
   final AppUser? currentUser;
+  final AdminConfigModel? adminConfig;
   final ValueChanged<SavedVideoRecordingModel> onDeleteRecording;
   final VoidCallback onStartRecording;
 
@@ -32,6 +36,7 @@ class SavedRecordingsSection extends StatelessWidget {
     if (sortedRecordings.isEmpty) {
       return EmptySavedRecordingsExperience(
         key: const Key('emptySavedRecordingsState'),
+        config: adminConfig ?? AdminConfigModel.defaults,
         onStartRecording: onStartRecording,
       );
     }
@@ -176,9 +181,11 @@ class _HeaderChip extends StatelessWidget {
 class EmptySavedRecordingsExperience extends StatelessWidget {
   const EmptySavedRecordingsExperience({
     super.key,
+    required this.config,
     required this.onStartRecording,
   });
 
+  final AdminConfigModel config;
   final VoidCallback onStartRecording;
 
   @override
@@ -197,7 +204,7 @@ class EmptySavedRecordingsExperience extends StatelessWidget {
               child: Column(
                 children: <Widget>[
                   Text(
-                    'Hassle-free video communication,\nno need to install',
+                    config.title,
                     textAlign: TextAlign.center,
                     style: textTheme.displayMedium?.copyWith(
                       fontSize: compact ? 30 : 48,
@@ -205,7 +212,7 @@ class EmptySavedRecordingsExperience extends StatelessWidget {
                   ),
                   SizedBox(height: compact ? 14 : 18),
                   Text(
-                    'Start recording instantly, keep your workspace clean, and let Firebase videos appear below when your library begins to fill.',
+                    config.subtitle,
                     textAlign: TextAlign.center,
                     style: textTheme.bodyLarge?.copyWith(
                       color: VideoFeatureTheme.muted,
@@ -231,11 +238,11 @@ class EmptySavedRecordingsExperience extends StatelessWidget {
                             borderRadius: BorderRadius.circular(16),
                           ),
                         ),
-                        child: const Row(
+                        child: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: <Widget>[
                             Text(
-                              'Get Started',
+                              config.primaryActionLabel,
                               style: TextStyle(
                                 fontFamily: VideoFeatureTheme.fontFamily,
                                 fontSize: 16,
@@ -248,15 +255,23 @@ class EmptySavedRecordingsExperience extends StatelessWidget {
                         ),
                       ),
                       OutlinedButton(
-                        onPressed: () {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text(
-                                'Intro preview will be added here.',
-                              ),
-                            ),
-                          );
-                        },
+                        onPressed: config.hasDemoVideo
+                            ? () {
+                                SavedRecordingPlayer.showFullscreenDialog(
+                                  context,
+                                  recording: config.toDemoRecording(),
+                                  autoplayMuted: false,
+                                );
+                              }
+                            : () {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content: Text(
+                                      'Demo video is not configured yet.',
+                                    ),
+                                  ),
+                                );
+                              },
                         style: OutlinedButton.styleFrom(
                           foregroundColor: VideoFeatureTheme.accent,
                           side: const BorderSide(
@@ -270,13 +285,13 @@ class EmptySavedRecordingsExperience extends StatelessWidget {
                             borderRadius: BorderRadius.circular(16),
                           ),
                         ),
-                        child: const Row(
+                        child: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: <Widget>[
                             Icon(Icons.play_arrow_rounded, size: 18),
                             SizedBox(width: 8),
                             Text(
-                              'Watch Intro',
+                              config.secondaryActionLabel,
                               style: TextStyle(
                                 fontFamily: VideoFeatureTheme.fontFamily,
                                 fontSize: 16,
@@ -293,17 +308,15 @@ class EmptySavedRecordingsExperience extends StatelessWidget {
                     alignment: WrapAlignment.center,
                     spacing: 22,
                     runSpacing: 12,
-                    children: const <Widget>[
-                      _FeaturePoint(label: 'Auto video encoding'),
-                      _FeaturePoint(label: 'Easy to use'),
-                      _FeaturePoint(label: 'Complete controls'),
-                    ],
+                    children: config.featurePoints
+                        .map((String label) => _FeaturePoint(label: label))
+                        .toList(growable: false),
                   ),
                 ],
               ),
             ),
             SizedBox(height: compact ? 26 : 34),
-            _EmptyFirebasePreview(compact: compact),
+            _EmptyFirebasePreview(compact: compact, config: config),
           ],
         ),
       ),
@@ -345,90 +358,13 @@ class _FeaturePoint extends StatelessWidget {
 }
 
 class _EmptyFirebasePreview extends StatelessWidget {
-  const _EmptyFirebasePreview({required this.compact});
+  const _EmptyFirebasePreview({required this.compact, required this.config});
 
   final bool compact;
+  final AdminConfigModel config;
 
   @override
   Widget build(BuildContext context) {
-    final Widget overview = Container(
-      padding: EdgeInsets.all(compact ? 18 : 22),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: VideoFeatureTheme.line),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: <Widget>[
-          Container(
-            height: 42,
-            padding: const EdgeInsets.symmetric(horizontal: 14),
-            decoration: BoxDecoration(
-              color: VideoFeatureTheme.panelMuted,
-              borderRadius: BorderRadius.circular(14),
-            ),
-            child: Row(
-              children: <Widget>[
-                Icon(Icons.search_rounded, color: VideoFeatureTheme.muted),
-                const SizedBox(width: 10),
-                const Text(
-                  'Search recordings',
-                  style: TextStyle(
-                    color: VideoFeatureTheme.muted,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                const Spacer(),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 7,
-                  ),
-                  decoration: BoxDecoration(
-                    color: VideoFeatureTheme.accentSoft,
-                    borderRadius: BorderRadius.circular(999),
-                  ),
-                  child: const Text(
-                    'New Request',
-                    style: TextStyle(
-                      color: VideoFeatureTheme.accent,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          SizedBox(height: compact ? 16 : 18),
-          if (compact)
-            Column(
-              children: <Widget>[
-                const _PreviewMetricRow(),
-                const SizedBox(height: 16),
-                _PreviewVideoPlaceholder(compact: compact),
-                const SizedBox(height: 16),
-                const _PreviewListPlaceholder(),
-              ],
-            )
-          else
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: <Widget>[
-                const Expanded(flex: 3, child: _PreviewMetricRow()),
-                const SizedBox(width: 16),
-                Expanded(
-                  flex: 4,
-                  child: _PreviewVideoPlaceholder(compact: compact),
-                ),
-                const SizedBox(width: 16),
-                const Expanded(flex: 3, child: _PreviewListPlaceholder()),
-              ],
-            ),
-        ],
-      ),
-    );
-
     return Container(
       width: double.infinity,
       padding: EdgeInsets.all(compact ? 14 : 20),
@@ -443,191 +379,48 @@ class _EmptyFirebasePreview extends StatelessWidget {
           ),
         ],
       ),
-      child: overview,
-    );
-  }
-}
-
-class _PreviewMetricRow extends StatelessWidget {
-  const _PreviewMetricRow();
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      children: List<Widget>.generate(3, (int index) {
-        return Expanded(
-          child: Container(
-            margin: EdgeInsets.only(right: index == 2 ? 0 : 12),
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: VideoFeatureTheme.panelMuted,
-              borderRadius: BorderRadius.circular(18),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: <Widget>[
-                Text(
-                  index == 0
-                      ? 'Total users'
-                      : index == 1
-                      ? 'Monthly active'
-                      : 'Contributing',
-                  style: const TextStyle(
-                    color: VideoFeatureTheme.muted,
-                    fontSize: 12,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  index == 0
-                      ? '84,573'
-                      : index == 1
-                      ? '62,405'
-                      : '48,413',
-                  style: const TextStyle(
-                    color: VideoFeatureTheme.ink,
-                    fontSize: 22,
-                    fontWeight: FontWeight.w800,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        );
-      }),
+      child: _PreviewVideoPlaceholder(compact: compact, config: config),
     );
   }
 }
 
 class _PreviewVideoPlaceholder extends StatelessWidget {
-  const _PreviewVideoPlaceholder({required this.compact});
+  const _PreviewVideoPlaceholder({required this.compact, required this.config});
 
   final bool compact;
+  final AdminConfigModel config;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      height: compact ? 220 : 286,
-      padding: const EdgeInsets.all(18),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: <Color>[
-            VideoFeatureTheme.canvasShade,
-            VideoFeatureTheme.panelMuted,
-          ],
-        ),
-        borderRadius: BorderRadius.circular(22),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: <Widget>[
-          const Text(
-            'Firebase videos',
-            style: TextStyle(
-              color: VideoFeatureTheme.ink,
-              fontSize: 18,
-              fontWeight: FontWeight.w800,
-            ),
-          ),
-          const SizedBox(height: 6),
-          const Text(
-            'Empty container until remote clips load.',
-            style: TextStyle(
-              color: VideoFeatureTheme.muted,
-              fontSize: 13,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-          const Spacer(),
-          Container(
-            height: compact ? 116 : 154,
-            decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.54),
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: Colors.white.withValues(alpha: 0.8)),
-            ),
-            child: const Center(
-              child: Icon(
-                Icons.play_circle_outline_rounded,
-                size: 44,
-                color: VideoFeatureTheme.accent,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
+    final double radius = compact ? 18 : 20;
+    final double videoHeight = compact ? 240 : 500;
 
-class _PreviewListPlaceholder extends StatelessWidget {
-  const _PreviewListPlaceholder();
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(18),
-      decoration: BoxDecoration(
-        color: VideoFeatureTheme.panelMuted,
-        borderRadius: BorderRadius.circular(22),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: List<Widget>.generate(4, (int index) {
-          return Container(
-            margin: EdgeInsets.only(bottom: index == 3 ? 0 : 12),
-            padding: const EdgeInsets.all(14),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: VideoFeatureTheme.line),
-            ),
-            child: Row(
-              children: <Widget>[
-                Container(
-                  width: 34,
-                  height: 34,
-                  decoration: BoxDecoration(
-                    color: VideoFeatureTheme.accentSoft,
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: const Icon(
-                    Icons.video_library_rounded,
-                    color: VideoFeatureTheme.accent,
-                    size: 18,
-                  ),
-                ),
-                const SizedBox(width: 12),
-                const Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: <Widget>[
-                      Text(
-                        'Video slot',
-                        style: TextStyle(
-                          color: VideoFeatureTheme.ink,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                      SizedBox(height: 4),
-                      Text(
-                        'Waiting for Firebase content',
-                        style: TextStyle(
-                          color: VideoFeatureTheme.muted,
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(radius),
+      child: SizedBox(
+        width: double.infinity,
+        height: videoHeight,
+        child: config.hasDemoVideo
+            ? SavedRecordingPlayer(recording: config.toDemoRecording())
+            : Container(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: <Color>[
+                      VideoFeatureTheme.canvasShade,
+                      VideoFeatureTheme.panelMuted,
                     ],
                   ),
                 ),
-              ],
-            ),
-          );
-        }),
+                child: const Center(
+                  child: Icon(
+                    Icons.play_circle_outline_rounded,
+                    size: 44,
+                    color: VideoFeatureTheme.accent,
+                  ),
+                ),
+              ),
       ),
     );
   }
