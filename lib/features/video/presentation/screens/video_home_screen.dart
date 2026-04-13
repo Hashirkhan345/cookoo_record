@@ -263,22 +263,6 @@ class _VideoHomeScreenState extends ConsumerState<VideoHomeScreen> {
               ),
             ),
           ),
-          Positioned(
-            left: -120,
-            top: -80,
-            child: _AmbientGlow(
-              size: screenSize.width * 0.42,
-              color: const Color(0x33E8BC67),
-            ),
-          ),
-          Positioned(
-            right: -140,
-            top: 120,
-            child: _AmbientGlow(
-              size: screenSize.width * 0.48,
-              color: const Color(0x26147A73),
-            ),
-          ),
           SafeArea(
             child: Padding(
               padding: const EdgeInsets.fromLTRB(0, 18, 0, 24),
@@ -326,29 +310,12 @@ class _VideoHomeScreenState extends ConsumerState<VideoHomeScreen> {
                                 ],
                               ),
                               const SizedBox(height: 26),
-                              if (state.savedRecordings.isNotEmpty) ...<Widget>[
-                                LayoutBuilder(
-                                  builder:
-                                      (
-                                        BuildContext context,
-                                        BoxConstraints constraints,
-                                      ) {
-                                        return _HomeHeroCard(
-                                          title: flow.heroTitle,
-                                          buttonLabel: flow.heroActionLabel,
-                                          isBusy:
-                                              state.isPreparingCameraPreview,
-                                          onStart:
-                                              videoController.openRecordingFlow,
-                                        );
-                                      },
-                                ),
-                                const SizedBox(height: 26),
-                              ],
                               SavedRecordingsSection(
                                 recordings: state.savedRecordings,
                                 currentUser: authState.user,
                                 adminConfig: adminConfigAsync.valueOrNull,
+                                savedCountLabel:
+                                    '${state.savedRecordings.length} saved',
                                 onDeleteRecording:
                                     videoController.deleteSavedRecording,
                                 onStartRecording:
@@ -365,157 +332,30 @@ class _VideoHomeScreenState extends ConsumerState<VideoHomeScreen> {
               ),
             ),
           ),
-        ],
-      ),
-    );
-  }
-}
-
-class _AmbientGlow extends StatelessWidget {
-  const _AmbientGlow({required this.size, required this.color});
-
-  final double size;
-  final Color color;
-
-  @override
-  Widget build(BuildContext context) {
-    return IgnorePointer(
-      child: Container(
-        width: size,
-        height: size,
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          gradient: RadialGradient(
-            colors: <Color>[color, color.withValues(alpha: 0)],
+          Positioned(
+            left: 16,
+            bottom: 0,
+            child: SafeArea(
+              bottom: false,
+              child: IconButton(
+                key: const Key('recordVideoFloatingButton'),
+                onPressed: state.isPreparingCameraPreview
+                    ? null
+                    : videoController.openRecordingFlow,
+                tooltip: 'Record a video',
+                style: IconButton.styleFrom(
+                  backgroundColor: VideoFeatureTheme.accent,
+                  disabledBackgroundColor: VideoFeatureTheme.muted,
+                  foregroundColor: Colors.white,
+                  minimumSize: const Size(58, 58),
+                  shape: const CircleBorder(),
+                  elevation: 6,
+                ),
+                icon: const Icon(Icons.videocam_rounded, size: 24),
+              ),
+            ),
           ),
-        ),
-      ),
-    );
-  }
-}
-
-class _HomeHeroCard extends StatelessWidget {
-  const _HomeHeroCard({
-    required this.title,
-    required this.buttonLabel,
-    required this.isBusy,
-    required this.onStart,
-  });
-
-  final String title;
-  final String buttonLabel;
-  final bool isBusy;
-  final Future<void> Function() onStart;
-
-  @override
-  Widget build(BuildContext context) {
-    final bool isCompact = MediaQuery.sizeOf(context).width < 760;
-    final double cardRadius = isCompact ? 32 : 40;
-
-    return Container(
-      width: double.infinity,
-      decoration: BoxDecoration(
-        gradient: VideoFeatureTheme.heroGradient,
-        borderRadius: BorderRadius.circular(cardRadius),
-        boxShadow: VideoFeatureTheme.panelShadow,
-      ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(cardRadius),
-        child: Stack(
-          children: <Widget>[
-            Positioned(
-              right: isCompact ? -34 : -40,
-              top: isCompact ? -28 : -20,
-              child: Container(
-                width: isCompact ? 160 : 220,
-                height: isCompact ? 160 : 220,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: Colors.white.withValues(alpha: 0.08),
-                ),
-              ),
-            ),
-            Positioned(
-              right: isCompact ? 18 : 32,
-              bottom: isCompact ? 18 : 22,
-              child: Container(
-                width: isCompact ? 92 : 138,
-                height: isCompact ? 92 : 138,
-                decoration: BoxDecoration(
-                  color: VideoFeatureTheme.focus.withValues(alpha: 0.16),
-                  borderRadius: BorderRadius.circular(isCompact ? 28 : 38),
-                  border: Border.all(
-                    color: Colors.white.withValues(alpha: 0.18),
-                  ),
-                ),
-              ),
-            ),
-            ConstrainedBox(
-              constraints: BoxConstraints(minHeight: isCompact ? 210 : 248),
-              child: Padding(
-                padding: EdgeInsets.fromLTRB(
-                  isCompact ? 24 : 42,
-                  isCompact ? 24 : 34,
-                  isCompact ? 24 : 42,
-                  isCompact ? 24 : 34,
-                ),
-                child: Align(
-                  alignment: Alignment.center,
-                  child: ConstrainedBox(
-                    constraints: BoxConstraints(
-                      maxWidth: isCompact ? 320 : 560,
-                    ),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      crossAxisAlignment: CrossAxisAlignment.center,
-                      children: <Widget>[
-                        Container(
-                          width: isCompact ? 56 : 72,
-                          height: 4,
-                          decoration: BoxDecoration(
-                            color: VideoFeatureTheme.focus,
-                            borderRadius: BorderRadius.circular(999),
-                          ),
-                        ),
-                        SizedBox(height: isCompact ? 18 : 20),
-                        Text(
-                          title,
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: isCompact ? 30 : 42,
-                            fontWeight: FontWeight.w700,
-                            height: 1.04,
-                            letterSpacing: -1.2,
-                          ),
-                        ),
-                        SizedBox(height: isCompact ? 18 : 22),
-                        FilledButton.icon(
-                          key: const Key('recordVideoButton'),
-                          onPressed: isBusy ? null : () => onStart(),
-                          icon: const Icon(Icons.fiber_manual_record_rounded),
-                          label: Text(buttonLabel),
-                          style: FilledButton.styleFrom(
-                            backgroundColor: VideoFeatureTheme.accent,
-                            foregroundColor: Colors.white,
-                            padding: EdgeInsets.symmetric(
-                              horizontal: isCompact ? 22 : 24,
-                              vertical: isCompact ? 16 : 18,
-                            ),
-                            textStyle: const TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w700,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          ],
-        ),
+        ],
       ),
     );
   }

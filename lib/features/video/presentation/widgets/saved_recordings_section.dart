@@ -13,6 +13,7 @@ class SavedRecordingsSection extends StatelessWidget {
     required this.recordings,
     required this.currentUser,
     required this.adminConfig,
+    required this.savedCountLabel,
     required this.onDeleteRecording,
     required this.onStartRecording,
   });
@@ -20,6 +21,7 @@ class SavedRecordingsSection extends StatelessWidget {
   final List<SavedVideoRecordingModel> recordings;
   final AppUser? currentUser;
   final AdminConfigModel? adminConfig;
+  final String savedCountLabel;
   final ValueChanged<SavedVideoRecordingModel> onDeleteRecording;
   final VoidCallback onStartRecording;
 
@@ -42,137 +44,97 @@ class SavedRecordingsSection extends StatelessWidget {
     }
 
     return ConstrainedBox(
-      constraints: const BoxConstraints(maxWidth: 980),
-      child: Container(
-        padding: const EdgeInsets.all(26),
-        decoration: BoxDecoration(
-          color: Colors.white.withValues(alpha: 0.72),
-          borderRadius: BorderRadius.circular(36),
-          border: Border.all(color: VideoFeatureTheme.line),
-          boxShadow: VideoFeatureTheme.floatingShadow,
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: <Widget>[
-            LayoutBuilder(
-              builder: (BuildContext context, BoxConstraints constraints) {
-                final bool stackHeader = constraints.maxWidth < 760;
-                final Widget titleBlock = Column(
+      constraints: const BoxConstraints(maxWidth: 1240),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: <Widget>[
+          LayoutBuilder(
+            builder: (BuildContext context, BoxConstraints constraints) {
+              final bool stackHeader = constraints.maxWidth < 640;
+              final Widget title = Text(
+                'Video library',
+                style: textTheme.titleLarge?.copyWith(
+                  fontSize: 22,
+                  fontWeight: FontWeight.w700,
+                ),
+              );
+              final Widget chip = _SavedCountChip(label: savedCountLabel);
+
+              if (stackHeader) {
+                return Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
-                  children: <Widget>[
-                    Text(
-                      'Recording library',
-                      style: textTheme.headlineMedium?.copyWith(fontSize: 34),
-                    ),
-                    SizedBox(height: 8),
-                    Text(
-                      'Saved clips.',
-                      style: textTheme.bodyMedium?.copyWith(
-                        color: VideoFeatureTheme.muted,
-                        fontSize: 15,
-                      ),
-                    ),
-                  ],
+                  children: <Widget>[title, const SizedBox(height: 8), chip],
                 );
-                final Widget chips = Wrap(
-                  spacing: 12,
-                  runSpacing: 12,
-                  children: <Widget>[
-                    _HeaderChip(label: '${sortedRecordings.length} Saved'),
-                    const _HeaderChip(
-                      label: 'Newest first',
-                      icon: Icons.schedule,
-                    ),
-                  ],
-                );
+              }
 
-                if (stackHeader) {
-                  return Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: <Widget>[
-                      titleBlock,
-                      const SizedBox(height: 18),
-                      chips,
-                    ],
-                  );
-                }
+              return Row(
+                children: <Widget>[
+                  Expanded(child: title),
+                  const SizedBox(width: 12),
+                  chip,
+                ],
+              );
+            },
+          ),
+          const SizedBox(height: 14),
+          LayoutBuilder(
+            builder: (BuildContext context, BoxConstraints constraints) {
+              const double spacing = 22;
+              final int columnCount = constraints.maxWidth >= 1080
+                  ? 3
+                  : constraints.maxWidth >= 760
+                  ? 2
+                  : 1;
+              final double cardWidth =
+                  (constraints.maxWidth - (spacing * (columnCount - 1))) /
+                  columnCount;
 
-                return Row(
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: <Widget>[
-                    Expanded(child: titleBlock),
-                    const SizedBox(width: 16),
-                    chips,
-                  ],
-                );
-              },
-            ),
-            const SizedBox(height: 24),
-            LayoutBuilder(
-              builder: (BuildContext context, BoxConstraints constraints) {
-                const double spacing = 22;
-                final bool isSingleColumn = constraints.maxWidth < 760;
-                final double cardWidth = isSingleColumn
-                    ? constraints.maxWidth
-                    : (constraints.maxWidth - spacing) / 2;
-
-                return Wrap(
-                  spacing: spacing,
-                  runSpacing: spacing,
-                  children: sortedRecordings
-                      .map((SavedVideoRecordingModel recording) {
-                        return SizedBox(
-                          width: cardWidth,
-                          child: SavedRecordingCard(
-                            key: Key('savedRecordingCard_${recording.id}'),
-                            recording: recording,
-                            currentUser: currentUser,
-                            onDelete: () => onDeleteRecording(recording),
-                          ),
-                        );
-                      })
-                      .toList(growable: false),
-                );
-              },
-            ),
-          ],
-        ),
+              return Wrap(
+                spacing: spacing,
+                runSpacing: spacing,
+                children: sortedRecordings
+                    .map((SavedVideoRecordingModel recording) {
+                      return SizedBox(
+                        width: cardWidth,
+                        child: SavedRecordingCard(
+                          key: Key('savedRecordingCard_${recording.id}'),
+                          recording: recording,
+                          currentUser: currentUser,
+                          onDelete: () => onDeleteRecording(recording),
+                        ),
+                      );
+                    })
+                    .toList(growable: false),
+              );
+            },
+          ),
+        ],
       ),
     );
   }
 }
 
-class _HeaderChip extends StatelessWidget {
-  const _HeaderChip({required this.label, this.icon});
+class _SavedCountChip extends StatelessWidget {
+  const _SavedCountChip({required this.label});
 
   final String label;
-  final IconData? icon;
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
-        color: VideoFeatureTheme.panel,
+        color: Colors.white.withValues(alpha: 0.9),
         borderRadius: BorderRadius.circular(999),
         border: Border.all(color: VideoFeatureTheme.line),
       ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: <Widget>[
-          if (icon != null) ...<Widget>[
-            Icon(icon, color: VideoFeatureTheme.muted, size: 16),
-            const SizedBox(width: 8),
-          ],
-          Text(
-            label,
-            style: const TextStyle(
-              color: VideoFeatureTheme.ink,
-              fontSize: 14,
-              fontWeight: FontWeight.w700,
-            ),
-          ),
-        ],
+      child: Text(
+        label,
+        style: const TextStyle(
+          color: VideoFeatureTheme.ink,
+          fontSize: 12,
+          fontWeight: FontWeight.w700,
+        ),
       ),
     );
   }

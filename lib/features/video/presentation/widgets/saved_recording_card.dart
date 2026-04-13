@@ -42,7 +42,7 @@ class _SavedRecordingCardState extends State<SavedRecordingCard> {
       curve: Curves.easeOutCubic,
       decoration: BoxDecoration(
         color: VideoFeatureTheme.panel,
-        borderRadius: BorderRadius.circular(32),
+        borderRadius: BorderRadius.circular(28),
         border: Border.all(color: VideoFeatureTheme.line),
         boxShadow: VideoFeatureTheme.floatingShadow,
       ),
@@ -50,7 +50,7 @@ class _SavedRecordingCardState extends State<SavedRecordingCard> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
           Padding(
-            padding: const EdgeInsets.fromLTRB(14, 14, 14, 0),
+            padding: const EdgeInsets.fromLTRB(12, 12, 12, 0),
             child: _SavedRecordingPreviewTile(
               recording: recording,
               durationLabel: _formatDuration(recording.duration),
@@ -60,14 +60,14 @@ class _SavedRecordingCardState extends State<SavedRecordingCard> {
             ),
           ),
           Padding(
-            padding: const EdgeInsets.fromLTRB(18, 18, 18, 18),
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: <Widget>[
                 Row(
                   children: <Widget>[
                     _OwnerAvatar(user: widget.currentUser),
-                    const SizedBox(width: 12),
+                    const SizedBox(width: 10),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -78,7 +78,7 @@ class _SavedRecordingCardState extends State<SavedRecordingCard> {
                             overflow: TextOverflow.ellipsis,
                             style: const TextStyle(
                               color: VideoFeatureTheme.ink,
-                              fontSize: 15,
+                              fontSize: 14,
                               fontWeight: FontWeight.w800,
                               letterSpacing: -0.4,
                             ),
@@ -88,7 +88,7 @@ class _SavedRecordingCardState extends State<SavedRecordingCard> {
                             _formatRelativeSavedAt(recording.savedAt),
                             style: const TextStyle(
                               color: VideoFeatureTheme.muted,
-                              fontSize: 13,
+                              fontSize: 12,
                               fontWeight: FontWeight.w600,
                             ),
                           ),
@@ -104,24 +104,24 @@ class _SavedRecordingCardState extends State<SavedRecordingCard> {
                   overflow: TextOverflow.ellipsis,
                   style: const TextStyle(
                     color: VideoFeatureTheme.ink,
-                    fontSize: 24,
+                    fontSize: 18,
                     fontWeight: FontWeight.w700,
-                    height: 1.12,
-                    letterSpacing: -0.7,
+                    height: 1.16,
+                    letterSpacing: -0.4,
                   ),
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(height: 6),
                 Text(
                   '${_formatSavedAt(recording.savedAt)} • ${_formatBytes(recording.sizeInBytes)}',
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: const TextStyle(
                     color: VideoFeatureTheme.muted,
-                    fontSize: 14,
+                    fontSize: 12,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
-                const SizedBox(height: 18),
+                const SizedBox(height: 14),
                 Row(
                   children: <Widget>[
                     Expanded(
@@ -132,25 +132,25 @@ class _SavedRecordingCardState extends State<SavedRecordingCard> {
                           icon: Symbols.play_arrow_rounded,
                           backgroundColor: Color(0x33FFFFFF),
                           foregroundColor: Colors.white,
-                          size: 30,
-                          iconSize: 18,
+                          size: 28,
+                          iconSize: 16,
                         ),
                         label: const Text('Watch recording'),
                         style: FilledButton.styleFrom(
                           backgroundColor: VideoFeatureTheme.accent,
                           foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(vertical: 15),
+                          padding: const EdgeInsets.symmetric(vertical: 13),
                           shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(20),
+                            borderRadius: BorderRadius.circular(18),
                           ),
                           textStyle: const TextStyle(
                             fontWeight: FontWeight.w700,
-                            fontSize: 15,
+                            fontSize: 13,
                           ),
                         ),
                       ),
                     ),
-                    const SizedBox(width: 12),
+                    const SizedBox(width: 10),
                     Expanded(
                       child: OutlinedButton.icon(
                         onPressed: _isProcessingTransfer
@@ -162,8 +162,8 @@ class _SavedRecordingCardState extends State<SavedRecordingCard> {
                           icon: Symbols.download_rounded,
                           backgroundColor: Color(0xFFEAF1FF),
                           foregroundColor: VideoFeatureTheme.primary,
-                          size: 30,
-                          iconSize: 18,
+                          size: 28,
+                          iconSize: 16,
                         ),
                         label: const Text('Download'),
                         style: OutlinedButton.styleFrom(
@@ -171,13 +171,13 @@ class _SavedRecordingCardState extends State<SavedRecordingCard> {
                           backgroundColor: VideoFeatureTheme.panelMuted
                               .withValues(alpha: 0.36),
                           side: const BorderSide(color: VideoFeatureTheme.line),
-                          padding: const EdgeInsets.symmetric(vertical: 15),
+                          padding: const EdgeInsets.symmetric(vertical: 13),
                           shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(20),
+                            borderRadius: BorderRadius.circular(18),
                           ),
                           textStyle: const TextStyle(
                             fontWeight: FontWeight.w700,
-                            fontSize: 15,
+                            fontSize: 13,
                           ),
                         ),
                       ),
