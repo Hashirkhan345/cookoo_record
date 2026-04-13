@@ -137,10 +137,10 @@ class _AuthFeaturePanel extends StatelessWidget {
     return Container(
       width: double.infinity,
       padding: EdgeInsets.fromLTRB(
-        compact ? 24 : 40,
-        compact ? 24 : 40,
-        compact ? 24 : 40,
-        compact ? 28 : 40,
+        compact ? 20 : 40,
+        compact ? 20 : 40,
+        compact ? 20 : 40,
+        compact ? 22 : 40,
       ),
       decoration: const BoxDecoration(gradient: VideoFeatureTheme.heroGradient),
       child: Column(
@@ -148,40 +148,40 @@ class _AuthFeaturePanel extends StatelessWidget {
         children: <Widget>[
           Row(
             children: <Widget>[
-              const BrandMark(size: 54),
-              const SizedBox(width: 14),
+              BrandMark(size: compact ? 42 : 54),
+              SizedBox(width: compact ? 12 : 14),
               Text(
                 'bloop',
                 style: TextStyle(
                   color: Colors.white.withValues(alpha: 0.96),
-                  fontSize: compact ? 22 : 24,
+                  fontSize: compact ? 20 : 24,
                   fontWeight: FontWeight.w700,
                   letterSpacing: -0.8,
                 ),
               ),
             ],
           ),
-          SizedBox(height: compact ? 26 : 40),
+          SizedBox(height: compact ? 18 : 40),
           Text(
             'Record with clarity.',
             style: TextStyle(
               color: Colors.white,
-              fontSize: compact ? 28 : 42,
+              fontSize: compact ? 22 : 42,
               fontWeight: FontWeight.w700,
               height: 1.06,
               letterSpacing: -1.3,
             ),
           ),
-          const SizedBox(height: 16),
+          SizedBox(height: compact ? 10 : 16),
           Text(
             'Screen, camera, mic.',
             style: TextStyle(
               color: Colors.white.withValues(alpha: 0.82),
-              fontSize: 15,
+              fontSize: compact ? 13 : 15,
               fontWeight: FontWeight.w600,
             ),
           ),
-          SizedBox(height: compact ? 24 : 34),
+          SizedBox(height: compact ? 16 : 34),
           _AuthPreviewPanel(compact: compact),
           if (!compact) ...<Widget>[
             const SizedBox(height: 22),
@@ -209,10 +209,10 @@ class _AuthPreviewPanel extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       width: double.infinity,
-      padding: EdgeInsets.all(compact ? 18 : 22),
+      padding: EdgeInsets.all(compact ? 14 : 22),
       decoration: BoxDecoration(
         color: Colors.white.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(32),
+        borderRadius: BorderRadius.circular(compact ? 24 : 32),
         border: Border.all(color: Colors.white.withValues(alpha: 0.14)),
       ),
       child: Column(
@@ -228,12 +228,12 @@ class _AuthPreviewPanel extends StatelessWidget {
               _PreviewBadge(label: compact ? 'REC' : 'LIVE'),
             ],
           ),
-          SizedBox(height: compact ? 16 : 18),
+          SizedBox(height: compact ? 12 : 18),
           Container(
-            height: compact ? 132 : 188,
+            height: compact ? 96 : 188,
             decoration: BoxDecoration(
               color: Colors.white.withValues(alpha: 0.08),
-              borderRadius: BorderRadius.circular(28),
+              borderRadius: BorderRadius.circular(compact ? 20 : 28),
               border: Border.all(color: Colors.white.withValues(alpha: 0.12)),
             ),
             child: Stack(
@@ -242,8 +242,8 @@ class _AuthPreviewPanel extends StatelessWidget {
                   right: -10,
                   top: -16,
                   child: Container(
-                    width: compact ? 90 : 118,
-                    height: compact ? 90 : 118,
+                    width: compact ? 58 : 118,
+                    height: compact ? 58 : 118,
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
                       color: Colors.white.withValues(alpha: 0.08),
@@ -253,8 +253,8 @@ class _AuthPreviewPanel extends StatelessWidget {
                 Align(
                   alignment: Alignment.center,
                   child: Container(
-                    width: compact ? 70 : 84,
-                    height: compact ? 70 : 84,
+                    width: compact ? 48 : 84,
+                    height: compact ? 48 : 84,
                     decoration: BoxDecoration(
                       color: Colors.white.withValues(alpha: 0.14),
                       shape: BoxShape.circle,
@@ -262,22 +262,22 @@ class _AuthPreviewPanel extends StatelessWidget {
                         color: Colors.white.withValues(alpha: 0.2),
                       ),
                     ),
-                    child: const Icon(
+                    child: Icon(
                       Icons.play_arrow_rounded,
                       color: Colors.white,
-                      size: 34,
+                      size: compact ? 28 : 34,
                     ),
                   ),
                 ),
                 Positioned(
-                  left: 16,
-                  right: 16,
-                  bottom: 16,
+                  left: compact ? 12 : 16,
+                  right: compact ? 12 : 16,
+                  bottom: compact ? 12 : 16,
                   child: Row(
                     children: <Widget>[
                       Expanded(
                         child: Container(
-                          height: 10,
+                          height: compact ? 8 : 10,
                           decoration: BoxDecoration(
                             color: Colors.white.withValues(alpha: 0.16),
                             borderRadius: BorderRadius.circular(999),
@@ -286,8 +286,8 @@ class _AuthPreviewPanel extends StatelessWidget {
                       ),
                       const SizedBox(width: 10),
                       Container(
-                        width: compact ? 34 : 42,
-                        height: 10,
+                        width: compact ? 24 : 42,
+                        height: compact ? 8 : 10,
                         decoration: BoxDecoration(
                           color: VideoFeatureTheme.focus.withValues(alpha: 0.9),
                           borderRadius: BorderRadius.circular(999),
@@ -299,7 +299,7 @@ class _AuthPreviewPanel extends StatelessWidget {
               ],
             ),
           ),
-          SizedBox(height: compact ? 14 : 16),
+          SizedBox(height: compact ? 10 : 16),
           Row(
             children: const <Widget>[
               Expanded(
@@ -335,8 +335,8 @@ class _PreviewDot extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: 10,
-      height: 10,
+      width: 8,
+      height: 8,
       decoration: BoxDecoration(color: color, shape: BoxShape.circle),
     );
   }
@@ -350,7 +350,7 @@ class _PreviewBadge extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
         color: Colors.white.withValues(alpha: 0.14),
         borderRadius: BorderRadius.circular(999),
@@ -360,7 +360,7 @@ class _PreviewBadge extends StatelessWidget {
         label,
         style: const TextStyle(
           color: Colors.white,
-          fontSize: 12,
+          fontSize: 11,
           fontWeight: FontWeight.w800,
           letterSpacing: 0.4,
         ),
@@ -378,26 +378,39 @@ class _PreviewToggle extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
       decoration: BoxDecoration(
         color: Colors.white.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(16),
         border: Border.all(color: Colors.white.withValues(alpha: 0.12)),
       ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: <Widget>[
-          Icon(icon, color: Colors.white, size: 18),
-          const SizedBox(width: 8),
-          Text(
-            label,
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 13,
-              fontWeight: FontWeight.w700,
-            ),
-          ),
-        ],
+      child: LayoutBuilder(
+        builder: (BuildContext context, BoxConstraints constraints) {
+          final bool iconOnly = constraints.maxWidth < 72;
+
+          return Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            mainAxisSize: MainAxisSize.min,
+            children: <Widget>[
+              Icon(icon, color: Colors.white, size: 16),
+              if (!iconOnly) ...<Widget>[
+                const SizedBox(width: 6),
+                Flexible(
+                  child: Text(
+                    label,
+                    overflow: TextOverflow.fade,
+                    softWrap: false,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
+              ],
+            ],
+          );
+        },
       ),
     );
   }
