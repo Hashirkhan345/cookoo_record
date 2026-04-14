@@ -8,7 +8,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../data/enums/video_recording_mode.dart';
 import '../data/enums/video_recording_status.dart';
 import '../data/models/saved_video_recording_model.dart';
-import '../data/repository/video_recording_storage_support.dart';
+import '../data/repository/public_video_share_repository.dart';
 import '../data/repository/video_repository.dart';
 import 'video_state.dart';
 import 'video_saved_recordings_merge.dart';
@@ -36,9 +36,6 @@ class VideoController extends StateNotifier<VideoState> {
   static const Duration _countdownTick = Duration(seconds: 1);
   static const Duration _countdownGoTick = Duration(milliseconds: 650);
   static const Duration _countdownDismissDelay = Duration(milliseconds: 240);
-  static const String _recordingRestrictionMessage =
-      'You have already recorded 2 videos. Recording is now locked.';
-
   final VideoRepository _repository;
   Timer? _recordingTimer;
   Future<CameraController>? _cameraControllerInitialization;
@@ -87,11 +84,6 @@ class VideoController extends StateNotifier<VideoState> {
     if (state.flow == null ||
         state.isRecordingFlowVisible ||
         state.isPreparingCameraPreview) {
-      return;
-    }
-
-    if (state.hasReachedRecordingRestriction) {
-      state = state.copyWith(feedbackMessage: _recordingRestrictionMessage);
       return;
     }
 
@@ -157,11 +149,6 @@ class VideoController extends StateNotifier<VideoState> {
         state.isRecording ||
         state.isPaused ||
         state.isCountingDown) {
-      return;
-    }
-
-    if (state.hasReachedRecordingRestriction) {
-      state = state.copyWith(feedbackMessage: _recordingRestrictionMessage);
       return;
     }
 
@@ -358,11 +345,9 @@ class VideoController extends StateNotifier<VideoState> {
         savedRecordings: savedRecordings,
         lifetimeRecordedCount: lifetimeRecordedCount,
         savedRecordingsStorageLocationLabel: storageLocationLabel,
-        feedbackMessage:
-            lifetimeRecordedCount >= lifetimeRecordedVideosRestrictionLimit
-            ? 'Recording saved to ${savedRecording.storageSummary}. You have reached the 2-video lifetime limit.'
-            : 'Recording saved to ${savedRecording.storageSummary}.',
+        feedbackMessage: 'Recording saved to ${savedRecording.storageSummary}.',
       );
+      unawaited(PublicVideoShareRepository().prewarmShareUrl(savedRecording));
     } catch (error) {
       await _disposeCameraController();
       state = state.copyWith(

@@ -229,7 +229,8 @@ class _VideoHomeScreenState extends ConsumerState<VideoHomeScreen> {
     AuthState authState,
     VideoState videoState,
   ) async {
-    if (videoState.hasReachedRecordingRestriction) {
+    final bool isGuest = !authState.isAuthenticated;
+    if (isGuest && videoState.hasReachedRecordingRestriction) {
       await _showRecordingRestrictedDialog();
       return;
     }
@@ -401,7 +402,9 @@ class _VideoHomeScreenState extends ConsumerState<VideoHomeScreen> {
                 onPressed: state.isPreparingCameraPreview
                     ? null
                     : () => unawaited(_handleRecordingAccess(authState, state)),
-                tooltip: state.hasReachedRecordingRestriction
+                tooltip:
+                    !authState.isAuthenticated &&
+                        state.hasReachedRecordingRestriction
                     ? '2-video limit reached'
                     : 'Record a video',
                 style: IconButton.styleFrom(

@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:flutter/services.dart';
 
 import '../../data/models/saved_video_recording_model.dart';
+import '../../data/repository/public_video_share_repository.dart';
 
 const MethodChannel _videoTransferChannel = MethodChannel(
   'bloop/video_transfer',
@@ -27,5 +28,9 @@ Future<String> downloadSavedRecording(
 }
 
 Future<String> shareSavedRecording(SavedVideoRecordingModel recording) async {
-  return 'Sharing is not available on this platform yet.';
+  final String url = await PublicVideoShareRepository().ensureShareUrl(
+    recording,
+  );
+  await Clipboard.setData(ClipboardData(text: url));
+  return 'Share link copied. Anyone with the link can view this recording.';
 }

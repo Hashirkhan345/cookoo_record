@@ -14,6 +14,9 @@ class SavedVideoRecordingModel {
     required this.playbackPath,
     required this.mimeType,
     required this.sizeInBytes,
+    this.publicShareUrl,
+    this.publicShareStoragePath,
+    this.sharedAt,
   });
 
   final String id;
@@ -25,6 +28,9 @@ class SavedVideoRecordingModel {
   final String playbackPath;
   final String mimeType;
   final int sizeInBytes;
+  final String? publicShareUrl;
+  final String? publicShareStoragePath;
+  final DateTime? sharedAt;
 
   String get storageSummary {
     switch (storageKind) {
@@ -42,6 +48,9 @@ class SavedVideoRecordingModel {
     String? storagePath,
     String? playbackPath,
     int? sizeInBytes,
+    String? publicShareUrl,
+    String? publicShareStoragePath,
+    DateTime? sharedAt,
   }) {
     return SavedVideoRecordingModel(
       id: id,
@@ -53,6 +62,10 @@ class SavedVideoRecordingModel {
       playbackPath: playbackPath ?? this.playbackPath,
       mimeType: mimeType,
       sizeInBytes: sizeInBytes ?? this.sizeInBytes,
+      publicShareUrl: publicShareUrl ?? this.publicShareUrl,
+      publicShareStoragePath:
+          publicShareStoragePath ?? this.publicShareStoragePath,
+      sharedAt: sharedAt ?? this.sharedAt,
     );
   }
 
@@ -66,6 +79,9 @@ class SavedVideoRecordingModel {
       'storagePath': storagePath,
       'mimeType': mimeType,
       'sizeInBytes': sizeInBytes,
+      'publicShareUrl': publicShareUrl,
+      'publicShareStoragePath': publicShareStoragePath,
+      'sharedAt': sharedAt?.toIso8601String(),
     };
   }
 
@@ -82,6 +98,11 @@ class SavedVideoRecordingModel {
       playbackPath: json['storagePath'] as String,
       mimeType: json['mimeType'] as String? ?? 'video/mp4',
       sizeInBytes: json['sizeInBytes'] as int? ?? 0,
+      publicShareUrl: json['publicShareUrl'] as String?,
+      publicShareStoragePath: json['publicShareStoragePath'] as String?,
+      sharedAt: (json['sharedAt'] as String?) != null
+          ? DateTime.tryParse(json['sharedAt'] as String)
+          : null,
     );
   }
 }

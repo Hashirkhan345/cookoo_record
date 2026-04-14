@@ -276,8 +276,7 @@ class _RecordVideoFlowScreenState extends ConsumerState<RecordVideoFlowScreen> {
                                 videoController.startRecordingSession,
                             isRecordingActive: hasActiveRecording,
                             isBusy: isBusy,
-                            isRecordingRestricted:
-                                state.hasReachedRecordingRestriction,
+                            isRecordingRestricted: false,
                           ),
                         ),
                       ),
@@ -321,10 +320,6 @@ class _RecordVideoFlowScreenState extends ConsumerState<RecordVideoFlowScreen> {
 
     if (state.isFinalizing) {
       return 'Finishing recording...';
-    }
-
-    if (state.hasReachedRecordingRestriction) {
-      return 'Recording limit reached';
     }
 
     if (state.isPaused) {
