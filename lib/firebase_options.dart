@@ -64,7 +64,7 @@ class DefaultFirebaseOptions {
     messagingSenderId: '702524155709',
     projectId: 'cookoo-record',
     storageBucket: 'cookoo-record.firebasestorage.app',
-    iosBundleId: 'com.example.cookooRecord',
+    iosBundleId: 'com.cookoo.cookoorecord',
   );
 
   static const FirebaseOptions macos = FirebaseOptions(
@@ -73,7 +73,7 @@ class DefaultFirebaseOptions {
     messagingSenderId: '702524155709',
     projectId: 'cookoo-record',
     storageBucket: 'cookoo-record.firebasestorage.app',
-    iosBundleId: 'com.example.cookooRecord',
+    iosBundleId: 'com.cookoo.cookoorecord',
   );
 
   static const FirebaseOptions windows = FirebaseOptions(

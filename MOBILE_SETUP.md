@@ -12,8 +12,8 @@ This project now includes the app-side changes needed to run on Android and iOS:
 
 The project is currently wired to these Firebase app identifiers:
 
-- Android package: `com.example.cookoo_record`
-- iOS bundle ID: `com.example.cookooRecord`
+- Android package: `com.cookoo.cookoorecord`
+- iOS bundle ID: `com.cookoo.cookoorecord`
 
 ## Required Firebase Console steps
 
@@ -26,12 +26,12 @@ Google Sign-In to work on Android or iOS:
    - `Email/Password`
    - `Google`
 3. For Android:
-   - open the Android app `com.example.cookoo_record`
+   - open the Android app `com.cookoo.cookoorecord`
    - add the debug and release `SHA-1` and `SHA-256` fingerprints
    - download a fresh `google-services.json`
    - confirm it contains OAuth client entries, including a web client
 4. For iOS:
-   - open the iOS app `com.example.cookooRecord`
+   - open the iOS app `com.cookoo.cookoorecord`
    - download a fresh `GoogleService-Info.plist`
    - confirm it contains `CLIENT_ID` and `REVERSED_CLIENT_ID`
    - add the required Google Sign-In keys to `ios/Runner/Info.plist`

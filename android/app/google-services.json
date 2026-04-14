@@ -7,12 +7,17 @@
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:702524155709:android:63309fc17769f7c9e18754",
+        "mobilesdk_app_id": "1:702524155709:android:3799113888af12efe18754",
         "android_client_info": {
-          "package_name": "com.example.cookoo_record"
+          "package_name": "com.cookoo.cookoorecord"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "702524155709-1kdf6k049j2famjnfc2nen022t9dfko9.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
           "current_key": "AIzaSyCWHrLMtYBTyPiQrIJTmjQiDLC5YU5c_vk"
@@ -20,7 +25,55 @@
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "702524155709-1kdf6k049j2famjnfc2nen022t9dfko9.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "702524155709-2619adkdl9njt96heqlvpat1fd2o6tic.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.cookoo.cookoorecord"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:702524155709:android:63309fc17769f7c9e18754",
+        "android_client_info": {
+          "package_name": "com.example.cookoo_record"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "702524155709-1kdf6k049j2famjnfc2nen022t9dfko9.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCWHrLMtYBTyPiQrIJTmjQiDLC5YU5c_vk"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "702524155709-1kdf6k049j2famjnfc2nen022t9dfko9.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "702524155709-2619adkdl9njt96heqlvpat1fd2o6tic.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.cookoo.cookoorecord"
+              }
+            }
+          ]
         }
       }
     }
