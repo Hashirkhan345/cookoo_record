@@ -22,6 +22,8 @@ abstract class VideoRepository {
 
   Future<List<SavedVideoRecordingModel>> loadSavedRecordings();
 
+  Future<int> loadLifetimeRecordingCount();
+
   Future<List<CameraDescription>> getAvailableCameras();
 
   Future<CameraController> createCameraController(CameraDescription camera);
@@ -91,7 +93,7 @@ class LocalVideoRepository implements VideoRepository {
           : 'For the best recording experience, open this flow on a larger screen.',
       previewTitle: 'Ways to use bloop for education',
       startRecordingLabel: 'Start recording',
-      recordingLimitLabel: '5 min limit',
+      recordingLimitLabel: '2 recordings lifetime · 5 min each',
       tutorialLabel: '1 minute tutorial',
       successMessage: 'Recording setup opened successfully.',
       panelOptions: isMobileNative
@@ -152,6 +154,11 @@ class LocalVideoRepository implements VideoRepository {
   }
 
   @override
+  Future<int> loadLifetimeRecordingCount() {
+    return _recordingStorage.loadLifetimeRecordingCount();
+  }
+
+  @override
   Future<List<CameraDescription>> getAvailableCameras() {
     return availableCameras();
   }
@@ -160,7 +167,11 @@ class LocalVideoRepository implements VideoRepository {
   Future<CameraController> createCameraController(
     CameraDescription camera,
   ) async {
-    return CameraController(camera, ResolutionPreset.high, enableAudio: true);
+    return CameraController(
+      camera,
+      ResolutionPreset.veryHigh,
+      enableAudio: true,
+    );
   }
 
   @override

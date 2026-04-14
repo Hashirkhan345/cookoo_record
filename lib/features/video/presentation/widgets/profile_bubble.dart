@@ -11,7 +11,8 @@ class ProfileBubble extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final double badgeSize = size * 0.22;
+    final double borderWidth = size < 180 ? 3 : 5;
+    final double badgeSize = size * 0.15;
 
     return Stack(
       clipBehavior: Clip.none,
@@ -22,7 +23,7 @@ class ProfileBubble extends StatelessWidget {
           height: size,
           decoration: BoxDecoration(
             shape: BoxShape.circle,
-            border: Border.all(color: Colors.white, width: 6),
+            border: Border.all(color: Colors.white, width: borderWidth),
             boxShadow: VideoFeatureTheme.panelShadow,
           ),
           child: ClipOval(
@@ -33,20 +34,23 @@ class ProfileBubble extends StatelessWidget {
           ),
         ),
         Positioned(
-          left: size * 0.02,
-          bottom: -badgeSize * 0.08,
+          left: size * 0.03,
+          bottom: size * 0.03,
           child: Container(
             width: badgeSize,
             height: badgeSize,
             decoration: BoxDecoration(
               gradient: VideoFeatureTheme.accentGradient,
               borderRadius: BorderRadius.circular(badgeSize * 0.35),
-              border: Border.all(color: Colors.white, width: 3),
+              border: Border.all(
+                color: Colors.white,
+                width: size < 180 ? 2 : 2.5,
+              ),
             ),
             child: Icon(
               Icons.videocam_rounded,
               color: Colors.white,
-              size: badgeSize * 0.48,
+              size: badgeSize * 0.46,
             ),
           ),
         ),
@@ -68,21 +72,26 @@ class _ProfileBubbleContent extends StatelessWidget {
   Widget build(BuildContext context) {
     final CameraController? controller = cameraController;
     if (controller != null && controller.value.isInitialized) {
-      final double previewAspectRatio = controller.value.aspectRatio == 0
-          ? 1
-          : controller.value.aspectRatio;
+      final Size previewSize = controller.value.previewSize ?? Size(size, size);
+      final double previewWidth = previewSize.width <= 0
+          ? size
+          : previewSize.width;
+      final double previewHeight = previewSize.height <= 0
+          ? size
+          : previewSize.height;
 
       return ColoredBox(
         color: Colors.black,
-        child: Transform.scale(
-          scale: previewAspectRatio,
-          child: Center(
-            child: AspectRatio(
-              aspectRatio: previewAspectRatio,
-              child: CameraPreview(
-                key: ValueKey<CameraController>(controller),
-                controller,
-              ),
+        child: FittedBox(
+          fit: BoxFit.cover,
+          clipBehavior: Clip.hardEdge,
+          alignment: const Alignment(0, -0.2),
+          child: SizedBox(
+            width: previewWidth,
+            height: previewHeight,
+            child: CameraPreview(
+              key: ValueKey<CameraController>(controller),
+              controller,
             ),
           ),
         ),

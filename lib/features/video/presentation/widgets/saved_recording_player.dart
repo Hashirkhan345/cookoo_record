@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:video_player/video_player.dart';
 
@@ -236,6 +237,17 @@ class _SavedRecordingPlayerState extends State<SavedRecordingPlayer> {
     return '${safeDuration.inMinutes.toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')}';
   }
 
+  String _buildPlaybackErrorMessage() {
+    final String path = widget.recording.playbackPath.toLowerCase();
+    final bool isWebm = path.contains('.webm');
+
+    if (!kIsWeb && isWebm) {
+      return 'This device does not support this WebM demo. Use an MP4 demo video for mobile.';
+    }
+
+    return 'Unable to load this recording.';
+  }
+
   @override
   Widget build(BuildContext context) {
     final VideoPlayerController? controller = _controller;
@@ -263,6 +275,9 @@ class _SavedRecordingPlayerState extends State<SavedRecordingPlayer> {
                   ? duration
                   : controller.value.position)
             : Duration.zero;
+        final double playerAspectRatio = isReady
+            ? _resolvePlayerAspectRatio(controller)
+            : 1.7;
 
         return Container(
           key: Key('savedRecordingStage_${widget.recording.id}'),
@@ -277,7 +292,7 @@ class _SavedRecordingPlayerState extends State<SavedRecordingPlayer> {
             ],
           ),
           child: AspectRatio(
-            aspectRatio: 1.7,
+            aspectRatio: playerAspectRatio,
             child: ClipRRect(
               borderRadius: BorderRadius.circular(34),
               child: Stack(
@@ -302,11 +317,18 @@ class _SavedRecordingPlayerState extends State<SavedRecordingPlayer> {
                       child: IgnorePointer(
                         child: ColoredBox(
                           color: Colors.black,
-                          child: Center(
-                            child: AspectRatio(
-                              aspectRatio: controller.value.aspectRatio == 0
-                                  ? 16 / 9
-                                  : controller.value.aspectRatio,
+                          child: FittedBox(
+                            fit: widget.isFullscreen
+                                ? BoxFit.contain
+                                : BoxFit.cover,
+                            clipBehavior: Clip.hardEdge,
+                            child: SizedBox(
+                              width: controller.value.size.width <= 0
+                                  ? 16
+                                  : controller.value.size.width,
+                              height: controller.value.size.height <= 0
+                                  ? 9
+                                  : controller.value.size.height,
                               child: VideoPlayer(controller),
                             ),
                           ),
@@ -363,13 +385,17 @@ class _SavedRecordingPlayerState extends State<SavedRecordingPlayer> {
                   if (snapshot.connectionState != ConnectionState.done)
                     const Center(child: CircularProgressIndicator())
                   else if (snapshot.hasError || _initializationError != null)
-                    const Center(
-                      child: Text(
-                        'Unable to load this recording.',
-                        style: TextStyle(
-                          color: Colors.white70,
-                          fontSize: 16,
-                          fontWeight: FontWeight.w700,
+                    Center(
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 24),
+                        child: Text(
+                          _buildPlaybackErrorMessage(),
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(
+                            color: Colors.white70,
+                            fontSize: 16,
+                            fontWeight: FontWeight.w700,
+                          ),
                         ),
                       ),
                     ),
@@ -400,6 +426,19 @@ class _SavedRecordingPlayerState extends State<SavedRecordingPlayer> {
         );
       },
     );
+  }
+
+  double _resolvePlayerAspectRatio(VideoPlayerController controller) {
+    final double aspectRatio = controller.value.aspectRatio;
+    if (aspectRatio <= 0) {
+      return widget.isFullscreen ? 16 / 9 : 1.7;
+    }
+
+    if (widget.isFullscreen) {
+      return aspectRatio.clamp(0.56, 2.1);
+    }
+
+    return 1.7;
   }
 }
 

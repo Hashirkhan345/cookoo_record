@@ -83,6 +83,12 @@ class WebVideoRecordingStorage implements VideoRecordingStorage {
   }
 
   @override
+  Future<int> loadLifetimeRecordingCount() async {
+    final SharedPreferences preferences = await SharedPreferences.getInstance();
+    return preferences.getInt(lifetimeRecordedVideosCountKey) ?? 0;
+  }
+
+  @override
   Future<SavedVideoRecordingModel> saveRecording(
     XFile recordedVideo, {
     required Duration duration,
@@ -155,6 +161,10 @@ class WebVideoRecordingStorage implements VideoRecordingStorage {
         savedRecording,
         ...manifest,
       ]),
+    );
+    await preferences.setInt(
+      lifetimeRecordedVideosCountKey,
+      (preferences.getInt(lifetimeRecordedVideosCountKey) ?? 0) + 1,
     );
 
     return savedRecording;

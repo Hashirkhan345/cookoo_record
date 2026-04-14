@@ -7,6 +7,9 @@ import '../models/saved_video_recording_model.dart';
 const String savedVideoRecordingsManifestKey =
     'video_saved_recordings_manifest';
 const String savedVideoRecordingDataPrefix = 'video_saved_recording_data_';
+const String lifetimeRecordedVideosCountKey =
+    'video_lifetime_recorded_videos_count';
+const int lifetimeRecordedVideosRestrictionLimit = 2;
 
 String buildSavedRecordingId(DateTime timestamp) {
   return 'recording_${timestamp.microsecondsSinceEpoch}';

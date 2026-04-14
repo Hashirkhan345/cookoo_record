@@ -23,7 +23,7 @@ class SavedRecordingsSection extends StatelessWidget {
   final AdminConfigModel? adminConfig;
   final String savedCountLabel;
   final ValueChanged<SavedVideoRecordingModel> onDeleteRecording;
-  final VoidCallback onStartRecording;
+  final VoidCallback? onStartRecording;
 
   @override
   Widget build(BuildContext context) {
@@ -85,11 +85,18 @@ class SavedRecordingsSection extends StatelessWidget {
                   : constraints.maxWidth >= 760
                   ? 2
                   : 1;
-              final double cardWidth =
+              double cardWidth =
                   (constraints.maxWidth - (spacing * (columnCount - 1))) /
                   columnCount;
 
+              if (columnCount == 1) {
+                cardWidth = cardWidth.clamp(0, 340);
+              }
+
               return Wrap(
+                alignment: columnCount == 1
+                    ? WrapAlignment.center
+                    : WrapAlignment.start,
                 spacing: spacing,
                 runSpacing: spacing,
                 children: sortedRecordings
@@ -148,17 +155,20 @@ class EmptySavedRecordingsExperience extends StatelessWidget {
   });
 
   final AdminConfigModel config;
-  final VoidCallback onStartRecording;
+  final VoidCallback? onStartRecording;
 
   @override
   Widget build(BuildContext context) {
     final bool compact = MediaQuery.sizeOf(context).width < 780;
+    final bool isPhone = MediaQuery.sizeOf(context).width < 520;
     final TextTheme textTheme = Theme.of(context).textTheme;
 
     return ConstrainedBox(
       constraints: const BoxConstraints(maxWidth: 1120),
       child: Padding(
-        padding: EdgeInsets.symmetric(horizontal: compact ? 0 : 8),
+        padding: EdgeInsets.symmetric(
+          horizontal: compact ? (isPhone ? 0 : 0) : 8,
+        ),
         child: Column(
           children: <Widget>[
             ConstrainedBox(
@@ -169,23 +179,24 @@ class EmptySavedRecordingsExperience extends StatelessWidget {
                     config.title,
                     textAlign: TextAlign.center,
                     style: textTheme.displayMedium?.copyWith(
-                      fontSize: compact ? 30 : 48,
+                      fontSize: compact ? (isPhone ? 24 : 30) : 48,
                     ),
                   ),
-                  SizedBox(height: compact ? 14 : 18),
+                  SizedBox(height: compact ? (isPhone ? 10 : 14) : 18),
                   Text(
                     config.subtitle,
                     textAlign: TextAlign.center,
                     style: textTheme.bodyLarge?.copyWith(
                       color: VideoFeatureTheme.muted,
-                      fontSize: compact ? 15 : 18,
+                      fontSize: compact ? (isPhone ? 13 : 15) : 18,
+                      height: isPhone ? 1.45 : null,
                     ),
                   ),
-                  SizedBox(height: compact ? 22 : 28),
+                  SizedBox(height: compact ? (isPhone ? 16 : 22) : 28),
                   Wrap(
                     alignment: WrapAlignment.center,
-                    spacing: 14,
-                    runSpacing: 14,
+                    spacing: isPhone ? 10 : 14,
+                    runSpacing: isPhone ? 10 : 14,
                     children: <Widget>[
                       FilledButton(
                         onPressed: onStartRecording,
@@ -193,8 +204,8 @@ class EmptySavedRecordingsExperience extends StatelessWidget {
                           backgroundColor: VideoFeatureTheme.accent,
                           foregroundColor: Colors.white,
                           padding: EdgeInsets.symmetric(
-                            horizontal: compact ? 22 : 28,
-                            vertical: compact ? 16 : 18,
+                            horizontal: compact ? (isPhone ? 18 : 22) : 28,
+                            vertical: compact ? (isPhone ? 14 : 16) : 18,
                           ),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(16),
@@ -207,7 +218,7 @@ class EmptySavedRecordingsExperience extends StatelessWidget {
                               config.primaryActionLabel,
                               style: TextStyle(
                                 fontFamily: VideoFeatureTheme.fontFamily,
-                                fontSize: 16,
+                                fontSize: isPhone ? 14 : 16,
                                 fontWeight: FontWeight.w700,
                               ),
                             ),
@@ -240,8 +251,8 @@ class EmptySavedRecordingsExperience extends StatelessWidget {
                             color: VideoFeatureTheme.lineStrong,
                           ),
                           padding: EdgeInsets.symmetric(
-                            horizontal: compact ? 20 : 26,
-                            vertical: compact ? 16 : 18,
+                            horizontal: compact ? (isPhone ? 16 : 20) : 26,
+                            vertical: compact ? (isPhone ? 14 : 16) : 18,
                           ),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(16),
@@ -256,7 +267,7 @@ class EmptySavedRecordingsExperience extends StatelessWidget {
                               config.secondaryActionLabel,
                               style: TextStyle(
                                 fontFamily: VideoFeatureTheme.fontFamily,
-                                fontSize: 16,
+                                fontSize: isPhone ? 14 : 16,
                                 fontWeight: FontWeight.w700,
                               ),
                             ),
@@ -265,11 +276,11 @@ class EmptySavedRecordingsExperience extends StatelessWidget {
                       ),
                     ],
                   ),
-                  SizedBox(height: compact ? 20 : 24),
+                  SizedBox(height: compact ? (isPhone ? 14 : 20) : 24),
                   Wrap(
                     alignment: WrapAlignment.center,
-                    spacing: 22,
-                    runSpacing: 12,
+                    spacing: isPhone ? 14 : 22,
+                    runSpacing: isPhone ? 10 : 12,
                     children: config.featurePoints
                         .map((String label) => _FeaturePoint(label: label))
                         .toList(growable: false),
@@ -277,7 +288,7 @@ class EmptySavedRecordingsExperience extends StatelessWidget {
                 ],
               ),
             ),
-            SizedBox(height: compact ? 26 : 34),
+            SizedBox(height: compact ? (isPhone ? 18 : 26) : 34),
             _EmptyFirebasePreview(compact: compact, config: config),
           ],
         ),
@@ -293,28 +304,40 @@ class _FeaturePoint extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: <Widget>[
-        Container(
-          width: 26,
-          height: 26,
-          decoration: const BoxDecoration(
-            color: VideoFeatureTheme.focus,
-            shape: BoxShape.circle,
+    final bool isPhone = MediaQuery.sizeOf(context).width < 520;
+    return Container(
+      constraints: BoxConstraints(maxWidth: isPhone ? 160 : 220),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: <Widget>[
+          Container(
+            width: isPhone ? 22 : 26,
+            height: isPhone ? 22 : 26,
+            decoration: const BoxDecoration(
+              color: VideoFeatureTheme.focus,
+              shape: BoxShape.circle,
+            ),
+            child: Icon(
+              Icons.check_rounded,
+              color: Colors.white,
+              size: isPhone ? 14 : 16,
+            ),
           ),
-          child: const Icon(Icons.check_rounded, color: Colors.white, size: 16),
-        ),
-        const SizedBox(width: 10),
-        Text(
-          label,
-          style: const TextStyle(
-            color: VideoFeatureTheme.muted,
-            fontSize: 15,
-            fontWeight: FontWeight.w600,
+          SizedBox(width: isPhone ? 8 : 10),
+          Expanded(
+            child: Text(
+              label,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                color: VideoFeatureTheme.muted,
+                fontSize: isPhone ? 13 : 15,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 }
@@ -327,12 +350,13 @@ class _EmptyFirebasePreview extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final bool isPhone = MediaQuery.sizeOf(context).width < 520;
     return Container(
       width: double.infinity,
-      padding: EdgeInsets.all(compact ? 14 : 20),
+      padding: EdgeInsets.all(compact ? (isPhone ? 10 : 14) : 20),
       decoration: BoxDecoration(
         color: const Color(0xFF0F2530),
-        borderRadius: BorderRadius.circular(compact ? 24 : 28),
+        borderRadius: BorderRadius.circular(compact ? (isPhone ? 18 : 24) : 28),
         boxShadow: const <BoxShadow>[
           BoxShadow(
             color: Color(0x1A0F2530),
@@ -354,8 +378,9 @@ class _PreviewVideoPlaceholder extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final double radius = compact ? 18 : 20;
-    final double videoHeight = compact ? 240 : 500;
+    final bool isPhone = MediaQuery.sizeOf(context).width < 520;
+    final double radius = compact ? (isPhone ? 14 : 18) : 20;
+    final double videoHeight = compact ? (isPhone ? 200 : 240) : 500;
 
     return ClipRRect(
       borderRadius: BorderRadius.circular(radius),

@@ -36,6 +36,7 @@ class _SavedRecordingCardState extends State<SavedRecordingCard> {
   @override
   Widget build(BuildContext context) {
     final SavedVideoRecordingModel recording = widget.recording;
+    final bool isPhone = MediaQuery.sizeOf(context).width < 600;
 
     return AnimatedContainer(
       duration: const Duration(milliseconds: 220),
@@ -50,7 +51,12 @@ class _SavedRecordingCardState extends State<SavedRecordingCard> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
           Padding(
-            padding: const EdgeInsets.fromLTRB(12, 12, 12, 0),
+            padding: EdgeInsets.fromLTRB(
+              isPhone ? 10 : 12,
+              isPhone ? 10 : 12,
+              isPhone ? 10 : 12,
+              0,
+            ),
             child: _SavedRecordingPreviewTile(
               recording: recording,
               durationLabel: _formatDuration(recording.duration),
@@ -60,7 +66,12 @@ class _SavedRecordingCardState extends State<SavedRecordingCard> {
             ),
           ),
           Padding(
-            padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
+            padding: EdgeInsets.fromLTRB(
+              isPhone ? 14 : 16,
+              isPhone ? 12 : 16,
+              isPhone ? 14 : 16,
+              isPhone ? 14 : 16,
+            ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: <Widget>[
@@ -78,7 +89,7 @@ class _SavedRecordingCardState extends State<SavedRecordingCard> {
                             overflow: TextOverflow.ellipsis,
                             style: const TextStyle(
                               color: VideoFeatureTheme.ink,
-                              fontSize: 14,
+                              fontSize: 13,
                               fontWeight: FontWeight.w800,
                               letterSpacing: -0.4,
                             ),
@@ -88,7 +99,7 @@ class _SavedRecordingCardState extends State<SavedRecordingCard> {
                             _formatRelativeSavedAt(recording.savedAt),
                             style: const TextStyle(
                               color: VideoFeatureTheme.muted,
-                              fontSize: 12,
+                              fontSize: 11,
                               fontWeight: FontWeight.w600,
                             ),
                           ),
@@ -97,35 +108,37 @@ class _SavedRecordingCardState extends State<SavedRecordingCard> {
                     ),
                   ],
                 ),
-                const SizedBox(height: 16),
+                SizedBox(height: isPhone ? 12 : 16),
                 Text(
                   _displayTitle(recording),
-                  maxLines: 2,
+                  maxLines: isPhone ? 3 : 2,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
+                  style: TextStyle(
                     color: VideoFeatureTheme.ink,
-                    fontSize: 18,
+                    fontSize: isPhone ? 16 : 18,
                     fontWeight: FontWeight.w700,
                     height: 1.16,
                     letterSpacing: -0.4,
                   ),
                 ),
-                const SizedBox(height: 6),
+                SizedBox(height: isPhone ? 4 : 6),
                 Text(
                   '${_formatSavedAt(recording.savedAt)} • ${_formatBytes(recording.sizeInBytes)}',
-                  maxLines: 1,
+                  maxLines: isPhone ? 2 : 1,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
+                  style: TextStyle(
                     color: VideoFeatureTheme.muted,
-                    fontSize: 12,
+                    fontSize: isPhone ? 11 : 12,
                     fontWeight: FontWeight.w600,
+                    height: isPhone ? 1.35 : 1.2,
                   ),
                 ),
-                const SizedBox(height: 14),
-                Row(
-                  children: <Widget>[
-                    Expanded(
-                      child: FilledButton.icon(
+                SizedBox(height: isPhone ? 12 : 14),
+                if (isPhone)
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: <Widget>[
+                      FilledButton.icon(
                         key: Key('playRecordingButton_${recording.id}'),
                         onPressed: _openPlayer,
                         icon: const ActionIconBadge(
@@ -139,20 +152,18 @@ class _SavedRecordingCardState extends State<SavedRecordingCard> {
                         style: FilledButton.styleFrom(
                           backgroundColor: VideoFeatureTheme.accent,
                           foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(vertical: 13),
+                          padding: const EdgeInsets.symmetric(vertical: 12),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(18),
                           ),
                           textStyle: const TextStyle(
                             fontWeight: FontWeight.w700,
-                            fontSize: 13,
+                            fontSize: 12,
                           ),
                         ),
                       ),
-                    ),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: OutlinedButton.icon(
+                      const SizedBox(height: 10),
+                      OutlinedButton.icon(
                         onPressed: _isProcessingTransfer
                             ? null
                             : () => _handleRecordingAction(
@@ -171,19 +182,83 @@ class _SavedRecordingCardState extends State<SavedRecordingCard> {
                           backgroundColor: VideoFeatureTheme.panelMuted
                               .withValues(alpha: 0.36),
                           side: const BorderSide(color: VideoFeatureTheme.line),
-                          padding: const EdgeInsets.symmetric(vertical: 13),
+                          padding: const EdgeInsets.symmetric(vertical: 12),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(18),
                           ),
                           textStyle: const TextStyle(
                             fontWeight: FontWeight.w700,
-                            fontSize: 13,
+                            fontSize: 12,
                           ),
                         ),
                       ),
-                    ),
-                  ],
-                ),
+                    ],
+                  )
+                else
+                  Row(
+                    children: <Widget>[
+                      Expanded(
+                        child: FilledButton.icon(
+                          key: Key('playRecordingButton_${recording.id}'),
+                          onPressed: _openPlayer,
+                          icon: const ActionIconBadge(
+                            icon: Symbols.play_arrow_rounded,
+                            backgroundColor: Color(0x33FFFFFF),
+                            foregroundColor: Colors.white,
+                            size: 28,
+                            iconSize: 16,
+                          ),
+                          label: const Text('Watch recording'),
+                          style: FilledButton.styleFrom(
+                            backgroundColor: VideoFeatureTheme.accent,
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(vertical: 13),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(18),
+                            ),
+                            textStyle: const TextStyle(
+                              fontWeight: FontWeight.w700,
+                              fontSize: 13,
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: OutlinedButton.icon(
+                          onPressed: _isProcessingTransfer
+                              ? null
+                              : () => _handleRecordingAction(
+                                  downloadSavedRecording,
+                                ),
+                          icon: const ActionIconBadge(
+                            icon: Symbols.download_rounded,
+                            backgroundColor: Color(0xFFEAF1FF),
+                            foregroundColor: VideoFeatureTheme.primary,
+                            size: 28,
+                            iconSize: 16,
+                          ),
+                          label: const Text('Download'),
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: VideoFeatureTheme.ink,
+                            backgroundColor: VideoFeatureTheme.panelMuted
+                                .withValues(alpha: 0.36),
+                            side: const BorderSide(
+                              color: VideoFeatureTheme.line,
+                            ),
+                            padding: const EdgeInsets.symmetric(vertical: 13),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(18),
+                            ),
+                            textStyle: const TextStyle(
+                              fontWeight: FontWeight.w700,
+                              fontSize: 13,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
               ],
             ),
           ),
@@ -370,10 +445,11 @@ class _SavedRecordingPreviewTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final bool isPhone = MediaQuery.sizeOf(context).width < 600;
     return ClipRRect(
-      borderRadius: BorderRadius.circular(24),
+      borderRadius: BorderRadius.circular(isPhone ? 20 : 24),
       child: AspectRatio(
-        aspectRatio: 1.34,
+        aspectRatio: isPhone ? 1.18 : 1.34,
         child: Material(
           color: Colors.transparent,
           child: InkWell(
@@ -398,30 +474,30 @@ class _SavedRecordingPreviewTile extends StatelessWidget {
                     ),
                   ),
                 ),
-                const Positioned(
-                  top: 14,
-                  left: 14,
+                Positioned(
+                  top: isPhone ? 10 : 14,
+                  left: isPhone ? 10 : 14,
                   child: _PreviewLabel(
                     icon: Icons.bookmark_rounded,
                     label: 'Saved',
                   ),
                 ),
                 Positioned(
-                  top: 14,
-                  right: 14,
+                  top: isPhone ? 10 : 14,
+                  right: isPhone ? 10 : 14,
                   child: _PreviewMenuButton(
                     isBusy: isBusy,
                     onSelected: onSelectedAction,
                   ),
                 ),
                 Positioned(
-                  left: 16,
-                  right: 16,
-                  bottom: 16,
+                  left: isPhone ? 10 : 16,
+                  right: isPhone ? 10 : 16,
+                  bottom: isPhone ? 10 : 16,
                   child: Row(
                     children: <Widget>[
                       Expanded(child: _PreviewActionPill(onTap: onTap)),
-                      const SizedBox(width: 12),
+                      SizedBox(width: isPhone ? 8 : 12),
                       _PreviewDurationBadge(label: durationLabel),
                     ],
                   ),
@@ -522,13 +598,20 @@ class _SavedRecordingThumbnailState extends State<_SavedRecordingThumbnail> {
             controller.value.isInitialized;
 
         if (isReady) {
+          final Size videoSize = controller.value.size;
+          final double videoWidth = videoSize.width <= 0 ? 16 : videoSize.width;
+          final double videoHeight = videoSize.height <= 0
+              ? 9
+              : videoSize.height;
+
           return ColoredBox(
             color: Colors.black,
-            child: Center(
-              child: AspectRatio(
-                aspectRatio: controller.value.aspectRatio == 0
-                    ? 16 / 9
-                    : controller.value.aspectRatio,
+            child: FittedBox(
+              fit: BoxFit.cover,
+              clipBehavior: Clip.hardEdge,
+              child: SizedBox(
+                width: videoWidth,
+                height: videoHeight,
                 child: IgnorePointer(child: VideoPlayer(controller)),
               ),
             ),

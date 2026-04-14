@@ -33,6 +33,7 @@ class HomeAccountMenu extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final bool isPhone = MediaQuery.sizeOf(context).width < 600;
     return Opacity(
       opacity: isBusy ? 0.68 : 1,
       child: Material(
@@ -41,8 +42,8 @@ class HomeAccountMenu extends StatelessWidget {
           onTap: isBusy ? null : () => _showAccountPanel(context),
           borderRadius: BorderRadius.circular(999),
           child: Container(
-            width: 56,
-            height: 56,
+            width: isPhone ? 48 : 56,
+            height: isPhone ? 48 : 56,
             decoration: BoxDecoration(
               gradient: VideoFeatureTheme.primaryGradient,
               borderRadius: BorderRadius.circular(999),
@@ -54,14 +55,14 @@ class HomeAccountMenu extends StatelessWidget {
                   ? const Icon(
                       Icons.person_outline_rounded,
                       color: Colors.white,
-                      size: 26,
+                      size: 22,
                     )
                   : Text(
                       user!.initials,
-                      style: const TextStyle(
+                      style: TextStyle(
                         color: Colors.white,
                         fontWeight: FontWeight.w800,
-                        fontSize: 22,
+                        fontSize: isPhone ? 18 : 22,
                         letterSpacing: -0.4,
                       ),
                     ),
@@ -75,6 +76,7 @@ class HomeAccountMenu extends StatelessWidget {
   Future<void> _showAccountPanel(BuildContext context) {
     final Size screenSize = MediaQuery.sizeOf(context);
     final bool isDesktop = screenSize.width >= 720;
+    final bool isPhone = screenSize.width < 600;
 
     return showGeneralDialog<void>(
       context: context,
@@ -90,13 +92,20 @@ class HomeAccountMenu extends StatelessWidget {
           ) {
             return SafeArea(
               child: Padding(
-                padding: EdgeInsets.fromLTRB(16, isDesktop ? 16 : 24, 16, 16),
+                padding: EdgeInsets.fromLTRB(
+                  isPhone ? 10 : 16,
+                  isDesktop ? 16 : (isPhone ? 12 : 24),
+                  isPhone ? 10 : 16,
+                  isPhone ? 10 : 16,
+                ),
                 child: Align(
                   alignment: isDesktop ? Alignment.topRight : Alignment.center,
                   child: ConstrainedBox(
                     constraints: BoxConstraints(
-                      maxWidth: 420,
-                      maxHeight: screenSize.height - (isDesktop ? 32 : 40),
+                      maxWidth: isPhone ? screenSize.width - 20 : 420,
+                      maxHeight:
+                          screenSize.height -
+                          (isDesktop ? 32 : (isPhone ? 20 : 40)),
                     ),
                     child: Material(
                       color: Colors.transparent,
@@ -158,21 +167,27 @@ class _AccountPanel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final bool isPhone = MediaQuery.sizeOf(context).width < 600;
     return Container(
       decoration: BoxDecoration(
         color: Colors.white.withValues(alpha: 0.94),
-        borderRadius: BorderRadius.circular(36),
+        borderRadius: BorderRadius.circular(isPhone ? 26 : 36),
         border: Border.all(color: VideoFeatureTheme.line),
         boxShadow: VideoFeatureTheme.panelShadow,
       ),
       child: ClipRRect(
-        borderRadius: BorderRadius.circular(36),
+        borderRadius: BorderRadius.circular(isPhone ? 26 : 36),
         child: SingleChildScrollView(
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: <Widget>[
               Padding(
-                padding: const EdgeInsets.fromLTRB(24, 24, 18, 24),
+                padding: EdgeInsets.fromLTRB(
+                  isPhone ? 16 : 24,
+                  isPhone ? 16 : 24,
+                  isPhone ? 12 : 18,
+                  isPhone ? 16 : 24,
+                ),
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: <Widget>[
@@ -184,16 +199,18 @@ class _AccountPanel extends StatelessWidget {
                           children: <Widget>[
                             Container(
                               width: double.infinity,
-                              padding: const EdgeInsets.all(20),
+                              padding: EdgeInsets.all(isPhone ? 14 : 20),
                               decoration: BoxDecoration(
                                 gradient: VideoFeatureTheme.heroGradient,
-                                borderRadius: BorderRadius.circular(28),
+                                borderRadius: BorderRadius.circular(
+                                  isPhone ? 22 : 28,
+                                ),
                               ),
                               child: Row(
                                 children: <Widget>[
                                   Container(
-                                    width: 74,
-                                    height: 74,
+                                    width: isPhone ? 58 : 74,
+                                    height: isPhone ? 58 : 74,
                                     decoration: BoxDecoration(
                                       color: Colors.white.withValues(
                                         alpha: 0.12,
@@ -210,20 +227,20 @@ class _AccountPanel extends StatelessWidget {
                                           ? const Icon(
                                               Icons.person_outline_rounded,
                                               color: Colors.white,
-                                              size: 34,
+                                              size: 28,
                                             )
                                           : Text(
                                               user!.initials,
-                                              style: const TextStyle(
+                                              style: TextStyle(
                                                 color: Colors.white,
-                                                fontSize: 26,
+                                                fontSize: isPhone ? 22 : 26,
                                                 fontWeight: FontWeight.w800,
                                                 letterSpacing: -0.7,
                                               ),
                                             ),
                                     ),
                                   ),
-                                  const SizedBox(width: 18),
+                                  SizedBox(width: isPhone ? 12 : 18),
                                   Expanded(
                                     child: Column(
                                       crossAxisAlignment:
@@ -231,21 +248,21 @@ class _AccountPanel extends StatelessWidget {
                                       children: <Widget>[
                                         Text(
                                           user?.name ?? guestLabel,
-                                          style: const TextStyle(
+                                          style: TextStyle(
                                             color: Colors.white,
-                                            fontSize: 22,
+                                            fontSize: isPhone ? 18 : 22,
                                             fontWeight: FontWeight.w700,
                                             letterSpacing: -0.6,
                                           ),
                                         ),
-                                        const SizedBox(height: 8),
+                                        SizedBox(height: isPhone ? 4 : 8),
                                         Text(
                                           isGuest ? 'Browse first' : 'Owner',
                                           style: TextStyle(
                                             color: Colors.white.withValues(
                                               alpha: 0.76,
                                             ),
-                                            fontSize: 14,
+                                            fontSize: isPhone ? 12 : 14,
                                             fontWeight: FontWeight.w600,
                                           ),
                                         ),
@@ -255,7 +272,7 @@ class _AccountPanel extends StatelessWidget {
                                 ],
                               ),
                             ),
-                            const SizedBox(height: 16),
+                            SizedBox(height: isPhone ? 12 : 16),
                             OutlinedButton(
                               onPressed: () => onActionSelected(
                                 isGuest
@@ -266,16 +283,16 @@ class _AccountPanel extends StatelessWidget {
                                 foregroundColor: VideoFeatureTheme.ink,
                                 backgroundColor: VideoFeatureTheme.panelMuted
                                     .withValues(alpha: 0.45),
-                                minimumSize: const Size(0, 54),
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 22,
-                                  vertical: 14,
+                                minimumSize: Size(0, isPhone ? 46 : 54),
+                                padding: EdgeInsets.symmetric(
+                                  horizontal: isPhone ? 16 : 22,
+                                  vertical: isPhone ? 12 : 14,
                                 ),
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(999),
                                 ),
-                                textStyle: const TextStyle(
-                                  fontSize: 15,
+                                textStyle: TextStyle(
+                                  fontSize: isPhone ? 13 : 15,
                                   fontWeight: FontWeight.w700,
                                 ),
                               ),
@@ -285,14 +302,14 @@ class _AccountPanel extends StatelessWidget {
                         ),
                       ),
                     ),
-                    const SizedBox(width: 12),
+                    SizedBox(width: isPhone ? 6 : 12),
                     IconButton(
                       onPressed: onClose,
                       tooltip: 'Close account panel',
-                      icon: const Icon(
+                      icon: Icon(
                         Icons.close_rounded,
                         color: VideoFeatureTheme.ink,
-                        size: 34,
+                        size: isPhone ? 28 : 34,
                       ),
                     ),
                   ],
@@ -300,9 +317,9 @@ class _AccountPanel extends StatelessWidget {
               ),
               const Divider(height: 1, color: VideoFeatureTheme.line),
               Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 18,
-                  vertical: 14,
+                padding: EdgeInsets.symmetric(
+                  horizontal: isPhone ? 12 : 18,
+                  vertical: isPhone ? 10 : 14,
                 ),
                 child: Column(
                   children: <Widget>[
@@ -350,7 +367,12 @@ class _AccountPanel extends StatelessWidget {
               const Divider(height: 1, color: VideoFeatureTheme.line),
               if (!isGuest)
                 Padding(
-                  padding: const EdgeInsets.fromLTRB(18, 14, 18, 18),
+                  padding: EdgeInsets.fromLTRB(
+                    isPhone ? 12 : 18,
+                    isPhone ? 10 : 14,
+                    isPhone ? 12 : 18,
+                    isPhone ? 12 : 18,
+                  ),
                   child: _AccountActionTile(
                     label: 'Sign Out',
                     onTap: () =>
@@ -379,19 +401,23 @@ class _AccountActionTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final bool isPhone = MediaQuery.sizeOf(context).width < 600;
     return Material(
       color: Colors.transparent,
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(22),
+        borderRadius: BorderRadius.circular(isPhone ? 18 : 22),
         child: Container(
-          margin: const EdgeInsets.symmetric(vertical: 6),
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 16),
+          margin: EdgeInsets.symmetric(vertical: isPhone ? 4 : 6),
+          padding: EdgeInsets.symmetric(
+            horizontal: isPhone ? 12 : 14,
+            vertical: isPhone ? 13 : 16,
+          ),
           decoration: BoxDecoration(
             color: isDestructive
                 ? VideoFeatureTheme.accentSoft.withValues(alpha: 0.5)
                 : VideoFeatureTheme.panel,
-            borderRadius: BorderRadius.circular(22),
+            borderRadius: BorderRadius.circular(isPhone ? 18 : 22),
             border: Border.all(
               color: isDestructive
                   ? VideoFeatureTheme.accent.withValues(alpha: 0.18)
@@ -407,16 +433,16 @@ class _AccountActionTile extends StatelessWidget {
                     color: isDestructive
                         ? VideoFeatureTheme.danger
                         : VideoFeatureTheme.ink,
-                    fontSize: 16,
+                    fontSize: isPhone ? 14 : 16,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
               ),
               if (!isDestructive)
-                const Icon(
+                Icon(
                   Icons.arrow_forward_rounded,
                   color: VideoFeatureTheme.muted,
-                  size: 20,
+                  size: isPhone ? 18 : 20,
                 ),
             ],
           ),

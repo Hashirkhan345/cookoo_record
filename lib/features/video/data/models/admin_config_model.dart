@@ -12,6 +12,7 @@ class AdminConfigModel {
     required this.secondaryActionLabel,
     required this.featurePoints,
     this.demoVideoUrl,
+    this.demoVideoUrlMobile,
     this.demoVideoTitle,
     this.demoVideoSubtitle,
   });
@@ -22,29 +23,54 @@ class AdminConfigModel {
   final String secondaryActionLabel;
   final List<String> featurePoints;
   final String? demoVideoUrl;
+  final String? demoVideoUrlMobile;
   final String? demoVideoTitle;
   final String? demoVideoSubtitle;
 
   static const String fallbackDemoVideoUrl =
       'https://firebasestorage.googleapis.com/v0/b/cookoo-record.firebasestorage.app/o/recording_1776069028392000.webm?alt=media&token=e97adf56-a6ea-4b5c-931c-2c99b77875e2';
 
-  bool get hasDemoVideo =>
-      demoVideoUrl != null && demoVideoUrl!.trim().isNotEmpty;
+  String? get resolvedDemoVideoUrl {
+    if (!kIsWeb &&
+        demoVideoUrlMobile != null &&
+        demoVideoUrlMobile!.trim().isNotEmpty) {
+      return demoVideoUrlMobile!.trim();
+    }
+
+    if (!kIsWeb) {
+      if (demoVideoUrl != null &&
+          demoVideoUrl!.trim().isNotEmpty &&
+          _mimeTypeForUrl(demoVideoUrl!) == 'video/mp4') {
+        return demoVideoUrl!.trim();
+      }
+
+      return null;
+    }
+
+    if (demoVideoUrl != null && demoVideoUrl!.trim().isNotEmpty) {
+      return demoVideoUrl!.trim();
+    }
+
+    return null;
+  }
+
+  bool get hasDemoVideo => resolvedDemoVideoUrl != null;
 
   SavedVideoRecordingModel toDemoRecording() {
-    final String playbackUrl = demoVideoUrl?.trim() ?? '';
+    final String playbackUrl = resolvedDemoVideoUrl ?? '';
+    final String extension = _fileExtension(playbackUrl);
 
     return SavedVideoRecordingModel(
       id: 'admin-demo-video',
       fileName: demoVideoTitle?.trim().isNotEmpty == true
-          ? '${demoVideoTitle!.trim()}.webm'
-          : 'bloop-demo-video.webm',
+          ? '${demoVideoTitle!.trim()}$extension'
+          : 'bloop-demo-video$extension',
       savedAt: DateTime.fromMillisecondsSinceEpoch(0),
       duration: Duration.zero,
       storageKind: VideoRecordingStorageKind.localFile,
       storagePath: playbackUrl,
       playbackPath: playbackUrl,
-      mimeType: 'video/webm',
+      mimeType: _mimeTypeForUrl(playbackUrl),
       sizeInBytes: 0,
     );
   }
@@ -57,6 +83,7 @@ class AdminConfigModel {
       'secondaryActionLabel': secondaryActionLabel,
       'featurePoints': featurePoints,
       'demoVideoUrl': demoVideoUrl,
+      'demoVideoUrlMobile': demoVideoUrlMobile,
       'demoVideoTitle': demoVideoTitle,
       'demoVideoSubtitle': demoVideoSubtitle,
     };
@@ -87,6 +114,7 @@ class AdminConfigModel {
           .where((String value) => value.isNotEmpty)
           .toList(growable: false),
       demoVideoUrl: (json['demoVideoUrl'] as String?)?.trim(),
+      demoVideoUrlMobile: (json['demoVideoUrlMobile'] as String?)?.trim(),
       demoVideoTitle: (json['demoVideoTitle'] as String?)?.trim(),
       demoVideoSubtitle: (json['demoVideoSubtitle'] as String?)?.trim(),
     )._withDefaultFeaturePoints();
@@ -107,6 +135,7 @@ class AdminConfigModel {
     String? secondaryActionLabel,
     List<String>? featurePoints,
     String? demoVideoUrl,
+    String? demoVideoUrlMobile,
     String? demoVideoTitle,
     String? demoVideoSubtitle,
   }) {
@@ -117,6 +146,7 @@ class AdminConfigModel {
       secondaryActionLabel: secondaryActionLabel ?? this.secondaryActionLabel,
       featurePoints: featurePoints ?? this.featurePoints,
       demoVideoUrl: demoVideoUrl ?? this.demoVideoUrl,
+      demoVideoUrlMobile: demoVideoUrlMobile ?? this.demoVideoUrlMobile,
       demoVideoTitle: demoVideoTitle ?? this.demoVideoTitle,
       demoVideoSubtitle: demoVideoSubtitle ?? this.demoVideoSubtitle,
     );
@@ -137,4 +167,28 @@ class AdminConfigModel {
     demoVideoTitle: 'Firebase demo video',
     demoVideoSubtitle: 'Demo video loaded from Firebase Storage.',
   );
+
+  static String _mimeTypeForUrl(String url) {
+    final String lower = url.toLowerCase();
+    if (lower.contains('.mp4')) {
+      return 'video/mp4';
+    }
+    if (lower.contains('.webm')) {
+      return 'video/webm';
+    }
+
+    return 'video/mp4';
+  }
+
+  static String _fileExtension(String url) {
+    final String lower = url.toLowerCase();
+    if (lower.contains('.mp4')) {
+      return '.mp4';
+    }
+    if (lower.contains('.webm')) {
+      return '.webm';
+    }
+
+    return '.mp4';
+  }
 }

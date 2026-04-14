@@ -21,6 +21,7 @@ class RecorderPanel extends StatelessWidget {
     required this.onStartRecording,
     required this.isRecordingActive,
     required this.isBusy,
+    this.isRecordingRestricted = false,
   });
 
   final String brandLabel;
@@ -34,6 +35,7 @@ class RecorderPanel extends StatelessWidget {
   final Future<void> Function() onStartRecording;
   final bool isRecordingActive;
   final bool isBusy;
+  final bool isRecordingRestricted;
 
   @override
   Widget build(BuildContext context) {
@@ -188,7 +190,8 @@ class RecorderPanel extends StatelessWidget {
                   const SizedBox(height: 18),
                   FilledButton(
                     key: const Key('startRecordingButton'),
-                    onPressed: isRecordingActive || isBusy
+                    onPressed:
+                        isRecordingActive || isBusy || isRecordingRestricted
                         ? null
                         : () => onStartRecording(),
                     style: FilledButton.styleFrom(
@@ -206,12 +209,18 @@ class RecorderPanel extends StatelessWidget {
                         letterSpacing: -0.2,
                       ),
                     ),
-                    child: Text(statusLabel),
+                    child: Text(
+                      isRecordingRestricted
+                          ? 'Recording limit reached'
+                          : statusLabel,
+                    ),
                   ),
                   const SizedBox(height: 12),
                   Center(
                     child: Text(
-                      recordingLimitLabel,
+                      isRecordingRestricted
+                          ? 'You have reached the 2-video lifetime limit.'
+                          : recordingLimitLabel,
                       style: const TextStyle(
                         color: VideoFeatureTheme.muted,
                         fontSize: 14,

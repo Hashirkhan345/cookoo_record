@@ -8,6 +8,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../data/enums/video_recording_mode.dart';
 import '../data/enums/video_recording_status.dart';
 import '../data/models/saved_video_recording_model.dart';
+import '../data/repository/video_recording_storage_support.dart';
 import '../data/repository/video_repository.dart';
 import 'video_state.dart';
 import 'video_saved_recordings_merge.dart';
@@ -35,6 +36,8 @@ class VideoController extends StateNotifier<VideoState> {
   static const Duration _countdownTick = Duration(seconds: 1);
   static const Duration _countdownGoTick = Duration(milliseconds: 650);
   static const Duration _countdownDismissDelay = Duration(milliseconds: 240);
+  static const String _recordingRestrictionMessage =
+      'You have already recorded 2 videos. Recording is now locked.';
 
   final VideoRepository _repository;
   Timer? _recordingTimer;
@@ -48,11 +51,13 @@ class VideoController extends StateNotifier<VideoState> {
       final flow = await _repository.loadVideoRecordingFlow();
       List<SavedVideoRecordingModel> savedRecordings =
           const <SavedVideoRecordingModel>[];
+      int lifetimeRecordedCount = 0;
       String? storageLocationLabel;
       String? feedbackMessage;
 
       try {
         savedRecordings = await _repository.loadSavedRecordings();
+        lifetimeRecordedCount = await _repository.loadLifetimeRecordingCount();
         storageLocationLabel = await _repository
             .getSavedRecordingsStorageLocationLabel();
       } catch (_) {
@@ -65,6 +70,7 @@ class VideoController extends StateNotifier<VideoState> {
         isLoading: false,
         flow: flow,
         savedRecordings: savedRecordings,
+        lifetimeRecordedCount: lifetimeRecordedCount,
         savedRecordingsStorageLocationLabel: storageLocationLabel,
         selectedRecordingMode: defaultRecordingModeForCurrentPlatform(),
         feedbackMessage: feedbackMessage,
@@ -81,6 +87,11 @@ class VideoController extends StateNotifier<VideoState> {
     if (state.flow == null ||
         state.isRecordingFlowVisible ||
         state.isPreparingCameraPreview) {
+      return;
+    }
+
+    if (state.hasReachedRecordingRestriction) {
+      state = state.copyWith(feedbackMessage: _recordingRestrictionMessage);
       return;
     }
 
@@ -146,6 +157,11 @@ class VideoController extends StateNotifier<VideoState> {
         state.isRecording ||
         state.isPaused ||
         state.isCountingDown) {
+      return;
+    }
+
+    if (state.hasReachedRecordingRestriction) {
+      state = state.copyWith(feedbackMessage: _recordingRestrictionMessage);
       return;
     }
 
@@ -311,6 +327,7 @@ class VideoController extends StateNotifier<VideoState> {
       );
       final SavedVideoRecordingModel savedRecording = await _repository
           .saveRecording(recordedVideo, duration: completedDuration);
+      final int lifetimeRecordedCount = state.lifetimeRecordedCount + 1;
       List<SavedVideoRecordingModel> savedRecordings =
           mergeSavedRecordingIntoList(savedRecording, previousSavedRecordings);
 
@@ -339,8 +356,12 @@ class VideoController extends StateNotifier<VideoState> {
           name: savedRecording.fileName,
         ),
         savedRecordings: savedRecordings,
+        lifetimeRecordedCount: lifetimeRecordedCount,
         savedRecordingsStorageLocationLabel: storageLocationLabel,
-        feedbackMessage: 'Recording saved to ${savedRecording.storageSummary}.',
+        feedbackMessage:
+            lifetimeRecordedCount >= lifetimeRecordedVideosRestrictionLimit
+            ? 'Recording saved to ${savedRecording.storageSummary}. You have reached the 2-video lifetime limit.'
+            : 'Recording saved to ${savedRecording.storageSummary}.',
       );
     } catch (error) {
       await _disposeCameraController();

@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/foundation.dart';
 
 import '../models/admin_config_model.dart';
 
@@ -19,14 +20,20 @@ class FirebaseAdminConfigRepository implements AdminConfigRepository {
 
   @override
   Future<AdminConfigModel> fetchConfig() async {
-    final DocumentSnapshot<Map<String, dynamic>> snapshot =
-        await _configDocument.get();
-    final Map<String, dynamic>? data = snapshot.data();
-    if (data == null) {
+    try {
+      final DocumentSnapshot<Map<String, dynamic>> snapshot =
+          await _configDocument.get();
+      final Map<String, dynamic>? data = snapshot.data();
+      if (data == null) {
+        return AdminConfigModel.defaults;
+      }
+
+      return AdminConfigModel.fromJson(data);
+    } on FirebaseException catch (error, stackTrace) {
+      debugPrint('[adminConfig] fetch failed: ${error.code} ${error.message}');
+      debugPrintStack(stackTrace: stackTrace);
       return AdminConfigModel.defaults;
     }
-
-    return AdminConfigModel.fromJson(data);
   }
 
   @override

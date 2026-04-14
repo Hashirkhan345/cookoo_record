@@ -21,6 +21,7 @@ class AuthScreenScaffold extends StatelessWidget {
   Widget build(BuildContext context) {
     final Size screenSize = MediaQuery.sizeOf(context);
     final bool isWide = screenSize.width >= 920;
+    final bool isPhone = screenSize.width < 520;
 
     return Scaffold(
       body: Stack(
@@ -51,18 +52,18 @@ class AuthScreenScaffold extends StatelessWidget {
           SafeArea(
             child: Center(
               child: SingleChildScrollView(
-                padding: const EdgeInsets.all(24),
+                padding: EdgeInsets.all(isPhone ? 14 : 24),
                 child: ConstrainedBox(
                   constraints: const BoxConstraints(maxWidth: 1140),
                   child: Container(
                     decoration: BoxDecoration(
                       color: Colors.white.withValues(alpha: 0.68),
-                      borderRadius: BorderRadius.circular(40),
+                      borderRadius: BorderRadius.circular(isPhone ? 28 : 40),
                       border: Border.all(color: VideoFeatureTheme.line),
                       boxShadow: VideoFeatureTheme.panelShadow,
                     ),
                     child: ClipRRect(
-                      borderRadius: BorderRadius.circular(40),
+                      borderRadius: BorderRadius.circular(isPhone ? 28 : 40),
                       child: isWide
                           ? Row(
                               children: <Widget>[
@@ -134,13 +135,14 @@ class _AuthFeaturePanel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final bool isPhone = MediaQuery.sizeOf(context).width < 520;
     return Container(
       width: double.infinity,
       padding: EdgeInsets.fromLTRB(
-        compact ? 20 : 40,
-        compact ? 20 : 40,
-        compact ? 20 : 40,
-        compact ? 22 : 40,
+        compact ? (isPhone ? 16 : 20) : 40,
+        compact ? (isPhone ? 16 : 20) : 40,
+        compact ? (isPhone ? 16 : 20) : 40,
+        compact ? (isPhone ? 18 : 22) : 40,
       ),
       decoration: const BoxDecoration(gradient: VideoFeatureTheme.heroGradient),
       child: Column(
@@ -148,40 +150,40 @@ class _AuthFeaturePanel extends StatelessWidget {
         children: <Widget>[
           Row(
             children: <Widget>[
-              BrandMark(size: compact ? 42 : 54),
-              SizedBox(width: compact ? 12 : 14),
+              BrandMark(size: compact ? (isPhone ? 38 : 42) : 54),
+              SizedBox(width: compact ? (isPhone ? 10 : 12) : 14),
               Text(
                 'bloop',
                 style: TextStyle(
                   color: Colors.white.withValues(alpha: 0.96),
-                  fontSize: compact ? 20 : 24,
+                  fontSize: compact ? (isPhone ? 18 : 20) : 24,
                   fontWeight: FontWeight.w700,
                   letterSpacing: -0.8,
                 ),
               ),
             ],
           ),
-          SizedBox(height: compact ? 18 : 40),
+          SizedBox(height: compact ? (isPhone ? 14 : 18) : 40),
           Text(
             'Record with clarity.',
             style: TextStyle(
               color: Colors.white,
-              fontSize: compact ? 22 : 42,
+              fontSize: compact ? (isPhone ? 18 : 22) : 42,
               fontWeight: FontWeight.w700,
               height: 1.06,
               letterSpacing: -1.3,
             ),
           ),
-          SizedBox(height: compact ? 10 : 16),
+          SizedBox(height: compact ? (isPhone ? 8 : 10) : 16),
           Text(
             'Screen, camera, mic.',
             style: TextStyle(
               color: Colors.white.withValues(alpha: 0.82),
-              fontSize: compact ? 13 : 15,
+              fontSize: compact ? (isPhone ? 12 : 13) : 15,
               fontWeight: FontWeight.w600,
             ),
           ),
-          SizedBox(height: compact ? 16 : 34),
+          SizedBox(height: compact ? (isPhone ? 12 : 16) : 34),
           _AuthPreviewPanel(compact: compact),
           if (!compact) ...<Widget>[
             const SizedBox(height: 22),
@@ -207,12 +209,13 @@ class _AuthPreviewPanel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final bool isPhone = MediaQuery.sizeOf(context).width < 520;
     return Container(
       width: double.infinity,
-      padding: EdgeInsets.all(compact ? 14 : 22),
+      padding: EdgeInsets.all(compact ? (isPhone ? 12 : 14) : 22),
       decoration: BoxDecoration(
         color: Colors.white.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(compact ? 24 : 32),
+        borderRadius: BorderRadius.circular(compact ? (isPhone ? 20 : 24) : 32),
         border: Border.all(color: Colors.white.withValues(alpha: 0.14)),
       ),
       child: Column(
@@ -228,12 +231,14 @@ class _AuthPreviewPanel extends StatelessWidget {
               _PreviewBadge(label: compact ? 'REC' : 'LIVE'),
             ],
           ),
-          SizedBox(height: compact ? 12 : 18),
+          SizedBox(height: compact ? (isPhone ? 10 : 12) : 18),
           Container(
-            height: compact ? 96 : 188,
+            height: compact ? (isPhone ? 82 : 96) : 188,
             decoration: BoxDecoration(
               color: Colors.white.withValues(alpha: 0.08),
-              borderRadius: BorderRadius.circular(compact ? 20 : 28),
+              borderRadius: BorderRadius.circular(
+                compact ? (isPhone ? 16 : 20) : 28,
+              ),
               border: Border.all(color: Colors.white.withValues(alpha: 0.12)),
             ),
             child: Stack(
@@ -299,7 +304,7 @@ class _AuthPreviewPanel extends StatelessWidget {
               ],
             ),
           ),
-          SizedBox(height: compact ? 10 : 16),
+          SizedBox(height: compact ? (isPhone ? 8 : 10) : 16),
           Row(
             children: const <Widget>[
               Expanded(
@@ -386,20 +391,21 @@ class _PreviewToggle extends StatelessWidget {
       ),
       child: LayoutBuilder(
         builder: (BuildContext context, BoxConstraints constraints) {
-          final bool iconOnly = constraints.maxWidth < 72;
+          final bool iconOnly = constraints.maxWidth < 84;
 
           return Row(
             mainAxisAlignment: MainAxisAlignment.center,
-            mainAxisSize: MainAxisSize.min,
+            mainAxisSize: MainAxisSize.max,
             children: <Widget>[
               Icon(icon, color: Colors.white, size: 16),
               if (!iconOnly) ...<Widget>[
                 const SizedBox(width: 6),
-                Flexible(
+                Expanded(
                   child: Text(
                     label,
-                    overflow: TextOverflow.fade,
-                    softWrap: false,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    textAlign: TextAlign.center,
                     style: const TextStyle(
                       color: Colors.white,
                       fontSize: 12,
@@ -433,37 +439,38 @@ class _AuthFormPanel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final bool isPhone = MediaQuery.sizeOf(context).width < 520;
     return Container(
       width: double.infinity,
       color: VideoFeatureTheme.panel,
-      padding: EdgeInsets.all(compact ? 24 : 32),
+      padding: EdgeInsets.all(compact ? (isPhone ? 18 : 24) : 32),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
-          const BrandMark(size: 28),
-          const SizedBox(height: 20),
+          BrandMark(size: isPhone ? 24 : 28),
+          SizedBox(height: isPhone ? 16 : 20),
           Text(
             title,
             style: TextStyle(
               color: VideoFeatureTheme.ink,
-              fontSize: compact ? 30 : 34,
+              fontSize: compact ? (isPhone ? 24 : 30) : 34,
               fontWeight: FontWeight.w700,
               height: 1.05,
               letterSpacing: -1.2,
             ),
           ),
-          const SizedBox(height: 10),
+          SizedBox(height: isPhone ? 8 : 10),
           Text(
             subtitle,
-            style: const TextStyle(
+            style: TextStyle(
               color: VideoFeatureTheme.muted,
-              fontSize: 15,
+              fontSize: isPhone ? 14 : 15,
               height: 1.5,
             ),
           ),
-          SizedBox(height: compact ? 24 : 28),
+          SizedBox(height: compact ? (isPhone ? 18 : 24) : 28),
           child,
-          const SizedBox(height: 24),
+          SizedBox(height: isPhone ? 18 : 24),
           Align(alignment: Alignment.center, child: footer),
         ],
       ),

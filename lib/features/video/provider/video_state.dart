@@ -5,6 +5,7 @@ import '../data/enums/video_recording_mode.dart';
 import '../data/enums/video_recording_status.dart';
 import '../data/models/video_recording_flow_model.dart';
 import '../data/models/saved_video_recording_model.dart';
+import '../data/repository/video_recording_storage_support.dart';
 
 @immutable
 class VideoState {
@@ -20,6 +21,7 @@ class VideoState {
     this.activeCamera,
     this.recordedVideo,
     this.savedRecordings = const <SavedVideoRecordingModel>[],
+    this.lifetimeRecordedCount = 0,
     this.savedRecordingsStorageLocationLabel,
     this.recordingDuration = Duration.zero,
     this.supportsPauseResume = true,
@@ -38,6 +40,7 @@ class VideoState {
   final CameraDescription? activeCamera;
   final XFile? recordedVideo;
   final List<SavedVideoRecordingModel> savedRecordings;
+  final int lifetimeRecordedCount;
   final String? savedRecordingsStorageLocationLabel;
   final Duration recordingDuration;
   final bool supportsPauseResume;
@@ -58,6 +61,9 @@ class VideoState {
   bool get hasActiveRecording =>
       isRecording || isPaused || isPreparingRecording || isFinalizing;
 
+  bool get hasReachedRecordingRestriction =>
+      lifetimeRecordedCount >= lifetimeRecordedVideosRestrictionLimit;
+
   VideoState copyWith({
     bool? isLoading,
     VideoRecordingFlowModel? flow,
@@ -70,6 +76,7 @@ class VideoState {
     CameraDescription? activeCamera,
     XFile? recordedVideo,
     List<SavedVideoRecordingModel>? savedRecordings,
+    int? lifetimeRecordedCount,
     String? savedRecordingsStorageLocationLabel,
     Duration? recordingDuration,
     bool? supportsPauseResume,
@@ -103,6 +110,8 @@ class VideoState {
           ? null
           : recordedVideo ?? this.recordedVideo,
       savedRecordings: savedRecordings ?? this.savedRecordings,
+      lifetimeRecordedCount:
+          lifetimeRecordedCount ?? this.lifetimeRecordedCount,
       savedRecordingsStorageLocationLabel:
           savedRecordingsStorageLocationLabel ??
           this.savedRecordingsStorageLocationLabel,

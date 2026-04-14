@@ -41,23 +41,40 @@ class StudioDialogShell extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final Size screenSize = MediaQuery.sizeOf(context);
+    final bool isCompact = screenSize.width < 600;
+    final double horizontalInset = isCompact ? 14 : 24;
+    final double verticalInset = isCompact ? 18 : 28;
+    final double dialogRadius = isCompact ? 24 : 34;
+    final double shellPadding = isCompact ? 18 : 28;
+    final double titleSize = isCompact ? 20 : 24;
+    final double messageSize = isCompact ? 14 : 15;
+    final double iconBoxSize = isCompact ? 44 : 52;
+
     return Dialog(
-      insetPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 28),
+      insetPadding: EdgeInsets.symmetric(
+        horizontal: horizontalInset,
+        vertical: verticalInset,
+      ),
       backgroundColor: Colors.transparent,
       child: ConstrainedBox(
-        constraints: BoxConstraints(maxWidth: maxWidth),
+        constraints: BoxConstraints(
+          maxWidth: isCompact
+              ? screenSize.width - (horizontalInset * 2)
+              : maxWidth,
+        ),
         child: ClipRRect(
-          borderRadius: BorderRadius.circular(34),
+          borderRadius: BorderRadius.circular(dialogRadius),
           child: Material(
             color: VideoFeatureTheme.panel,
             child: Stack(
               children: <Widget>[
                 Positioned(
-                  top: -34,
-                  right: -18,
+                  top: isCompact ? -24 : -34,
+                  right: isCompact ? -12 : -18,
                   child: Container(
-                    width: 170,
-                    height: 170,
+                    width: isCompact ? 108 : 170,
+                    height: isCompact ? 108 : 170,
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
                       color: VideoFeatureTheme.primary.withValues(alpha: 0.08),
@@ -65,11 +82,11 @@ class StudioDialogShell extends StatelessWidget {
                   ),
                 ),
                 Positioned(
-                  left: -40,
-                  bottom: -52,
+                  left: isCompact ? -26 : -40,
+                  bottom: isCompact ? -34 : -52,
                   child: Container(
-                    width: 160,
-                    height: 160,
+                    width: isCompact ? 110 : 160,
+                    height: isCompact ? 110 : 160,
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
                       color: VideoFeatureTheme.focus.withValues(alpha: 0.08),
@@ -78,7 +95,7 @@ class StudioDialogShell extends StatelessWidget {
                 ),
                 Container(
                   decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(34),
+                    borderRadius: BorderRadius.circular(dialogRadius),
                     border: Border.all(color: VideoFeatureTheme.line),
                     boxShadow: const <BoxShadow>[
                       BoxShadow(
@@ -88,7 +105,12 @@ class StudioDialogShell extends StatelessWidget {
                       ),
                     ],
                   ),
-                  padding: const EdgeInsets.fromLTRB(28, 26, 28, 28),
+                  padding: EdgeInsets.fromLTRB(
+                    shellPadding,
+                    isCompact ? 18 : 26,
+                    shellPadding,
+                    shellPadding,
+                  ),
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -98,15 +120,21 @@ class StudioDialogShell extends StatelessWidget {
                         children: <Widget>[
                           if (icon != null) ...<Widget>[
                             Container(
-                              width: 52,
-                              height: 52,
+                              width: iconBoxSize,
+                              height: iconBoxSize,
                               decoration: BoxDecoration(
                                 gradient: VideoFeatureTheme.primaryGradient,
-                                borderRadius: BorderRadius.circular(18),
+                                borderRadius: BorderRadius.circular(
+                                  isCompact ? 14 : 18,
+                                ),
                               ),
-                              child: Icon(icon, color: Colors.white, size: 24),
+                              child: Icon(
+                                icon,
+                                color: Colors.white,
+                                size: isCompact ? 20 : 24,
+                              ),
                             ),
-                            const SizedBox(width: 16),
+                            SizedBox(width: isCompact ? 12 : 16),
                           ],
                           Expanded(
                             child: Column(
@@ -114,9 +142,9 @@ class StudioDialogShell extends StatelessWidget {
                               children: <Widget>[
                                 if (badge != null) ...<Widget>[
                                   Container(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 12,
-                                      vertical: 8,
+                                    padding: EdgeInsets.symmetric(
+                                      horizontal: isCompact ? 10 : 12,
+                                      vertical: isCompact ? 6 : 8,
                                     ),
                                     decoration: BoxDecoration(
                                       color: VideoFeatureTheme.accentSoft,
@@ -132,25 +160,25 @@ class StudioDialogShell extends StatelessWidget {
                                       ),
                                     ),
                                   ),
-                                  const SizedBox(height: 14),
+                                  SizedBox(height: isCompact ? 10 : 14),
                                 ],
                                 Text(
                                   title,
-                                  style: const TextStyle(
+                                  style: TextStyle(
                                     color: VideoFeatureTheme.ink,
-                                    fontSize: 24,
+                                    fontSize: titleSize,
                                     fontWeight: FontWeight.w800,
                                     height: 1.12,
                                     letterSpacing: -0.8,
                                   ),
                                 ),
                                 if (message != null) ...<Widget>[
-                                  const SizedBox(height: 12),
+                                  SizedBox(height: isCompact ? 10 : 12),
                                   Text(
                                     message!,
-                                    style: const TextStyle(
+                                    style: TextStyle(
                                       color: VideoFeatureTheme.muted,
-                                      fontSize: 15,
+                                      fontSize: messageSize,
                                       height: 1.55,
                                       fontWeight: FontWeight.w500,
                                     ),
@@ -160,8 +188,9 @@ class StudioDialogShell extends StatelessWidget {
                             ),
                           ),
                           if (showCloseButton) ...<Widget>[
-                            const SizedBox(width: 14),
+                            SizedBox(width: isCompact ? 10 : 14),
                             _DialogCloseButton(
+                              compact: isCompact,
                               onPressed:
                                   onClose ?? () => Navigator.of(context).pop(),
                             ),
@@ -169,11 +198,11 @@ class StudioDialogShell extends StatelessWidget {
                         ],
                       ),
                       if (content != null) ...<Widget>[
-                        const SizedBox(height: 24),
+                        SizedBox(height: isCompact ? 18 : 24),
                         content!,
                       ],
                       if (actions != null) ...<Widget>[
-                        const SizedBox(height: 24),
+                        SizedBox(height: isCompact ? 18 : 24),
                         actions!,
                       ],
                     ],
@@ -189,9 +218,10 @@ class StudioDialogShell extends StatelessWidget {
 }
 
 class _DialogCloseButton extends StatelessWidget {
-  const _DialogCloseButton({required this.onPressed});
+  const _DialogCloseButton({required this.onPressed, required this.compact});
 
   final VoidCallback onPressed;
+  final bool compact;
 
   @override
   Widget build(BuildContext context) {
@@ -199,19 +229,19 @@ class _DialogCloseButton extends StatelessWidget {
       color: Colors.transparent,
       child: InkWell(
         onTap: onPressed,
-        borderRadius: BorderRadius.circular(18),
+        borderRadius: BorderRadius.circular(compact ? 14 : 18),
         child: Container(
-          width: 46,
-          height: 46,
+          width: compact ? 40 : 46,
+          height: compact ? 40 : 46,
           decoration: BoxDecoration(
             color: Colors.white.withValues(alpha: 0.78),
-            borderRadius: BorderRadius.circular(18),
+            borderRadius: BorderRadius.circular(compact ? 14 : 18),
             border: Border.all(color: VideoFeatureTheme.line),
           ),
-          child: const Icon(
+          child: Icon(
             Icons.close_rounded,
             color: VideoFeatureTheme.ink,
-            size: 24,
+            size: compact ? 20 : 24,
           ),
         ),
       ),

@@ -46,7 +46,7 @@ class RecordingCancelDialog extends StatelessWidget {
       badge: isRestartDialog ? 'Restart' : 'Recording',
       title: title,
       message: 'Your current video progress will be lost.',
-      maxWidth: 760,
+      maxWidth: isCompact ? 420 : 760,
       actions: isCompact
           ? _CompactActions(
               isRestartDialog: isRestartDialog,
@@ -85,7 +85,7 @@ class _CompactActions extends StatelessWidget {
               backgroundColor: VideoFeatureTheme.panelMuted.withValues(
                 alpha: 0.7,
               ),
-              padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
             ),
           ),
           const SizedBox(height: 12),
@@ -94,7 +94,7 @@ class _CompactActions extends StatelessWidget {
           onPressed: () =>
               Navigator.of(context).pop(RecordingCancelAction.resume),
           style: OutlinedButton.styleFrom(
-            padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
           ),
           child: const Text('Resume'),
         ),
@@ -108,7 +108,7 @@ class _CompactActions extends StatelessWidget {
           style: FilledButton.styleFrom(
             backgroundColor: VideoFeatureTheme.accent,
             foregroundColor: Colors.white,
-            padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
           ),
           child: Text(primaryActionLabel),
         ),
@@ -128,6 +128,7 @@ class _WideActions extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final bool phone = MediaQuery.sizeOf(context).width < 900;
     return Row(
       children: <Widget>[
         if (!isRestartDialog)
@@ -141,7 +142,10 @@ class _WideActions extends StatelessWidget {
               backgroundColor: VideoFeatureTheme.panelMuted.withValues(
                 alpha: 0.7,
               ),
-              padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
+              padding: EdgeInsets.symmetric(
+                horizontal: phone ? 16 : 18,
+                vertical: phone ? 14 : 16,
+              ),
             ),
           ),
         const Spacer(),
@@ -149,7 +153,10 @@ class _WideActions extends StatelessWidget {
           onPressed: () =>
               Navigator.of(context).pop(RecordingCancelAction.resume),
           style: OutlinedButton.styleFrom(
-            padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 16),
+            padding: EdgeInsets.symmetric(
+              horizontal: phone ? 18 : 22,
+              vertical: phone ? 14 : 16,
+            ),
           ),
           child: const Text('Resume'),
         ),
@@ -163,7 +170,10 @@ class _WideActions extends StatelessWidget {
           style: FilledButton.styleFrom(
             backgroundColor: VideoFeatureTheme.accent,
             foregroundColor: Colors.white,
-            padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 16),
+            padding: EdgeInsets.symmetric(
+              horizontal: phone ? 18 : 22,
+              vertical: phone ? 14 : 16,
+            ),
           ),
           child: Text(primaryActionLabel),
         ),

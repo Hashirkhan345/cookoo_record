@@ -73,7 +73,7 @@ class _RecordVideoFlowScreenState extends ConsumerState<RecordVideoFlowScreen> {
               final double horizontalPadding = isCompact ? 12 : 24;
               final bool canMoveBubble =
                   hasActiveRecording && !state.isCountingDown;
-              final double bubbleBaseSize = isCompact ? 132 : 220;
+              final double bubbleBaseSize = isCompact ? 188 : 220;
               final double bubbleSize =
                   bubbleBaseSize * _bubbleSizeMultiplierFor(_bubbleSizeIndex);
               final Offset bubblePosition =
@@ -276,6 +276,8 @@ class _RecordVideoFlowScreenState extends ConsumerState<RecordVideoFlowScreen> {
                                 videoController.startRecordingSession,
                             isRecordingActive: hasActiveRecording,
                             isBusy: isBusy,
+                            isRecordingRestricted:
+                                state.hasReachedRecordingRestriction,
                           ),
                         ),
                       ),
@@ -319,6 +321,10 @@ class _RecordVideoFlowScreenState extends ConsumerState<RecordVideoFlowScreen> {
 
     if (state.isFinalizing) {
       return 'Finishing recording...';
+    }
+
+    if (state.hasReachedRecordingRestriction) {
+      return 'Recording limit reached';
     }
 
     if (state.isPaused) {
@@ -420,9 +426,9 @@ class _RecordVideoFlowScreenState extends ConsumerState<RecordVideoFlowScreen> {
       case 0:
         return 1.0;
       case 1:
-        return 1.18;
+        return 1.3;
       case 2:
-        return 1.36;
+        return 1.58;
     }
     return 1.0;
   }

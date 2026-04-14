@@ -187,6 +187,56 @@ class _VideoHomeScreenState extends ConsumerState<VideoHomeScreen> {
     );
   }
 
+  Future<void> _showRecordingRestrictedDialog() {
+    return showStudioDialog<void>(
+      context: context,
+      builder: (BuildContext context) {
+        return StudioDialogShell(
+          icon: Icons.lock_outline_rounded,
+          badge: 'Recording',
+          title: 'Login required',
+          message:
+              'You cannot capture a recording right now. Please log in first to use the recording feature.',
+          maxWidth: 560,
+          actions: Wrap(
+            alignment: WrapAlignment.end,
+            spacing: 12,
+            runSpacing: 12,
+            children: <Widget>[
+              OutlinedButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: const Text('Not now'),
+              ),
+              FilledButton(
+                onPressed: () {
+                  Navigator.of(context).pop();
+                  Navigator.of(this.context).pushNamed(AppRoute.login);
+                },
+                style: FilledButton.styleFrom(
+                  backgroundColor: VideoFeatureTheme.primary,
+                  foregroundColor: Colors.white,
+                ),
+                child: const Text('Go to login'),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Future<void> _handleRecordingAccess(
+    AuthState authState,
+    VideoState videoState,
+  ) async {
+    if (videoState.hasReachedRecordingRestriction) {
+      await _showRecordingRestrictedDialog();
+      return;
+    }
+
+    await ref.read(videoControllerProvider.notifier).openRecordingFlow();
+  }
+
   @override
   Widget build(BuildContext context) {
     ref.listen<VideoState>(videoControllerProvider, (previous, next) {
@@ -251,7 +301,10 @@ class _VideoHomeScreenState extends ConsumerState<VideoHomeScreen> {
 
     final Size screenSize = MediaQuery.sizeOf(context);
     final bool isDesktop = screenSize.width >= 980;
-    final double contentHorizontalPadding = isDesktop ? 36 : 20;
+    final bool isPhone = screenSize.width < 600;
+    final double contentHorizontalPadding = isDesktop
+        ? 36
+        : (isPhone ? 14 : 20);
 
     return Scaffold(
       body: Stack(
@@ -265,7 +318,12 @@ class _VideoHomeScreenState extends ConsumerState<VideoHomeScreen> {
           ),
           SafeArea(
             child: Padding(
-              padding: const EdgeInsets.fromLTRB(0, 18, 0, 24),
+              padding: EdgeInsets.fromLTRB(
+                0,
+                isPhone ? 12 : 18,
+                0,
+                isPhone ? 16 : 24,
+              ),
               child: ScrollConfiguration(
                 behavior: const MaterialScrollBehavior().copyWith(
                   scrollbars: false,
@@ -309,7 +367,7 @@ class _VideoHomeScreenState extends ConsumerState<VideoHomeScreen> {
                                   ),
                                 ],
                               ),
-                              const SizedBox(height: 26),
+                              SizedBox(height: isPhone ? 18 : 26),
                               SavedRecordingsSection(
                                 recordings: state.savedRecordings,
                                 currentUser: authState.user,
@@ -318,10 +376,11 @@ class _VideoHomeScreenState extends ConsumerState<VideoHomeScreen> {
                                     '${state.savedRecordings.length} saved',
                                 onDeleteRecording:
                                     videoController.deleteSavedRecording,
-                                onStartRecording:
-                                    videoController.openRecordingFlow,
+                                onStartRecording: () => unawaited(
+                                  _handleRecordingAccess(authState, state),
+                                ),
                               ),
-                              const SizedBox(height: 40),
+                              SizedBox(height: isPhone ? 24 : 40),
                             ],
                           ),
                         ),
@@ -333,7 +392,7 @@ class _VideoHomeScreenState extends ConsumerState<VideoHomeScreen> {
             ),
           ),
           Positioned(
-            left: 16,
+            left: isPhone ? 12 : 16,
             bottom: 0,
             child: SafeArea(
               bottom: false,
@@ -341,17 +400,19 @@ class _VideoHomeScreenState extends ConsumerState<VideoHomeScreen> {
                 key: const Key('recordVideoFloatingButton'),
                 onPressed: state.isPreparingCameraPreview
                     ? null
-                    : videoController.openRecordingFlow,
-                tooltip: 'Record a video',
+                    : () => unawaited(_handleRecordingAccess(authState, state)),
+                tooltip: state.hasReachedRecordingRestriction
+                    ? '2-video limit reached'
+                    : 'Record a video',
                 style: IconButton.styleFrom(
                   backgroundColor: VideoFeatureTheme.accent,
                   disabledBackgroundColor: VideoFeatureTheme.muted,
                   foregroundColor: Colors.white,
-                  minimumSize: const Size(58, 58),
+                  minimumSize: Size(isPhone ? 52 : 58, isPhone ? 52 : 58),
                   shape: const CircleBorder(),
                   elevation: 6,
                 ),
-                icon: const Icon(Icons.videocam_rounded, size: 24),
+                icon: Icon(Icons.videocam_rounded, size: isPhone ? 22 : 24),
               ),
             ),
           ),

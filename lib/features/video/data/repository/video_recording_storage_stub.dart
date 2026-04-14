@@ -21,6 +21,11 @@ class _StubVideoRecordingStorage implements VideoRecordingStorage {
   }
 
   @override
+  Future<int> loadLifetimeRecordingCount() async {
+    return 0;
+  }
+
+  @override
   Future<SavedVideoRecordingModel> saveRecording(
     XFile recordedVideo, {
     required Duration duration,

@@ -7,6 +7,8 @@ abstract class VideoRecordingStorage {
 
   Future<List<SavedVideoRecordingModel>> loadSavedRecordings();
 
+  Future<int> loadLifetimeRecordingCount();
+
   Future<SavedVideoRecordingModel> saveRecording(
     XFile recordedVideo, {
     required Duration duration,
