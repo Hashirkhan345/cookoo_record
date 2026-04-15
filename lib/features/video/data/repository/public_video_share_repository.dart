@@ -1,10 +1,12 @@
+import 'dart:async';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:path/path.dart' as path;
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../models/saved_video_recording_model.dart';
-import 'saved_recording_upload_source.dart';
+import 'saved_recording_share_upload.dart';
 import 'video_recording_storage_support.dart';
 
 class PublicVideoShareRepository {
@@ -84,7 +86,7 @@ class PublicVideoShareRepository {
       sharedAt: DateTime.now(),
     );
     await _persistSharedRecording(updatedRecording);
-    await _persistSharedMetadata(updatedRecording);
+    unawaited(_persistSharedMetadata(updatedRecording));
     return downloadUrl;
   }
 
@@ -93,18 +95,7 @@ class PublicVideoShareRepository {
     SavedVideoRecordingModel recording,
   ) async {
     try {
-      final bytes = await loadSavedRecordingUploadBytes(recording);
-      await ref.putData(
-        bytes,
-        SettableMetadata(
-          contentType: recording.mimeType,
-          customMetadata: <String, String>{
-            'recordingId': recording.id,
-            'fileName': recording.fileName,
-          },
-        ),
-      );
-      return await ref.getDownloadURL();
+      return await uploadSavedRecordingAndGetDownloadUrl(ref, recording);
     } on FirebaseException catch (error) {
       throw StateError(_describeStorageError(error));
     }

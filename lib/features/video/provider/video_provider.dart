@@ -72,6 +72,7 @@ class VideoController extends StateNotifier<VideoState> {
         selectedRecordingMode: defaultRecordingModeForCurrentPlatform(),
         feedbackMessage: feedbackMessage,
       );
+      _prewarmSavedRecordingShareLinks(savedRecordings);
     } catch (_) {
       state = state.copyWith(
         isLoading: false,
@@ -474,6 +475,19 @@ class VideoController extends StateNotifier<VideoState> {
       return await _repository.getSavedRecordingsStorageLocationLabel();
     } catch (_) {
       return null;
+    }
+  }
+
+  void _prewarmSavedRecordingShareLinks(
+    List<SavedVideoRecordingModel> savedRecordings,
+  ) {
+    for (final SavedVideoRecordingModel recording in savedRecordings) {
+      if (recording.publicShareUrl case final String existingUrl
+          when existingUrl.isNotEmpty) {
+        continue;
+      }
+
+      unawaited(PublicVideoShareRepository().prewarmShareUrl(recording));
     }
   }
 
