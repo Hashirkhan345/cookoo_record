@@ -4,9 +4,14 @@ enum VideoRecordingMode { fullScreen, window, currentTab, cameraOnly }
 
 extension VideoRecordingModeX on VideoRecordingMode {
   String get label {
+    final bool isNativeMobile =
+        !kIsWeb &&
+        (defaultTargetPlatform == TargetPlatform.android ||
+            defaultTargetPlatform == TargetPlatform.iOS);
+
     switch (this) {
       case VideoRecordingMode.fullScreen:
-        return 'Full Screen';
+        return isNativeMobile ? 'Screen Recording' : 'Full Screen';
       case VideoRecordingMode.window:
         return 'Window';
       case VideoRecordingMode.currentTab:
@@ -25,6 +30,13 @@ extension VideoRecordingModeX on VideoRecordingMode {
 List<VideoRecordingMode> supportedRecordingModesForCurrentPlatform() {
   if (kIsWeb) {
     return VideoRecordingMode.values;
+  }
+
+  if (defaultTargetPlatform == TargetPlatform.android) {
+    return const <VideoRecordingMode>[
+      VideoRecordingMode.fullScreen,
+      VideoRecordingMode.cameraOnly,
+    ];
   }
 
   return const <VideoRecordingMode>[VideoRecordingMode.cameraOnly];

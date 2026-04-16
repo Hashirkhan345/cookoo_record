@@ -1,9 +1,19 @@
 package com.cookoo.cookoorecord
 
+import android.app.Activity
 import android.content.ContentValues
+import android.content.Context
+import android.content.Intent
+import android.hardware.display.DisplayManager
+import android.hardware.display.VirtualDisplay
+import android.media.MediaRecorder
+import android.media.projection.MediaProjection
+import android.media.projection.MediaProjectionManager
 import android.os.Build
 import android.os.Environment
 import android.provider.MediaStore
+import android.util.DisplayMetrics
+import android.view.Surface
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodCall
@@ -13,15 +23,48 @@ import java.io.FileInputStream
 import java.io.FileOutputStream
 
 class MainActivity : FlutterActivity() {
+    companion object {
+        private const val screenCaptureRequestCode = 4817
+    }
+
+    private val videoTransferChannelName = "bloop/video_transfer"
+    private val nativeDisplayRecorderChannelName = "bloop/native_display_recorder"
+
+    private var pendingDisplayCaptureResult: MethodChannel.Result? = null
+    private var preparedDisplayCaptureResultCode: Int? = null
+    private var preparedDisplayCaptureData: Intent? = null
+
+    private var mediaProjectionManager: MediaProjectionManager? = null
+    private var mediaProjection: MediaProjection? = null
+    private var mediaProjectionCallback: MediaProjection.Callback? = null
+    private var mediaRecorder: MediaRecorder? = null
+    private var virtualDisplay: VirtualDisplay? = null
+    private var activeDisplayCaptureFile: File? = null
+
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
 
         MethodChannel(
             flutterEngine.dartExecutor.binaryMessenger,
-            "bloop/video_transfer"
+            videoTransferChannelName
         ).setMethodCallHandler { call, result ->
             when (call.method) {
                 "exportRecordingToDownloads" -> exportRecordingToDownloads(call, result)
+                else -> result.notImplemented()
+            }
+        }
+
+        MethodChannel(
+            flutterEngine.dartExecutor.binaryMessenger,
+            nativeDisplayRecorderChannelName
+        ).setMethodCallHandler { call, result ->
+            when (call.method) {
+                "prepareDisplayCapture" -> prepareDisplayCapture(result)
+                "startPreparedDisplayCapture" -> startPreparedDisplayCapture(result)
+                "cancelPreparedDisplayCapture" -> cancelPreparedDisplayCapture(result)
+                "pauseDisplayCapture" -> pauseDisplayCapture(result)
+                "resumeDisplayCapture" -> resumeDisplayCapture(result)
+                "stopDisplayCapture" -> stopDisplayCapture(result)
                 else -> result.notImplemented()
             }
         }
@@ -52,6 +95,218 @@ class MainActivity : FlutterActivity() {
             result.success(savedLabel)
         } catch (error: Exception) {
             result.error("export_failed", error.message, null)
+        }
+    }
+
+    private fun prepareDisplayCapture(result: MethodChannel.Result) {
+        if (pendingDisplayCaptureResult != null) {
+            result.error(
+                "screen_capture_busy",
+                "A screen recording permission request is already in progress.",
+                null
+            )
+            return
+        }
+
+        if (isDisplayCaptureActive()) {
+            result.success(true)
+            return
+        }
+
+        val projectionManager =
+            getSystemService(Context.MEDIA_PROJECTION_SERVICE) as? MediaProjectionManager
+        if (projectionManager == null) {
+            result.error(
+                "display_capture_not_supported",
+                "Screen recording is not supported on this device.",
+                null
+            )
+            return
+        }
+
+        mediaProjectionManager = projectionManager
+        pendingDisplayCaptureResult = result
+        @Suppress("DEPRECATION")
+        startActivityForResult(
+            projectionManager.createScreenCaptureIntent(),
+            screenCaptureRequestCode
+        )
+    }
+
+    private fun startPreparedDisplayCapture(result: MethodChannel.Result) {
+        if (isDisplayCaptureActive()) {
+            result.success(true)
+            return
+        }
+
+        val projectionManager = mediaProjectionManager
+            ?: getSystemService(Context.MEDIA_PROJECTION_SERVICE) as? MediaProjectionManager
+        val captureResultCode = preparedDisplayCaptureResultCode
+        val captureData = preparedDisplayCaptureData
+        if (projectionManager == null || captureResultCode == null || captureData == null) {
+            DisplayCaptureForegroundService.stop(this)
+            result.error(
+                "display_capture_not_prepared",
+                "Screen recording permission must be granted before recording starts.",
+                null
+            )
+            return
+        }
+
+        try {
+            val recordingFile = createScreenRecordingFile()
+            val (width, height, densityDpi) = currentDisplayMetrics()
+            val rotation = currentDisplayRotation()
+            val projection = projectionManager.getMediaProjection(captureResultCode, captureData)
+                ?: throw IllegalStateException("Unable to initialize screen capture.")
+            DisplayCaptureForegroundService.start(this)
+            val recorder = createScreenMediaRecorder(
+                outputFile = recordingFile,
+                width = width,
+                height = height,
+                rotation = rotation
+            )
+            val virtualDisplay = projection.createVirtualDisplay(
+                "bloop-screen-recording",
+                width,
+                height,
+                densityDpi,
+                DisplayManager.VIRTUAL_DISPLAY_FLAG_AUTO_MIRROR,
+                recorder.surface,
+                null,
+                null
+            )
+
+            val callback = object : MediaProjection.Callback() {
+                override fun onStop() {
+                    releaseDisplayCapture(stopRecorder = false, deleteFile = false)
+                }
+            }
+
+            projection.registerCallback(callback, null)
+            recorder.start()
+
+            mediaProjection = projection
+            mediaProjectionCallback = callback
+            mediaRecorder = recorder
+            this.virtualDisplay = virtualDisplay
+            activeDisplayCaptureFile = recordingFile
+
+            preparedDisplayCaptureResultCode = null
+            preparedDisplayCaptureData = null
+
+            result.success(true)
+        } catch (error: Exception) {
+            releaseDisplayCapture(stopRecorder = false, deleteFile = true)
+            result.error(
+                "display_capture_start_failed",
+                error.message ?: "Unable to start screen recording.",
+                null
+            )
+        }
+    }
+
+    private fun cancelPreparedDisplayCapture(result: MethodChannel.Result) {
+        clearPreparedDisplayCapture()
+        if (isDisplayCaptureActive()) {
+            releaseDisplayCapture(stopRecorder = false, deleteFile = true)
+        } else {
+            DisplayCaptureForegroundService.stop(this)
+        }
+        result.success(true)
+    }
+
+    private fun pauseDisplayCapture(result: MethodChannel.Result) {
+        val recorder = mediaRecorder
+        if (recorder == null) {
+            result.error(
+                "display_capture_not_active",
+                "No active screen recording is available to pause.",
+                null
+            )
+            return
+        }
+
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.N) {
+            result.error(
+                "pause_not_supported",
+                "Pause and resume are not supported for screen recording on this Android version.",
+                null
+            )
+            return
+        }
+
+        try {
+            recorder.pause()
+            result.success(true)
+        } catch (error: Exception) {
+            result.error(
+                "display_capture_pause_failed",
+                error.message ?: "Unable to pause screen recording.",
+                null
+            )
+        }
+    }
+
+    private fun resumeDisplayCapture(result: MethodChannel.Result) {
+        val recorder = mediaRecorder
+        if (recorder == null) {
+            result.error(
+                "display_capture_not_active",
+                "No active screen recording is available to resume.",
+                null
+            )
+            return
+        }
+
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.N) {
+            result.error(
+                "resume_not_supported",
+                "Pause and resume are not supported for screen recording on this Android version.",
+                null
+            )
+            return
+        }
+
+        try {
+            recorder.resume()
+            result.success(true)
+        } catch (error: Exception) {
+            result.error(
+                "display_capture_resume_failed",
+                error.message ?: "Unable to resume screen recording.",
+                null
+            )
+        }
+    }
+
+    private fun stopDisplayCapture(result: MethodChannel.Result) {
+        val recorder = mediaRecorder
+        val outputFile = activeDisplayCaptureFile
+        if (recorder == null || outputFile == null) {
+            result.error(
+                "display_capture_not_active",
+                "No active screen recording is available to stop.",
+                null
+            )
+            return
+        }
+
+        try {
+            recorder.stop()
+            result.success(outputFile.absolutePath)
+        } catch (error: Exception) {
+            if (outputFile.exists()) {
+                outputFile.delete()
+            }
+            result.error(
+                "display_capture_stop_failed",
+                error.message ?: "Unable to finish screen recording.",
+                null
+            )
+        } finally {
+            releaseDisplayCapture(stopRecorder = false, deleteFile = false)
+            clearPreparedDisplayCapture()
         }
     }
 
@@ -102,5 +357,191 @@ class MainActivity : FlutterActivity() {
         }
 
         return "Recording exported to ${targetFile.absolutePath}."
+    }
+
+    private fun clearPreparedDisplayCapture() {
+        preparedDisplayCaptureResultCode = null
+        preparedDisplayCaptureData = null
+    }
+
+    private fun isDisplayCaptureActive(): Boolean {
+        return mediaRecorder != null
+    }
+
+    private fun createScreenRecordingFile(): File {
+        val recordingsDirectory = File(cacheDir, "native_display_recordings")
+        if (!recordingsDirectory.exists()) {
+            recordingsDirectory.mkdirs()
+        }
+
+        return File(
+            recordingsDirectory,
+            "recording_${System.currentTimeMillis()}.mp4"
+        )
+    }
+
+    private fun createScreenMediaRecorder(
+        outputFile: File,
+        width: Int,
+        height: Int,
+        rotation: Int
+    ): MediaRecorder {
+        val recorder = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            MediaRecorder(this)
+        } else {
+            MediaRecorder()
+        }
+
+        recorder.setAudioSource(MediaRecorder.AudioSource.MIC)
+        recorder.setVideoSource(MediaRecorder.VideoSource.SURFACE)
+        recorder.setOutputFormat(MediaRecorder.OutputFormat.MPEG_4)
+        recorder.setOutputFile(outputFile.absolutePath)
+        recorder.setVideoEncoder(MediaRecorder.VideoEncoder.H264)
+        recorder.setAudioEncoder(MediaRecorder.AudioEncoder.AAC)
+        recorder.setVideoEncodingBitRate(8_000_000)
+        recorder.setVideoFrameRate(30)
+        recorder.setVideoSize(width, height)
+        recorder.setAudioEncodingBitRate(128_000)
+        recorder.setAudioSamplingRate(44_100)
+        recorder.setOrientationHint(orientationHintFor(rotation))
+        recorder.prepare()
+        return recorder
+    }
+
+    @Suppress("DEPRECATION")
+    private fun currentDisplayMetrics(): Triple<Int, Int, Int> {
+        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            val bounds = windowManager.currentWindowMetrics.bounds
+            Triple(
+                makeEven(bounds.width()),
+                makeEven(bounds.height()),
+                resources.displayMetrics.densityDpi
+            )
+        } else {
+            val metrics = DisplayMetrics()
+            windowManager.defaultDisplay.getRealMetrics(metrics)
+            Triple(
+                makeEven(metrics.widthPixels),
+                makeEven(metrics.heightPixels),
+                metrics.densityDpi
+            )
+        }
+    }
+
+    @Suppress("DEPRECATION")
+    private fun currentDisplayRotation(): Int {
+        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            display?.rotation ?: Surface.ROTATION_0
+        } else {
+            windowManager.defaultDisplay.rotation
+        }
+    }
+
+    private fun orientationHintFor(rotation: Int): Int {
+        return when (rotation) {
+            Surface.ROTATION_0 -> 90
+            Surface.ROTATION_90 -> 0
+            Surface.ROTATION_180 -> 270
+            Surface.ROTATION_270 -> 180
+            else -> 0
+        }
+    }
+
+    private fun makeEven(value: Int): Int {
+        return if (value % 2 == 0) value else value - 1
+    }
+
+    private fun releaseDisplayCapture(stopRecorder: Boolean, deleteFile: Boolean) {
+        val recorder = mediaRecorder
+        mediaRecorder = null
+
+        if (stopRecorder) {
+            try {
+                recorder?.stop()
+            } catch (_: Exception) {
+                // Ignore stop failures during cleanup.
+            }
+        }
+
+        try {
+            recorder?.reset()
+        } catch (_: Exception) {
+            // Ignore reset failures during cleanup.
+        }
+        try {
+            recorder?.release()
+        } catch (_: Exception) {
+            // Ignore release failures during cleanup.
+        }
+
+        try {
+            virtualDisplay?.release()
+        } catch (_: Exception) {
+            // Ignore display release failures during cleanup.
+        }
+        virtualDisplay = null
+
+        mediaProjectionCallback?.let { callback ->
+            try {
+                mediaProjection?.unregisterCallback(callback)
+            } catch (_: Exception) {
+                // Ignore callback unregistration failures during cleanup.
+            }
+        }
+        mediaProjectionCallback = null
+
+        try {
+            mediaProjection?.stop()
+        } catch (_: Exception) {
+            // Ignore projection stop failures during cleanup.
+        }
+        mediaProjection = null
+
+        val outputFile = activeDisplayCaptureFile
+        activeDisplayCaptureFile = null
+        if (deleteFile && outputFile != null && outputFile.exists()) {
+            outputFile.delete()
+        }
+
+        DisplayCaptureForegroundService.stop(this)
+    }
+
+    override fun onDestroy() {
+        pendingDisplayCaptureResult?.error(
+            "screen_capture_cancelled",
+            "The screen recording request was interrupted.",
+            null
+        )
+        pendingDisplayCaptureResult = null
+        clearPreparedDisplayCapture()
+        releaseDisplayCapture(stopRecorder = false, deleteFile = false)
+        super.onDestroy()
+    }
+
+    @Deprecated("Deprecated in Java")
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+
+        if (requestCode != screenCaptureRequestCode) {
+            return
+        }
+
+        val pendingResult = pendingDisplayCaptureResult ?: return
+        pendingDisplayCaptureResult = null
+
+        if (resultCode != Activity.RESULT_OK || data == null) {
+            clearPreparedDisplayCapture()
+            DisplayCaptureForegroundService.stop(this)
+            pendingResult.error(
+                "screen_capture_cancelled",
+                "Screen recording permission was denied.",
+                null
+            )
+            return
+        }
+
+        preparedDisplayCaptureResultCode = resultCode
+        preparedDisplayCaptureData = Intent(data)
+        pendingResult.success(true)
     }
 }

@@ -7,6 +7,7 @@ import 'app/router/app_routes.dart';
 import 'firebase_options.dart';
 import 'features/video/presentation/controller/video_feature_theme.dart';
 import 'features/video/presentation/controller/video_web_camera_registration.dart';
+//flutter run -d 192.168.100.136:5555
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();

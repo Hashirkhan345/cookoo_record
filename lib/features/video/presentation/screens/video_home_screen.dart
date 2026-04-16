@@ -308,6 +308,32 @@ class _VideoHomeScreenState extends ConsumerState<VideoHomeScreen> {
         : (isPhone ? 14 : 20);
 
     return Scaffold(
+      floatingActionButtonLocation: FloatingActionButtonLocation.startFloat,
+      floatingActionButton: Padding(
+        padding: EdgeInsets.only(
+          left: isPhone ? 2 : 6,
+          bottom: isPhone ? 4 : 8,
+        ),
+        child: IconButton(
+          key: const Key('recordVideoFloatingButton'),
+          onPressed: state.isPreparingCameraPreview
+              ? null
+              : () => unawaited(_handleRecordingAccess(authState, state)),
+          tooltip:
+              !authState.isAuthenticated && state.hasReachedRecordingRestriction
+              ? '2-video limit reached'
+              : 'Record a video',
+          style: IconButton.styleFrom(
+            backgroundColor: VideoFeatureTheme.accent,
+            disabledBackgroundColor: VideoFeatureTheme.muted,
+            foregroundColor: Colors.white,
+            minimumSize: Size(isPhone ? 52 : 58, isPhone ? 52 : 58),
+            shape: const CircleBorder(),
+            elevation: 6,
+          ),
+          icon: Icon(Icons.videocam_rounded, size: isPhone ? 22 : 24),
+        ),
+      ),
       body: Stack(
         children: <Widget>[
           const Positioned.fill(
@@ -389,33 +415,6 @@ class _VideoHomeScreenState extends ConsumerState<VideoHomeScreen> {
                     ),
                   ),
                 ),
-              ),
-            ),
-          ),
-          Positioned(
-            left: isPhone ? 12 : 16,
-            bottom: 0,
-            child: SafeArea(
-              bottom: false,
-              child: IconButton(
-                key: const Key('recordVideoFloatingButton'),
-                onPressed: state.isPreparingCameraPreview
-                    ? null
-                    : () => unawaited(_handleRecordingAccess(authState, state)),
-                tooltip:
-                    !authState.isAuthenticated &&
-                        state.hasReachedRecordingRestriction
-                    ? '2-video limit reached'
-                    : 'Record a video',
-                style: IconButton.styleFrom(
-                  backgroundColor: VideoFeatureTheme.accent,
-                  disabledBackgroundColor: VideoFeatureTheme.muted,
-                  foregroundColor: Colors.white,
-                  minimumSize: Size(isPhone ? 52 : 58, isPhone ? 52 : 58),
-                  shape: const CircleBorder(),
-                  elevation: 6,
-                ),
-                icon: Icon(Icons.videocam_rounded, size: isPhone ? 22 : 24),
               ),
             ),
           ),

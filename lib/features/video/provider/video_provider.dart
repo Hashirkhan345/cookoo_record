@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:camera/camera.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/scheduler.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../data/enums/video_recording_mode.dart';
@@ -133,7 +134,7 @@ class VideoController extends StateNotifier<VideoState> {
     );
   }
 
-  void selectRecordingMode(VideoRecordingMode mode) {
+  Future<void> selectRecordingMode(VideoRecordingMode mode) async {
     if (state.hasActiveRecording ||
         !supportedRecordingModesForCurrentPlatform().contains(mode)) {
       return;
@@ -142,6 +143,48 @@ class VideoController extends StateNotifier<VideoState> {
     state = state.copyWith(
       selectedRecordingMode: mode,
       clearFeedbackMessage: true,
+    );
+
+    final bool isAndroidNativeDisplayMode =
+        !kIsWeb &&
+        defaultTargetPlatform == TargetPlatform.android &&
+        mode.capturesDisplay;
+    final bool isAndroidCameraMode =
+        !kIsWeb &&
+        defaultTargetPlatform == TargetPlatform.android &&
+        mode == VideoRecordingMode.cameraOnly;
+
+    if (isAndroidNativeDisplayMode) {
+      await _disposeCameraController();
+      return;
+    }
+
+    if (!isAndroidCameraMode || state.cameraController != null) {
+      return;
+    }
+
+    state = state.copyWith(isPreparingCameraPreview: true);
+    String? feedbackMessage;
+    try {
+      await _ensureCameraController();
+    } on _CancelledCameraPreviewPreparation {
+      return;
+    } catch (error, stackTrace) {
+      debugPrint('[video] selectRecordingMode preview setup failed: $error');
+      debugPrintStack(
+        label: '[video] selectRecordingMode preview stack',
+        stackTrace: stackTrace,
+      );
+      feedbackMessage = _describeRecordingError(error);
+    }
+
+    if (!mounted) {
+      return;
+    }
+
+    state = state.copyWith(
+      isPreparingCameraPreview: false,
+      feedbackMessage: feedbackMessage,
     );
   }
 
@@ -154,8 +197,8 @@ class VideoController extends StateNotifier<VideoState> {
     }
 
     final VideoRecordingMode selectedMode = state.selectedRecordingMode;
-    if (_usesWebDisplayCaptureHandshake(selectedMode)) {
-      await _startWebDisplayRecordingSession(selectedMode);
+    if (_usesDisplayCaptureHandshake(selectedMode)) {
+      await _startDisplayRecordingSession(selectedMode);
       return;
     }
 
@@ -206,9 +249,12 @@ class VideoController extends StateNotifier<VideoState> {
     }
   }
 
-  Future<void> _startWebDisplayRecordingSession(
+  Future<void> _startDisplayRecordingSession(
     VideoRecordingMode selectedMode,
   ) async {
+    final bool usesNativeMobileDisplayCapture =
+        !kIsWeb && selectedMode.capturesDisplay;
+
     state = state.copyWith(
       recordingStatus: VideoRecordingStatus.preparing,
       recordingDuration: Duration.zero,
@@ -218,14 +264,31 @@ class VideoController extends StateNotifier<VideoState> {
     );
 
     try {
-      await _ensureOptionalCameraController();
+      if (kIsWeb) {
+        await _ensureOptionalCameraController();
+      }
       await _repository.prepareDisplayCapture(mode: selectedMode);
       if (!mounted) {
         await _repository.cancelPreparedDisplayCapture();
         return;
       }
 
-      await _refreshWebCameraPreviewAfterDisplayCapture();
+      if (usesNativeMobileDisplayCapture) {
+        await _repository.startPreparedDisplayCapture();
+        _startTimer();
+        state = state.copyWith(
+          recordingStatus: VideoRecordingStatus.recording,
+          supportsPauseResume: _repository.supportsPauseResume(),
+          clearCountdownLabel: true,
+          feedbackMessage:
+              'Screen recording started. You can switch to another app now.',
+        );
+        return;
+      }
+
+      if (kIsWeb) {
+        await _refreshWebCameraPreviewAfterDisplayCapture();
+      }
       final bool didCompleteCountdown = await _runRecordingCountdown();
       if (!didCompleteCountdown || !mounted) {
         await _repository.cancelPreparedDisplayCapture();
@@ -247,8 +310,10 @@ class VideoController extends StateNotifier<VideoState> {
       }
 
       await _repository.startPreparedDisplayCapture();
-      await _refreshWebCameraPreviewAfterDisplayCapture();
-      unawaited(_refreshWebCameraPreviewAfterRecordingStart());
+      if (kIsWeb) {
+        await _refreshWebCameraPreviewAfterDisplayCapture();
+        unawaited(_refreshWebCameraPreviewAfterRecordingStart());
+      }
       _startTimer();
       state = state.copyWith(
         recordingStatus: VideoRecordingStatus.recording,
@@ -569,8 +634,8 @@ class VideoController extends StateNotifier<VideoState> {
     }
   }
 
-  bool _usesWebDisplayCaptureHandshake(VideoRecordingMode mode) {
-    return kIsWeb && mode.capturesDisplay;
+  bool _usesDisplayCaptureHandshake(VideoRecordingMode mode) {
+    return mode.capturesDisplay;
   }
 
   Future<bool> _waitForCountdownOverlayToDisappear() async {
@@ -632,16 +697,24 @@ class VideoController extends StateNotifier<VideoState> {
   Future<void> _disposeCameraController() async {
     _cameraControllerInitialization = null;
     final CameraController? controller = state.cameraController;
-    if (controller != null) {
-      await controller.dispose();
-    }
-
     state = state.copyWith(
       isPreparingCameraPreview: false,
       clearCameraController: true,
       clearActiveCamera: true,
       recordingDuration: Duration.zero,
     );
+
+    if (controller != null) {
+      try {
+        await controller.dispose();
+      } catch (error, stackTrace) {
+        debugPrint('[video] disposeCameraController failed: $error');
+        debugPrintStack(
+          label: '[video] disposeCameraController stack',
+          stackTrace: stackTrace,
+        );
+      }
+    }
   }
 
   Future<void> _refreshWebCameraPreviewAfterDisplayCapture() async {
@@ -722,6 +795,16 @@ class VideoController extends StateNotifier<VideoState> {
   }
 
   String _describeRecordingError(Object error) {
+    if (error is PlatformException) {
+      final String message = (error.message ?? '').trim();
+      if (message.isNotEmpty) {
+        return message;
+      }
+      if (error.code.isNotEmpty) {
+        return error.code;
+      }
+    }
+
     if (error is CameraException) {
       switch (error.code) {
         case 'CameraAccessDenied':

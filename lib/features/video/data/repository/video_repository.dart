@@ -8,8 +8,11 @@ import '../models/video_recording_flow_model.dart';
 import '../models/video_recording_option_model.dart';
 import '../models/saved_video_recording_model.dart';
 import '../models/video_shortcut_model.dart';
+import 'native_display_recorder_contract.dart';
 import 'video_browser_recorder.dart';
 import 'video_file_disposer.dart';
+import 'native_display_recorder_stub.dart'
+    if (dart.library.io) 'native_display_recorder_io.dart';
 import 'video_recording_storage.dart';
 import 'video_recording_storage_contract.dart';
 
@@ -64,11 +67,14 @@ abstract class VideoRepository {
 class LocalVideoRepository implements VideoRepository {
   LocalVideoRepository({VideoRecordingStorage? recordingStorage})
     : _recordingStorage = recordingStorage ?? createVideoRecordingStorage(),
-      _browserRecorder = createBrowserVideoRecorder();
+      _browserRecorder = createBrowserVideoRecorder(),
+      _nativeDisplayRecorder = createNativeDisplayRecorder();
 
   final VideoRecordingStorage _recordingStorage;
   final BrowserVideoRecorder _browserRecorder;
+  final NativeDisplayRecorder _nativeDisplayRecorder;
   bool _isBrowserRecordingActive = false;
+  bool _isNativeDisplayRecordingActive = false;
 
   @override
   Future<VideoRecordingFlowModel> loadVideoRecordingFlow() async {
@@ -80,15 +86,23 @@ class LocalVideoRepository implements VideoRepository {
         !kIsWeb &&
         (defaultTargetPlatform == TargetPlatform.android ||
             defaultTargetPlatform == TargetPlatform.iOS);
+    final bool supportsNativeDisplayRecording =
+        !kIsWeb &&
+        defaultTargetPlatform == TargetPlatform.android &&
+        _nativeDisplayRecorder.isSupported;
 
     return VideoRecordingFlowModel(
       brandLabel: 'bloop',
       heroTitle: 'Record your video',
-      heroDescription: isMobileNative
+      heroDescription: supportsNativeDisplayRecording
+          ? 'Record your screen or camera directly from your phone and keep your presenter available during the session.'
+          : isMobileNative
           ? 'Record polished camera videos directly from your phone and keep your presenter visible throughout the session.'
           : 'Launch a polished recording flow directly from the home screen and keep the presenter visible in the lower section.',
       heroActionLabel: 'Record a Video',
-      helperMessage: isMobileNative
+      helperMessage: supportsNativeDisplayRecording
+          ? 'Camera, microphone, and screen recording are available on this device.'
+          : isMobileNative
           ? 'Camera and microphone recording are available on this device.'
           : 'For the best recording experience, open this flow on a larger screen.',
       previewTitle: 'Ways to use bloop for education',
@@ -96,7 +110,25 @@ class LocalVideoRepository implements VideoRepository {
       recordingLimitLabel: '2 recordings lifetime · 5 min each',
       tutorialLabel: '1 minute tutorial',
       successMessage: 'Recording setup opened successfully.',
-      panelOptions: isMobileNative
+      panelOptions: supportsNativeDisplayRecording
+          ? const <VideoRecordingOptionModel>[
+              VideoRecordingOptionModel(
+                kind: VideoRecordingOptionKind.display,
+                label: 'Screen Recording',
+              ),
+              VideoRecordingOptionModel(
+                kind: VideoRecordingOptionKind.camera,
+                label: 'Front Camera',
+                status: 'On',
+              ),
+              VideoRecordingOptionModel(
+                kind: VideoRecordingOptionKind.microphone,
+                label: 'Device Microphone',
+                status: 'On',
+                highlighted: true,
+              ),
+            ]
+          : isMobileNative
           ? const <VideoRecordingOptionModel>[
               VideoRecordingOptionModel(
                 kind: VideoRecordingOptionKind.camera,
@@ -191,7 +223,15 @@ class LocalVideoRepository implements VideoRepository {
       return;
     }
 
+    if (!kIsWeb && mode.capturesDisplay) {
+      await _nativeDisplayRecorder.prepareRecording();
+      await _nativeDisplayRecorder.startPreparedRecording();
+      _isNativeDisplayRecordingActive = true;
+      return;
+    }
+
     _isBrowserRecordingActive = false;
+    _isNativeDisplayRecordingActive = false;
     final CameraController activeController =
         controller ??
         (throw StateError('A camera controller is required for this mode.'));
@@ -204,7 +244,8 @@ class LocalVideoRepository implements VideoRepository {
       throw StateError('Camera-only mode does not prepare display capture.');
     }
     if (!kIsWeb) {
-      throw StateError('Display capture preparation is only available on web.');
+      await _nativeDisplayRecorder.prepareRecording();
+      return;
     }
 
     _isBrowserRecordingActive = true;
@@ -219,7 +260,9 @@ class LocalVideoRepository implements VideoRepository {
   @override
   Future<void> startPreparedDisplayCapture() async {
     if (!kIsWeb) {
-      throw StateError('Prepared display capture is only available on web.');
+      await _nativeDisplayRecorder.startPreparedRecording();
+      _isNativeDisplayRecordingActive = true;
+      return;
     }
     if (!_isBrowserRecordingActive) {
       throw StateError('No prepared display capture is available to start.');
@@ -235,7 +278,13 @@ class LocalVideoRepository implements VideoRepository {
 
   @override
   Future<void> cancelPreparedDisplayCapture() async {
-    if (!kIsWeb || !_isBrowserRecordingActive) {
+    if (!kIsWeb) {
+      _isNativeDisplayRecordingActive = false;
+      await _nativeDisplayRecorder.cancelPreparedRecording();
+      return;
+    }
+
+    if (!_isBrowserRecordingActive) {
       return;
     }
 
@@ -245,6 +294,10 @@ class LocalVideoRepository implements VideoRepository {
 
   @override
   Future<void> pauseRecording(CameraController? controller) {
+    if (_isNativeDisplayRecordingActive) {
+      return _nativeDisplayRecorder.pauseRecording();
+    }
+
     if (kIsWeb && _isBrowserRecordingActive) {
       return _browserRecorder.pauseRecording();
     }
@@ -257,6 +310,10 @@ class LocalVideoRepository implements VideoRepository {
 
   @override
   Future<void> resumeRecording(CameraController? controller) {
+    if (_isNativeDisplayRecordingActive) {
+      return _nativeDisplayRecorder.resumeRecording();
+    }
+
     if (kIsWeb && _isBrowserRecordingActive) {
       return _browserRecorder.resumeRecording();
     }
@@ -269,6 +326,11 @@ class LocalVideoRepository implements VideoRepository {
 
   @override
   Future<XFile> stopRecording(CameraController? controller) {
+    if (_isNativeDisplayRecordingActive) {
+      _isNativeDisplayRecordingActive = false;
+      return _nativeDisplayRecorder.stopRecording();
+    }
+
     if (kIsWeb && _isBrowserRecordingActive) {
       _isBrowserRecordingActive = false;
       return _browserRecorder.stopRecording();

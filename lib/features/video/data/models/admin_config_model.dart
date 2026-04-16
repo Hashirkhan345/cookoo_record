@@ -12,6 +12,7 @@ class AdminConfigModel {
     required this.secondaryActionLabel,
     required this.featurePoints,
     this.demoVideoUrl,
+    this.demoVideoUrlWeb,
     this.demoVideoUrlMobile,
     this.demoVideoTitle,
     this.demoVideoSubtitle,
@@ -23,29 +24,35 @@ class AdminConfigModel {
   final String secondaryActionLabel;
   final List<String> featurePoints;
   final String? demoVideoUrl;
+  final String? demoVideoUrlWeb;
   final String? demoVideoUrlMobile;
   final String? demoVideoTitle;
   final String? demoVideoSubtitle;
 
   String? get resolvedDemoVideoUrl {
-    if (!kIsWeb &&
-        demoVideoUrlMobile != null &&
-        demoVideoUrlMobile!.trim().isNotEmpty) {
-      return demoVideoUrlMobile!.trim();
+    final String? trimmedWebUrl = _cleanUrl(demoVideoUrlWeb);
+    final String? trimmedMobileUrl = _cleanUrl(demoVideoUrlMobile);
+    final String? trimmedDefaultUrl = _cleanUrl(demoVideoUrl);
+
+    if (kIsWeb && trimmedWebUrl != null) {
+      return trimmedWebUrl;
+    }
+
+    if (!kIsWeb && trimmedMobileUrl != null) {
+      return trimmedMobileUrl;
     }
 
     if (!kIsWeb) {
-      if (demoVideoUrl != null &&
-          demoVideoUrl!.trim().isNotEmpty &&
-          _mimeTypeForUrl(demoVideoUrl!) == 'video/mp4') {
-        return demoVideoUrl!.trim();
+      if (trimmedDefaultUrl != null &&
+          !_isClearlyWebmVideo(trimmedDefaultUrl)) {
+        return trimmedDefaultUrl;
       }
 
       return null;
     }
 
-    if (demoVideoUrl != null && demoVideoUrl!.trim().isNotEmpty) {
-      return demoVideoUrl!.trim();
+    if (trimmedDefaultUrl != null) {
+      return trimmedDefaultUrl;
     }
 
     return null;
@@ -80,6 +87,7 @@ class AdminConfigModel {
       'secondaryActionLabel': secondaryActionLabel,
       'featurePoints': featurePoints,
       'demoVideoUrl': demoVideoUrl,
+      'demoVideoUrlWeb': demoVideoUrlWeb,
       'demoVideoUrlMobile': demoVideoUrlMobile,
       'demoVideoTitle': demoVideoTitle,
       'demoVideoSubtitle': demoVideoSubtitle,
@@ -91,29 +99,65 @@ class AdminConfigModel {
         json['featurePoints'] as List<dynamic>? ?? const <dynamic>[];
 
     return AdminConfigModel(
-      title: (json['title'] as String?)?.trim().isNotEmpty == true
-          ? (json['title'] as String).trim()
+      title: _readFirstNonEmptyString(json, const <String>['title']) != null
+          ? _readFirstNonEmptyString(json, const <String>['title'])!
           : defaults.title,
-      subtitle: (json['subtitle'] as String?)?.trim().isNotEmpty == true
-          ? (json['subtitle'] as String).trim()
+      subtitle:
+          _readFirstNonEmptyString(json, const <String>['subtitle']) != null
+          ? _readFirstNonEmptyString(json, const <String>['subtitle'])!
           : defaults.subtitle,
       primaryActionLabel:
-          (json['primaryActionLabel'] as String?)?.trim().isNotEmpty == true
-          ? (json['primaryActionLabel'] as String).trim()
+          _readFirstNonEmptyString(json, const <String>[
+                'primaryActionLabel',
+              ]) !=
+              null
+          ? _readFirstNonEmptyString(json, const <String>[
+              'primaryActionLabel',
+            ])!
           : defaults.primaryActionLabel,
       secondaryActionLabel:
-          (json['secondaryActionLabel'] as String?)?.trim().isNotEmpty == true
-          ? (json['secondaryActionLabel'] as String).trim()
+          _readFirstNonEmptyString(json, const <String>[
+                'secondaryActionLabel',
+              ]) !=
+              null
+          ? _readFirstNonEmptyString(json, const <String>[
+              'secondaryActionLabel',
+            ])!
           : defaults.secondaryActionLabel,
       featurePoints: rawPoints
           .whereType<String>()
           .map((String value) => value.trim())
           .where((String value) => value.isNotEmpty)
           .toList(growable: false),
-      demoVideoUrl: (json['demoVideoUrl'] as String?)?.trim(),
-      demoVideoUrlMobile: (json['demoVideoUrlMobile'] as String?)?.trim(),
-      demoVideoTitle: (json['demoVideoTitle'] as String?)?.trim(),
-      demoVideoSubtitle: (json['demoVideoSubtitle'] as String?)?.trim(),
+      demoVideoUrl: _readFirstNonEmptyString(json, const <String>[
+        'demoVideoUrl',
+        'videoUrl',
+        'demo_url',
+      ]),
+      demoVideoUrlWeb: _readFirstNonEmptyString(json, const <String>[
+        'demoVideoUrlWeb',
+        'demoVideoWebUrl',
+        'webDemoVideoUrl',
+        'demoVideoWebmUrl',
+        'demoWebmUrl',
+        'webVideoUrl',
+      ]),
+      demoVideoUrlMobile: _readFirstNonEmptyString(json, const <String>[
+        'demoVideoUrlMobile',
+        'demoVideoMobileUrl',
+        'mobileDemoVideoUrl',
+        'demoVideoMp4Url',
+        'demoMp4Url',
+        'mobileVideoUrl',
+      ]),
+      demoVideoTitle: _readFirstNonEmptyString(json, const <String>[
+        'demoVideoTitle',
+        'videoTitle',
+      ]),
+      demoVideoSubtitle: _readFirstNonEmptyString(json, const <String>[
+        'demoVideoSubtitle',
+        'videoSubtitle',
+      ]),
     )._withDefaultFeaturePoints();
   }
 
@@ -132,6 +176,7 @@ class AdminConfigModel {
     String? secondaryActionLabel,
     List<String>? featurePoints,
     String? demoVideoUrl,
+    String? demoVideoUrlWeb,
     String? demoVideoUrlMobile,
     String? demoVideoTitle,
     String? demoVideoSubtitle,
@@ -143,6 +188,7 @@ class AdminConfigModel {
       secondaryActionLabel: secondaryActionLabel ?? this.secondaryActionLabel,
       featurePoints: featurePoints ?? this.featurePoints,
       demoVideoUrl: demoVideoUrl ?? this.demoVideoUrl,
+      demoVideoUrlWeb: demoVideoUrlWeb ?? this.demoVideoUrlWeb,
       demoVideoUrlMobile: demoVideoUrlMobile ?? this.demoVideoUrlMobile,
       demoVideoTitle: demoVideoTitle ?? this.demoVideoTitle,
       demoVideoSubtitle: demoVideoSubtitle ?? this.demoVideoSubtitle,
@@ -186,5 +232,36 @@ class AdminConfigModel {
     }
 
     return '.mp4';
+  }
+
+  static String? _readFirstNonEmptyString(
+    Map<String, dynamic> json,
+    List<String> keys,
+  ) {
+    for (final String key in keys) {
+      final dynamic value = json[key];
+      if (value is String) {
+        final String trimmed = value.trim();
+        if (trimmed.isNotEmpty) {
+          return trimmed;
+        }
+      }
+    }
+
+    return null;
+  }
+
+  static String? _cleanUrl(String? value) {
+    if (value == null) {
+      return null;
+    }
+
+    final String trimmed = value.trim();
+    return trimmed.isEmpty ? null : trimmed;
+  }
+
+  static bool _isClearlyWebmVideo(String value) {
+    final String lower = value.toLowerCase();
+    return lower.contains('.webm') || lower.contains('video/webm');
   }
 }

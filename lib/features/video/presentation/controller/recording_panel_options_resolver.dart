@@ -14,11 +14,18 @@ List<VideoRecordingOptionModel> resolveRecordingPanelOptions({
 }) {
   final bool inputsReady =
       state.cameraController?.value.isInitialized ?? state.activeCamera != null;
+  final bool showDisplayOption = supportedRecordingModesForCurrentPlatform()
+      .any((VideoRecordingMode mode) => mode.capturesDisplay);
+  final bool isAndroidDisplayMode =
+      !kIsWeb &&
+      defaultTargetPlatform == TargetPlatform.android &&
+      state.selectedRecordingMode.capturesDisplay;
 
   return flow.panelOptions
       .where(
         (VideoRecordingOptionModel option) =>
-            kIsWeb || option.kind != VideoRecordingOptionKind.display,
+            option.kind != VideoRecordingOptionKind.display ||
+            showDisplayOption,
       )
       .map((VideoRecordingOptionModel option) {
         switch (option.kind) {
@@ -37,7 +44,9 @@ List<VideoRecordingOptionModel> resolveRecordingPanelOptions({
                 state.activeCamera,
                 fallback: option.label,
               ),
-              status: inputsReady ? 'On' : option.status,
+              status: inputsReady
+                  ? 'On'
+                  : (isAndroidDisplayMode ? 'Preview off' : option.status),
               highlighted: option.highlighted,
             );
           case VideoRecordingOptionKind.microphone:

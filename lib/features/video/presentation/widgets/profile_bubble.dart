@@ -71,29 +71,39 @@ class _ProfileBubbleContent extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final CameraController? controller = cameraController;
-    if (controller != null && controller.value.isInitialized) {
-      final Size previewSize = controller.value.previewSize ?? Size(size, size);
-      final double previewWidth = previewSize.width <= 0
-          ? size
-          : previewSize.width;
-      final double previewHeight = previewSize.height <= 0
-          ? size
-          : previewSize.height;
-
+    if (controller != null) {
       return ColoredBox(
         color: Colors.black,
-        child: FittedBox(
-          fit: BoxFit.cover,
-          clipBehavior: Clip.hardEdge,
-          alignment: const Alignment(0, -0.2),
-          child: SizedBox(
-            width: previewWidth,
-            height: previewHeight,
-            child: CameraPreview(
-              key: ValueKey<CameraController>(controller),
-              controller,
-            ),
-          ),
+        child: ValueListenableBuilder<CameraValue>(
+          valueListenable: controller,
+          builder: (BuildContext context, CameraValue value, Widget? child) {
+            if (!value.isInitialized) {
+              return const SizedBox.expand();
+            }
+
+            final Size previewSize = value.previewSize ?? Size(size, size);
+            final double previewWidth = previewSize.width <= 0
+                ? size
+                : previewSize.width;
+            final double previewHeight = previewSize.height <= 0
+                ? size
+                : previewSize.height;
+
+            try {
+              return FittedBox(
+                fit: BoxFit.cover,
+                clipBehavior: Clip.hardEdge,
+                alignment: const Alignment(0, -0.2),
+                child: SizedBox(
+                  width: previewWidth,
+                  height: previewHeight,
+                  child: controller.buildPreview(),
+                ),
+              );
+            } on CameraException {
+              return const SizedBox.expand();
+            }
+          },
         ),
       );
     }
