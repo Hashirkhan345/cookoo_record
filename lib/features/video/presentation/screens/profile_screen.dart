@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:material_symbols_icons/symbols.dart';
 
 import '../../../../app/router/app_routes.dart';
 import '../../../auth/data/models/app_user.dart';
@@ -34,7 +35,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       builder: (BuildContext context) {
         return StudioDialogShell(
           badge: 'Account',
-          icon: Icons.delete_outline_rounded,
+          icon: Symbols.delete_sharp,
           title: 'Delete account?',
           message:
               'This permanently removes your bloop account. If your session is old, Firebase may ask you to sign in again before deletion can finish.',
@@ -744,7 +745,7 @@ class _DangerZoneCard extends StatelessWidget {
                       color: Colors.white,
                     ),
                   )
-                : const Icon(Icons.delete_outline_rounded),
+                : const Icon(Symbols.delete_sharp),
             label: Text(isBusy ? 'Deleting account...' : 'Delete account'),
             style: FilledButton.styleFrom(
               backgroundColor: const Color(0xFFAF2D2D),

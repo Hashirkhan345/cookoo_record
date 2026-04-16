@@ -94,7 +94,7 @@ class _RecorderControlRailState extends State<RecorderControlRail>
                     const SizedBox(height: 20),
                     _RailAction(
                       key: const Key('deleteRecordingButton'),
-                      icon: Symbols.delete_rounded,
+                      icon: Symbols.delete_sharp,
                       outlined: true,
                       enabled: !widget.isBusy,
                       onTap: widget.onDelete,

@@ -70,7 +70,7 @@ class CompactControlStrip extends StatelessWidget {
           const SizedBox(width: 14),
           _CompactAction(
             key: const Key('deleteRecordingButton'),
-            icon: Symbols.delete_rounded,
+            icon: Symbols.delete_sharp,
             enabled: !isBusy,
             onTap: onDelete,
           ),

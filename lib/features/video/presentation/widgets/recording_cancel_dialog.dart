@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:material_symbols_icons/symbols.dart';
 
 import '../controller/video_feature_theme.dart';
 import 'studio_dialog.dart';
@@ -40,9 +41,7 @@ class RecordingCancelDialog extends StatelessWidget {
         : 'Cancel recording';
 
     return StudioDialogShell(
-      icon: isRestartDialog
-          ? Icons.restart_alt_rounded
-          : Icons.delete_outline_rounded,
+      icon: isRestartDialog ? Icons.restart_alt_rounded : Symbols.delete_sharp,
       badge: isRestartDialog ? 'Restart' : 'Recording',
       title: title,
       message: 'Your current video progress will be lost.',

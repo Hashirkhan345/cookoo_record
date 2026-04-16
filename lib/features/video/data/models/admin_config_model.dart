@@ -27,9 +27,6 @@ class AdminConfigModel {
   final String? demoVideoTitle;
   final String? demoVideoSubtitle;
 
-  static const String fallbackDemoVideoUrl =
-      'https://firebasestorage.googleapis.com/v0/b/cookoo-record.firebasestorage.app/o/recording_1776069028392000.webm?alt=media&token=e97adf56-a6ea-4b5c-931c-2c99b77875e2';
-
   String? get resolvedDemoVideoUrl {
     if (!kIsWeb &&
         demoVideoUrlMobile != null &&
@@ -163,9 +160,8 @@ class AdminConfigModel {
       'Easy to use',
       'Complete controls',
     ],
-    demoVideoUrl: fallbackDemoVideoUrl,
-    demoVideoTitle: 'Firebase demo video',
-    demoVideoSubtitle: 'Demo video loaded from Firebase Storage.',
+    demoVideoTitle: 'Demo video',
+    demoVideoSubtitle: 'Demo video is not configured yet.',
   );
 
   static String _mimeTypeForUrl(String url) {

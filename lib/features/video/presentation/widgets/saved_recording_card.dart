@@ -695,7 +695,7 @@ class _PreviewMenuButton extends StatelessWidget {
             const PopupMenuItem<_RecordingCardMenuAction>(
               value: _RecordingCardMenuAction.delete,
               child: _MenuActionLabel(
-                icon: Symbols.delete_forever_rounded,
+                icon: Symbols.delete_sharp,
                 label: 'Delete',
                 isDestructive: true,
               ),
