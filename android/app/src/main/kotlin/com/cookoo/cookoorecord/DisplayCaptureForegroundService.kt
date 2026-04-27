@@ -17,12 +17,37 @@ class DisplayCaptureForegroundService : Service() {
         private const val channelName = "Screen recording"
         private const val notificationId = 4818
 
-        fun start(context: Context) {
+        private var isForeground = false
+        private var foregroundReadyCallback: (() -> Unit)? = null
+        private var foregroundStartFailedCallback: ((Exception) -> Unit)? = null
+
+        fun start(
+            context: Context,
+            onReady: (() -> Unit)? = null,
+            onFailure: ((Exception) -> Unit)? = null
+        ) {
+            if (isForeground) {
+                onReady?.invoke()
+                return
+            }
+
+            foregroundReadyCallback = onReady
+            foregroundStartFailedCallback = onFailure
             val intent = Intent(context, DisplayCaptureForegroundService::class.java)
-            ContextCompat.startForegroundService(context, intent)
+            try {
+                ContextCompat.startForegroundService(context, intent)
+            } catch (error: Exception) {
+                val failureCallback = foregroundStartFailedCallback
+                foregroundReadyCallback = null
+                foregroundStartFailedCallback = null
+                failureCallback?.invoke(error)
+            }
         }
 
         fun stop(context: Context) {
+            isForeground = false
+            foregroundReadyCallback = null
+            foregroundStartFailedCallback = null
             val intent = Intent(context, DisplayCaptureForegroundService::class.java)
             context.stopService(intent)
         }
@@ -31,11 +56,24 @@ class DisplayCaptureForegroundService : Service() {
     override fun onBind(intent: Intent?): IBinder? = null
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        startAsForegroundService()
-        return START_STICKY
+        return try {
+            startAsForegroundService()
+            isForeground = true
+            foregroundReadyCallback?.invoke()
+            START_STICKY
+        } catch (error: Exception) {
+            isForeground = false
+            foregroundStartFailedCallback?.invoke(error)
+            stopSelf()
+            START_NOT_STICKY
+        } finally {
+            foregroundReadyCallback = null
+            foregroundStartFailedCallback = null
+        }
     }
 
     override fun onDestroy() {
+        isForeground = false
         stopForegroundCompat()
         super.onDestroy()
     }

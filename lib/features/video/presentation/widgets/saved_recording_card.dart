@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:video_player/video_player.dart';
@@ -526,6 +527,23 @@ class _SavedRecordingThumbnailState extends State<_SavedRecordingThumbnail> {
   Future<void>? _initialization;
   Object? _initializationError;
 
+  bool get _usesLivePreview {
+    if (kIsWeb) {
+      return true;
+    }
+
+    switch (defaultTargetPlatform) {
+      case TargetPlatform.android:
+      case TargetPlatform.iOS:
+        return false;
+      case TargetPlatform.fuchsia:
+      case TargetPlatform.linux:
+      case TargetPlatform.macOS:
+      case TargetPlatform.windows:
+        return true;
+    }
+  }
+
   @override
   void initState() {
     super.initState();
@@ -549,6 +567,11 @@ class _SavedRecordingThumbnailState extends State<_SavedRecordingThumbnail> {
   }
 
   void _initializeController() {
+    if (!_usesLivePreview) {
+      _disposeController();
+      return;
+    }
+
     final VideoPlayerController controller =
         createSavedRecordingPlayerController(widget.recording);
 
@@ -585,8 +608,12 @@ class _SavedRecordingThumbnailState extends State<_SavedRecordingThumbnail> {
     final VideoPlayerController? controller = _controller;
     final Future<void>? initialization = _initialization;
 
+    if (!_usesLivePreview) {
+      return const _SavedRecordingThumbnailFallback();
+    }
+
     if (controller == null || initialization == null) {
-      return const SizedBox.shrink();
+      return const _SavedRecordingThumbnailFallback();
     }
 
     return FutureBuilder<void>(
@@ -618,35 +645,35 @@ class _SavedRecordingThumbnailState extends State<_SavedRecordingThumbnail> {
           );
         }
 
-        return DecoratedBox(
-          decoration: const BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: <Color>[
-                VideoFeatureTheme.primaryDeep,
-                VideoFeatureTheme.primary,
-              ],
-            ),
-          ),
-          child: Center(
-            child: snapshot.connectionState == ConnectionState.done
-                ? const Icon(
-                    Icons.video_library_rounded,
-                    color: Colors.white70,
-                    size: 40,
-                  )
-                : const SizedBox(
-                    width: 28,
-                    height: 28,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2.6,
-                      color: Colors.white70,
-                    ),
-                  ),
-          ),
-        );
+        return const _SavedRecordingThumbnailFallback();
       },
+    );
+  }
+}
+
+class _SavedRecordingThumbnailFallback extends StatelessWidget {
+  const _SavedRecordingThumbnailFallback();
+
+  @override
+  Widget build(BuildContext context) {
+    return DecoratedBox(
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: <Color>[
+            VideoFeatureTheme.primaryDeep,
+            VideoFeatureTheme.primary,
+          ],
+        ),
+      ),
+      child: const Center(
+        child: Icon(
+          Icons.video_library_rounded,
+          color: Colors.white70,
+          size: 40,
+        ),
+      ),
     );
   }
 }

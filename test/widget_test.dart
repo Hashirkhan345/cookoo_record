@@ -1,4 +1,5 @@
 import 'package:camera/camera.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -152,6 +153,44 @@ void main() {
     expect(find.byKey(const Key('recordingCountdownOverlay')), findsNothing);
     expect(find.byKey(const Key('stopRecordingButton')), findsOneWidget);
   });
+
+  testWidgets('android screen capture hides setup panel after native start', (
+    WidgetTester tester,
+  ) async {
+    debugDefaultTargetPlatformOverride = TargetPlatform.android;
+    try {
+      _setDesktopSurface(tester);
+
+      final AndroidDisplayCaptureRepository repository =
+          AndroidDisplayCaptureRepository();
+
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: <Override>[
+            videoControllerProvider.overrideWith(
+              (ref) => AndroidDisplayCaptureVideoController(repository),
+            ),
+          ],
+          child: const MaterialApp(
+            home: Scaffold(body: RecordVideoFlowScreen()),
+          ),
+        ),
+      );
+      await tester.pump();
+
+      expect(find.byKey(const Key('recordingPanel')), findsOneWidget);
+
+      await tester.tap(find.byKey(const Key('startRecordingButton')));
+      await tester.pump();
+
+      expect(repository.didPrepareDisplayCapture, isTrue);
+      expect(repository.didStartPreparedDisplayCapture, isTrue);
+      expect(find.byKey(const Key('recordingPanel')), findsNothing);
+      expect(find.byKey(const Key('stopRecordingButton')), findsOneWidget);
+    } finally {
+      debugDefaultTargetPlatformOverride = null;
+    }
+  });
 }
 
 void _setDesktopSurface(WidgetTester tester) {
@@ -279,6 +318,40 @@ class CountdownVideoRepository extends LocalVideoRepository {
     CameraController? controller, {
     required VideoRecordingMode mode,
   }) async {}
+}
+
+class AndroidDisplayCaptureVideoController extends VideoController {
+  AndroidDisplayCaptureVideoController(this.repository) : super(repository) {
+    state = state.copyWith(
+      isLoading: false,
+      flow: repository.loadVideoRecordingFlowSync(),
+      isRecordingFlowVisible: true,
+      selectedRecordingMode: VideoRecordingMode.fullScreen,
+      savedRecordingsStorageLocationLabel: 'Device storage',
+    );
+  }
+
+  final AndroidDisplayCaptureRepository repository;
+
+  @override
+  Future<void> load() async {}
+}
+
+class AndroidDisplayCaptureRepository extends LocalVideoRepository {
+  AndroidDisplayCaptureRepository();
+
+  bool didPrepareDisplayCapture = false;
+  bool didStartPreparedDisplayCapture = false;
+
+  @override
+  Future<void> prepareDisplayCapture({required VideoRecordingMode mode}) async {
+    didPrepareDisplayCapture = true;
+  }
+
+  @override
+  Future<void> startPreparedDisplayCapture() async {
+    didStartPreparedDisplayCapture = true;
+  }
 }
 
 class FakeAuthRepository implements AuthRepository {

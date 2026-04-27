@@ -25,6 +25,8 @@ import java.io.FileOutputStream
 class MainActivity : FlutterActivity() {
     companion object {
         private const val screenCaptureRequestCode = 4817
+        private const val maxCaptureShortSide = 720
+        private const val maxCaptureLongSide = 1280
     }
 
     private val videoTransferChannelName = "bloop/video_transfer"
@@ -153,13 +155,54 @@ class MainActivity : FlutterActivity() {
             return
         }
 
+        DisplayCaptureForegroundService.start(
+            this,
+            onReady = {
+                beginPreparedDisplayCapture(
+                    projectionManager = projectionManager,
+                    captureResultCode = captureResultCode,
+                    captureData = Intent(captureData),
+                    result = result
+                )
+            },
+            onFailure = { error ->
+                clearPreparedDisplayCapture()
+                result.error(
+                    "display_capture_service_failed",
+                    error.message ?: "Unable to start the screen recording service.",
+                    null
+                )
+            }
+        )
+    }
+
+    private fun beginPreparedDisplayCapture(
+        projectionManager: MediaProjectionManager,
+        captureResultCode: Int,
+        captureData: Intent,
+        result: MethodChannel.Result
+    ) {
         try {
             val recordingFile = createScreenRecordingFile()
-            val (width, height, densityDpi) = currentDisplayMetrics()
+            val (displayWidth, displayHeight, densityDpi) = currentDisplayMetrics()
+            val (width, height) = compatibleCaptureSize(
+                width = displayWidth,
+                height = displayHeight
+            )
             val rotation = currentDisplayRotation()
             val projection = projectionManager.getMediaProjection(captureResultCode, captureData)
                 ?: throw IllegalStateException("Unable to initialize screen capture.")
-            DisplayCaptureForegroundService.start(this)
+
+            val callback = object : MediaProjection.Callback() {
+                override fun onStop() {
+                    releaseDisplayCapture(stopRecorder = false, deleteFile = false)
+                }
+            }
+
+            projection.registerCallback(callback, null)
+            mediaProjection = projection
+            mediaProjectionCallback = callback
+
             val recorder = createScreenMediaRecorder(
                 outputFile = recordingFile,
                 width = width,
@@ -176,18 +219,8 @@ class MainActivity : FlutterActivity() {
                 null,
                 null
             )
-
-            val callback = object : MediaProjection.Callback() {
-                override fun onStop() {
-                    releaseDisplayCapture(stopRecorder = false, deleteFile = false)
-                }
-            }
-
-            projection.registerCallback(callback, null)
             recorder.start()
 
-            mediaProjection = projection
-            mediaProjectionCallback = callback
             mediaRecorder = recorder
             this.virtualDisplay = virtualDisplay
             activeDisplayCaptureFile = recordingFile
@@ -398,8 +431,8 @@ class MainActivity : FlutterActivity() {
         recorder.setOutputFile(outputFile.absolutePath)
         recorder.setVideoEncoder(MediaRecorder.VideoEncoder.H264)
         recorder.setAudioEncoder(MediaRecorder.AudioEncoder.AAC)
-        recorder.setVideoEncodingBitRate(8_000_000)
-        recorder.setVideoFrameRate(30)
+        recorder.setVideoEncodingBitRate(4_000_000)
+        recorder.setVideoFrameRate(24)
         recorder.setVideoSize(width, height)
         recorder.setAudioEncodingBitRate(128_000)
         recorder.setAudioSamplingRate(44_100)
@@ -449,6 +482,22 @@ class MainActivity : FlutterActivity() {
 
     private fun makeEven(value: Int): Int {
         return if (value % 2 == 0) value else value - 1
+    }
+
+    private fun compatibleCaptureSize(width: Int, height: Int): Pair<Int, Int> {
+        val shortSide = minOf(width, height)
+        val longSide = maxOf(width, height)
+        val shortScale = maxCaptureShortSide.toDouble() / shortSide.toDouble()
+        val longScale = maxCaptureLongSide.toDouble() / longSide.toDouble()
+        val scale = minOf(1.0, shortScale, longScale)
+
+        val scaledWidth = makeEven((width * scale).toInt())
+        val scaledHeight = makeEven((height * scale).toInt())
+
+        return Pair(
+            scaledWidth.coerceAtLeast(2),
+            scaledHeight.coerceAtLeast(2)
+        )
     }
 
     private fun releaseDisplayCapture(stopRecorder: Boolean, deleteFile: Boolean) {
