@@ -61,12 +61,12 @@ class _AuthTextFieldState extends State<AuthTextField> {
                   _isTextObscured
                       ? Icons.visibility_off_rounded
                       : Icons.visibility_rounded,
-                  color: VideoFeatureTheme.muted,
+                  color: VideoFeatureTheme.mutedFor(context),
                 ),
                 tooltip: _isTextObscured ? 'Show password' : 'Hide password',
               )
             : null,
-        helperStyle: const TextStyle(color: VideoFeatureTheme.muted),
+        helperStyle: TextStyle(color: VideoFeatureTheme.mutedFor(context)),
       ),
     );
   }

@@ -17,8 +17,11 @@ class RecorderPanel extends StatelessWidget {
     required this.tutorialLabel,
     required this.onClose,
     required this.onSelectRecordingMode,
+    required this.onToggleCamera,
+    required this.onToggleMicrophone,
     required this.selectedRecordingMode,
     required this.onStartRecording,
+    required this.canStartRecording,
     required this.isRecordingActive,
     required this.isBusy,
     this.isRecordingRestricted = false,
@@ -31,8 +34,11 @@ class RecorderPanel extends StatelessWidget {
   final String tutorialLabel;
   final Future<void> Function() onClose;
   final Future<void> Function(VideoRecordingMode mode) onSelectRecordingMode;
+  final Future<void> Function() onToggleCamera;
+  final Future<void> Function() onToggleMicrophone;
   final VideoRecordingMode selectedRecordingMode;
   final Future<void> Function() onStartRecording;
+  final bool canStartRecording;
   final bool isRecordingActive;
   final bool isBusy;
   final bool isRecordingRestricted;
@@ -41,6 +47,7 @@ class RecorderPanel extends StatelessWidget {
   Widget build(BuildContext context) {
     final bool isCompact = MediaQuery.sizeOf(context).width < 1040;
     final double width = isCompact ? 448 : 472;
+    final bool isDark = VideoFeatureTheme.isDark(context);
 
     return ConstrainedBox(
       constraints: BoxConstraints(
@@ -50,14 +57,16 @@ class RecorderPanel extends StatelessWidget {
       child: Container(
         key: const Key('recordingPanel'),
         decoration: BoxDecoration(
-          color: Colors.white.withValues(alpha: 0.94),
+          color: VideoFeatureTheme.panelFor(
+            context,
+          ).withValues(alpha: isDark ? 0.96 : 0.94),
           borderRadius: BorderRadius.circular(38),
-          border: Border.all(color: VideoFeatureTheme.line),
-          boxShadow: const <BoxShadow>[
+          border: Border.all(color: VideoFeatureTheme.lineFor(context)),
+          boxShadow: <BoxShadow>[
             BoxShadow(
-              color: Color(0x1A152329),
+              color: isDark ? const Color(0x52040A12) : const Color(0x1A152329),
               blurRadius: 42,
-              offset: Offset(0, 24),
+              offset: const Offset(0, 24),
             ),
           ],
         ),
@@ -65,7 +74,12 @@ class RecorderPanel extends StatelessWidget {
           borderRadius: BorderRadius.circular(38),
           child: SingleChildScrollView(
             child: Padding(
-              padding: const EdgeInsets.fromLTRB(24, 24, 24, 24),
+              padding: EdgeInsets.fromLTRB(
+                isCompact ? 18 : 24,
+                isCompact ? 18 : 24,
+                isCompact ? 18 : 24,
+                isCompact ? 18 : 24,
+              ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: <Widget>[
@@ -79,84 +93,58 @@ class RecorderPanel extends StatelessWidget {
                       ),
                     ],
                   ),
-                  const SizedBox(height: 22),
-                  Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.all(22),
-                    decoration: BoxDecoration(
-                      gradient: VideoFeatureTheme.heroGradient,
-                      borderRadius: BorderRadius.circular(30),
-                    ),
-                    child: Stack(
-                      children: <Widget>[
-                        Positioned(
-                          right: -18,
-                          top: -12,
-                          child: Container(
-                            width: 112,
-                            height: 112,
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              color: Colors.white.withValues(alpha: 0.08),
-                            ),
+                  if (!isCompact) ...<Widget>[
+                    const SizedBox(height: 18),
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: VideoFeatureTheme.panelMutedFor(
+                          context,
+                        ).withValues(alpha: 0.74),
+                        borderRadius: BorderRadius.circular(24),
+                        border: Border.all(
+                          color: VideoFeatureTheme.lineFor(context),
+                        ),
+                      ),
+                      child: Column(
+                        children: const <Widget>[
+                          _SetupChecklistItem(
+                            step: '1',
+                            title: 'Choose a capture mode',
+                            subtitle:
+                                'Pick full screen, window, current tab, or camera only.',
                           ),
-                        ),
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: <Widget>[
-                            Wrap(
-                              spacing: 10,
-                              runSpacing: 10,
-                              children: <Widget>[
-                                _HeroBadge(label: 'Studio'),
-                                _HeroBadge(
-                                  label: _shortLimitLabel(recordingLimitLabel),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 22),
-                            Text(
-                              statusLabel,
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 34,
-                                fontWeight: FontWeight.w800,
-                                height: 1.02,
-                                letterSpacing: -1.2,
-                              ),
-                            ),
-                            const SizedBox(height: 18),
-                            Wrap(
-                              spacing: 10,
-                              runSpacing: 10,
-                              children: <Widget>[
-                                _StatusPill(
-                                  icon: Icons.desktop_windows_rounded,
-                                  label: _displayModeLabel(),
-                                ),
-                                const _StatusPill(
-                                  icon: Icons.videocam_rounded,
-                                  label: 'Camera ready',
-                                ),
-                                const _StatusPill(
-                                  icon: Icons.mic_rounded,
-                                  label: 'Mic on',
-                                ),
-                              ],
-                            ),
-                          ],
-                        ),
-                      ],
+                          SizedBox(height: 12),
+                          _SetupChecklistItem(
+                            step: '2',
+                            title: 'Confirm camera and mic',
+                            subtitle:
+                                'Check the active devices before the session starts.',
+                          ),
+                          SizedBox(height: 12),
+                          _SetupChecklistItem(
+                            step: '3',
+                            title: 'Start and save',
+                            subtitle:
+                                'Record, review the result, then keep or export it from your library.',
+                          ),
+                        ],
+                      ),
                     ),
-                  ),
+                  ],
                   const SizedBox(height: 18),
                   Container(
                     width: double.infinity,
                     padding: const EdgeInsets.all(14),
                     decoration: BoxDecoration(
-                      color: VideoFeatureTheme.panel.withValues(alpha: 0.82),
+                      color: VideoFeatureTheme.panelFor(
+                        context,
+                      ).withValues(alpha: 0.88),
                       borderRadius: BorderRadius.circular(30),
-                      border: Border.all(color: VideoFeatureTheme.line),
+                      border: Border.all(
+                        color: VideoFeatureTheme.lineFor(context),
+                      ),
                     ),
                     child: Column(
                       children: <Widget>[
@@ -178,6 +166,14 @@ class RecorderPanel extends StatelessWidget {
                                         !isBusy
                                     ? () => _showRecordingModeMenu(tileContext)
                                     : null,
+                                onStatusTap:
+                                    option.kind ==
+                                        VideoRecordingOptionKind.camera
+                                    ? onToggleCamera
+                                    : option.kind ==
+                                          VideoRecordingOptionKind.microphone
+                                    ? onToggleMicrophone
+                                    : null,
                               );
                             },
                           ),
@@ -191,13 +187,18 @@ class RecorderPanel extends StatelessWidget {
                   FilledButton(
                     key: const Key('startRecordingButton'),
                     onPressed:
-                        isRecordingActive || isBusy || isRecordingRestricted
+                        isRecordingActive ||
+                            isBusy ||
+                            isRecordingRestricted ||
+                            !canStartRecording
                         ? null
                         : () => onStartRecording(),
                     style: FilledButton.styleFrom(
                       minimumSize: const Size.fromHeight(68),
-                      backgroundColor: VideoFeatureTheme.accent,
-                      disabledBackgroundColor: VideoFeatureTheme.muted,
+                      backgroundColor: VideoFeatureTheme.primary,
+                      disabledBackgroundColor: VideoFeatureTheme.mutedFor(
+                        context,
+                      ),
                       disabledForegroundColor: Colors.white,
                       foregroundColor: Colors.white,
                       shape: RoundedRectangleBorder(
@@ -212,69 +213,7 @@ class RecorderPanel extends StatelessWidget {
                     child: Text(
                       isRecordingRestricted
                           ? 'Recording limit reached'
-                          : statusLabel,
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  Center(
-                    child: Text(
-                      isRecordingRestricted
-                          ? 'You have reached the 2-video lifetime limit.'
-                          : recordingLimitLabel,
-                      style: const TextStyle(
-                        color: VideoFeatureTheme.muted,
-                        fontSize: 14,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 18),
-                  Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 18,
-                      vertical: 16,
-                    ),
-                    decoration: BoxDecoration(
-                      color: VideoFeatureTheme.panelMuted.withValues(
-                        alpha: 0.7,
-                      ),
-                      borderRadius: BorderRadius.circular(24),
-                      border: Border.all(color: VideoFeatureTheme.line),
-                    ),
-                    child: Row(
-                      children: <Widget>[
-                        Container(
-                          width: 42,
-                          height: 42,
-                          decoration: BoxDecoration(
-                            color: Colors.white.withValues(alpha: 0.7),
-                            borderRadius: BorderRadius.circular(14),
-                          ),
-                          child: const Icon(
-                            Icons.play_arrow_rounded,
-                            color: VideoFeatureTheme.primary,
-                            size: 26,
-                          ),
-                        ),
-                        const SizedBox(width: 14),
-                        Expanded(
-                          child: Text(
-                            tutorialLabel,
-                            style: const TextStyle(
-                              color: VideoFeatureTheme.ink,
-                              fontSize: 16,
-                              fontWeight: FontWeight.w700,
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        const Icon(
-                          Icons.arrow_forward_rounded,
-                          color: VideoFeatureTheme.ink,
-                          size: 24,
-                        ),
-                      ],
+                          : 'Start recording',
                     ),
                   ),
                 ],
@@ -284,26 +223,6 @@ class RecorderPanel extends StatelessWidget {
         ),
       ),
     );
-  }
-
-  String _displayModeLabel() {
-    switch (selectedRecordingMode) {
-      case VideoRecordingMode.fullScreen:
-        return 'Full screen';
-      case VideoRecordingMode.window:
-        return 'Window';
-      case VideoRecordingMode.currentTab:
-        return 'Current tab';
-      case VideoRecordingMode.cameraOnly:
-        return 'Camera only';
-    }
-  }
-
-  String _shortLimitLabel(String label) {
-    if (label.toLowerCase() == '5 minute recording limit') {
-      return '5 min limit';
-    }
-    return label;
   }
 
   Future<void> _showRecordingModeMenu(BuildContext context) async {
@@ -331,7 +250,7 @@ class RecorderPanel extends StatelessWidget {
       context: context,
       position: position,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-      color: Colors.white,
+      color: VideoFeatureTheme.panelFor(context),
       items: supportedModes
           .map((VideoRecordingMode mode) {
             return PopupMenuItem<VideoRecordingMode>(
@@ -341,15 +260,15 @@ class RecorderPanel extends StatelessWidget {
                 children: <Widget>[
                   Icon(
                     _iconForMode(mode),
-                    color: VideoFeatureTheme.ink,
+                    color: VideoFeatureTheme.inkFor(context),
                     size: 22,
                   ),
                   const SizedBox(width: 12),
                   Expanded(
                     child: Text(
                       mode.label,
-                      style: const TextStyle(
-                        color: VideoFeatureTheme.ink,
+                      style: TextStyle(
+                        color: VideoFeatureTheme.inkFor(context),
                         fontSize: 16,
                         fontWeight: FontWeight.w700,
                       ),
@@ -391,62 +310,67 @@ class RecorderPanel extends StatelessWidget {
   }
 }
 
-class _HeroBadge extends StatelessWidget {
-  const _HeroBadge({required this.label});
+class _SetupChecklistItem extends StatelessWidget {
+  const _SetupChecklistItem({
+    required this.step,
+    required this.title,
+    required this.subtitle,
+  });
 
-  final String label;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-      decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.12),
-        borderRadius: BorderRadius.circular(999),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.14)),
-      ),
-      child: Text(
-        label,
-        style: TextStyle(
-          color: Colors.white.withValues(alpha: 0.94),
-          fontSize: 12,
-          fontWeight: FontWeight.w800,
-        ),
-      ),
-    );
-  }
-}
-
-class _StatusPill extends StatelessWidget {
-  const _StatusPill({required this.icon, required this.label});
-
-  final IconData icon;
-  final String label;
+  final String step;
+  final String title;
+  final String subtitle;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
-      decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(999),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.14)),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: <Widget>[
-          Icon(icon, color: VideoFeatureTheme.focus, size: 16),
-          const SizedBox(width: 8),
-          Text(
-            label,
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 13,
-              fontWeight: FontWeight.w700,
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: <Widget>[
+        Container(
+          width: 28,
+          height: 28,
+          decoration: BoxDecoration(
+            color: VideoFeatureTheme.primary,
+            borderRadius: BorderRadius.circular(999),
+          ),
+          child: Center(
+            child: Text(
+              step,
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 12,
+                fontWeight: FontWeight.w800,
+              ),
             ),
           ),
-        ],
-      ),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: <Widget>[
+              Text(
+                title,
+                style: TextStyle(
+                  color: VideoFeatureTheme.inkFor(context),
+                  fontSize: 14,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                subtitle,
+                style: TextStyle(
+                  color: VideoFeatureTheme.mutedFor(context),
+                  fontSize: 13,
+                  fontWeight: FontWeight.w500,
+                  height: 1.45,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
     );
   }
 }
@@ -468,11 +392,13 @@ class _PanelIconButton extends StatelessWidget {
           width: 48,
           height: 48,
           decoration: BoxDecoration(
-            color: VideoFeatureTheme.panelMuted.withValues(alpha: 0.46),
+            color: VideoFeatureTheme.panelMutedFor(
+              context,
+            ).withValues(alpha: 0.58),
             borderRadius: BorderRadius.circular(18),
-            border: Border.all(color: VideoFeatureTheme.line),
+            border: Border.all(color: VideoFeatureTheme.lineFor(context)),
           ),
-          child: Icon(icon, color: VideoFeatureTheme.ink, size: 24),
+          child: Icon(icon, color: VideoFeatureTheme.inkFor(context), size: 24),
         ),
       ),
     );

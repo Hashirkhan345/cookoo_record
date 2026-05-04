@@ -62,16 +62,16 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
 
     return AuthScreenScaffold(
       title: 'Create account',
-      subtitle: 'Create your bloop account.',
+      subtitle: 'Create your Aks account.',
       footer: Wrap(
         alignment: WrapAlignment.center,
         crossAxisAlignment: WrapCrossAlignment.center,
         spacing: 4,
         runSpacing: 4,
         children: <Widget>[
-          const Text(
+          Text(
             'Have an account?',
-            style: TextStyle(color: VideoFeatureTheme.muted),
+            style: TextStyle(color: VideoFeatureTheme.mutedFor(context)),
           ),
           TextButton(
             onPressed: authState.isSubmitting ? null : _backToSignIn,
@@ -149,7 +149,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
               onPressed: authState.isSubmitting ? null : _submitRegistration,
               style: FilledButton.styleFrom(
                 minimumSize: const Size.fromHeight(60),
-                backgroundColor: VideoFeatureTheme.accent,
+                backgroundColor: VideoFeatureTheme.primary,
                 foregroundColor: Colors.white,
                 textStyle: const TextStyle(
                   fontSize: 16,
@@ -168,20 +168,26 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
             Row(
               children: <Widget>[
                 Expanded(
-                  child: Container(height: 1, color: VideoFeatureTheme.line),
+                  child: Container(
+                    height: 1,
+                    color: VideoFeatureTheme.lineFor(context),
+                  ),
                 ),
-                const Padding(
+                Padding(
                   padding: EdgeInsets.symmetric(horizontal: 12),
                   child: Text(
                     'or',
                     style: TextStyle(
-                      color: VideoFeatureTheme.muted,
+                      color: VideoFeatureTheme.mutedFor(context),
                       fontWeight: FontWeight.w700,
                     ),
                   ),
                 ),
                 Expanded(
-                  child: Container(height: 1, color: VideoFeatureTheme.line),
+                  child: Container(
+                    height: 1,
+                    color: VideoFeatureTheme.lineFor(context),
+                  ),
                 ),
               ],
             ),
@@ -192,11 +198,11 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                   : ref.read(authControllerProvider.notifier).signInWithGoogle,
               style: OutlinedButton.styleFrom(
                 minimumSize: const Size.fromHeight(58),
-                backgroundColor: VideoFeatureTheme.panelMuted.withValues(
-                  alpha: 0.4,
-                ),
-                foregroundColor: VideoFeatureTheme.ink,
-                side: const BorderSide(color: VideoFeatureTheme.line),
+                backgroundColor: VideoFeatureTheme.panelMutedFor(
+                  context,
+                ).withValues(alpha: 0.4),
+                foregroundColor: VideoFeatureTheme.inkFor(context),
+                side: BorderSide(color: VideoFeatureTheme.lineFor(context)),
                 padding: const EdgeInsets.symmetric(horizontal: 18),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(22),

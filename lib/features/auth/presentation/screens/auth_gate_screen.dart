@@ -45,10 +45,10 @@ class _LoadingSplash extends StatelessWidget {
     return Scaffold(
       body: Stack(
         children: <Widget>[
-          const Positioned.fill(
+          Positioned.fill(
             child: DecoratedBox(
               decoration: BoxDecoration(
-                gradient: VideoFeatureTheme.screenBackground,
+                gradient: VideoFeatureTheme.screenBackgroundFor(context),
               ),
             ),
           ),
@@ -56,27 +56,31 @@ class _LoadingSplash extends StatelessWidget {
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 28),
               decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.78),
+                color: VideoFeatureTheme.panelFor(
+                  context,
+                ).withValues(alpha: 0.86),
                 borderRadius: BorderRadius.circular(32),
-                border: Border.all(color: VideoFeatureTheme.line),
+                border: Border.all(color: VideoFeatureTheme.lineFor(context)),
                 boxShadow: VideoFeatureTheme.floatingShadow,
               ),
-              child: const Column(
+              child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: <Widget>[
-                  BrandMark(size: 56),
-                  SizedBox(height: 18),
+                  const BrandMark(size: 56),
+                  const SizedBox(height: 18),
                   Text(
                     'Loading your studio',
                     style: TextStyle(
-                      color: VideoFeatureTheme.ink,
+                      color: VideoFeatureTheme.inkFor(context),
                       fontSize: 22,
                       fontWeight: FontWeight.w700,
                       letterSpacing: -0.6,
                     ),
                   ),
-                  SizedBox(height: 16),
-                  CircularProgressIndicator(color: VideoFeatureTheme.primary),
+                  const SizedBox(height: 16),
+                  const CircularProgressIndicator(
+                    color: VideoFeatureTheme.primary,
+                  ),
                 ],
               ),
             ),

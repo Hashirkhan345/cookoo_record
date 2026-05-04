@@ -7,13 +7,14 @@ import '../controller/video_feature_theme.dart';
 import 'saved_recording_player.dart';
 import 'saved_recording_card.dart';
 
-class SavedRecordingsSection extends StatelessWidget {
+class SavedRecordingsSection extends StatefulWidget {
   const SavedRecordingsSection({
     super.key,
     required this.recordings,
     required this.currentUser,
     required this.adminConfig,
     required this.savedCountLabel,
+    required this.onRenameRecording,
     required this.onDeleteRecording,
     required this.onStartRecording,
   });
@@ -22,100 +23,276 @@ class SavedRecordingsSection extends StatelessWidget {
   final AppUser? currentUser;
   final AdminConfigModel? adminConfig;
   final String savedCountLabel;
+  final Future<void> Function(SavedVideoRecordingModel recording, String title)
+  onRenameRecording;
   final ValueChanged<SavedVideoRecordingModel> onDeleteRecording;
   final VoidCallback? onStartRecording;
 
   @override
+  State<SavedRecordingsSection> createState() => _SavedRecordingsSectionState();
+}
+
+class _SavedRecordingsSectionState extends State<SavedRecordingsSection> {
+  int _preferredColumnCount = 3;
+
+  @override
   Widget build(BuildContext context) {
     final TextTheme textTheme = Theme.of(context).textTheme;
+    final bool isDark = VideoFeatureTheme.isDark(context);
 
-    final List<SavedVideoRecordingModel> sortedRecordings = recordings.toList()
-      ..sort(
-        (SavedVideoRecordingModel a, SavedVideoRecordingModel b) =>
-            b.savedAt.compareTo(a.savedAt),
-      );
+    final List<SavedVideoRecordingModel> sortedRecordings =
+        widget.recordings.toList()..sort(
+          (SavedVideoRecordingModel a, SavedVideoRecordingModel b) =>
+              b.savedAt.compareTo(a.savedAt),
+        );
 
     if (sortedRecordings.isEmpty) {
       return EmptySavedRecordingsExperience(
         key: const Key('emptySavedRecordingsState'),
-        config: adminConfig ?? AdminConfigModel.defaults,
-        onStartRecording: onStartRecording,
+        config: widget.adminConfig ?? AdminConfigModel.defaults,
+        onStartRecording: widget.onStartRecording,
       );
     }
 
     return ConstrainedBox(
       constraints: const BoxConstraints(maxWidth: 1240),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: <Widget>[
-          LayoutBuilder(
-            builder: (BuildContext context, BoxConstraints constraints) {
-              final bool stackHeader = constraints.maxWidth < 640;
-              final Widget title = Text(
-                'Video library',
-                style: textTheme.titleLarge?.copyWith(
-                  fontSize: 22,
-                  fontWeight: FontWeight.w700,
-                ),
-              );
-              final Widget chip = _SavedCountChip(label: savedCountLabel);
-
-              if (stackHeader) {
-                return Column(
+      child: Container(
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          color: VideoFeatureTheme.panelFor(
+            context,
+          ).withValues(alpha: isDark ? 0.92 : 0.88),
+          borderRadius: BorderRadius.circular(32),
+          border: Border.all(color: VideoFeatureTheme.lineFor(context)),
+          boxShadow: VideoFeatureTheme.panelShadow,
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: <Widget>[
+            LayoutBuilder(
+              builder: (BuildContext context, BoxConstraints constraints) {
+                final bool stackHeader = constraints.maxWidth < 700;
+                final Widget heading = Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
-                  children: <Widget>[title, const SizedBox(height: 8), chip],
+                  children: <Widget>[
+                    Text(
+                      'Library',
+                      style: textTheme.titleLarge?.copyWith(
+                        fontSize: 24,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      'Review, replay, and export every recording from one place.',
+                      style: textTheme.bodyMedium?.copyWith(
+                        color: VideoFeatureTheme.mutedFor(context),
+                        fontSize: 14,
+                      ),
+                    ),
+                  ],
                 );
-              }
 
-              return Row(
-                children: <Widget>[
-                  Expanded(child: title),
-                  const SizedBox(width: 12),
-                  chip,
-                ],
-              );
-            },
-          ),
-          const SizedBox(height: 14),
-          LayoutBuilder(
-            builder: (BuildContext context, BoxConstraints constraints) {
-              const double spacing = 22;
-              final int columnCount = constraints.maxWidth >= 1080
-                  ? 3
-                  : constraints.maxWidth >= 760
-                  ? 2
-                  : 1;
-              double cardWidth =
-                  (constraints.maxWidth - (spacing * (columnCount - 1))) /
-                  columnCount;
-
-              if (columnCount == 1) {
-                cardWidth = cardWidth.clamp(0, 340);
-              }
-
-              return Wrap(
-                alignment: columnCount == 1
-                    ? WrapAlignment.center
-                    : WrapAlignment.start,
-                spacing: spacing,
-                runSpacing: spacing,
-                children: sortedRecordings
-                    .map((SavedVideoRecordingModel recording) {
-                      return SizedBox(
-                        width: cardWidth,
-                        child: SavedRecordingCard(
-                          key: Key('savedRecordingCard_${recording.id}'),
-                          recording: recording,
-                          currentUser: currentUser,
-                          onDelete: () => onDeleteRecording(recording),
+                final Widget actions = Wrap(
+                  spacing: 10,
+                  runSpacing: 10,
+                  alignment: WrapAlignment.end,
+                  children: <Widget>[
+                    if (constraints.maxWidth >= 760)
+                      _GridLayoutToggle(
+                        selectedColumnCount: _preferredColumnCount,
+                        supportsThreeColumns: constraints.maxWidth >= 1080,
+                        onSelected: (int value) {
+                          setState(() {
+                            _preferredColumnCount = value;
+                          });
+                        },
+                      ),
+                    _SavedCountChip(label: widget.savedCountLabel),
+                    if (widget.onStartRecording != null)
+                      FilledButton.icon(
+                        onPressed: widget.onStartRecording,
+                        icon: const Icon(Icons.add_rounded),
+                        label: const Text('New recording'),
+                        style: FilledButton.styleFrom(
+                          backgroundColor: VideoFeatureTheme.primary,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 18,
+                            vertical: 14,
+                          ),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16),
+                          ),
                         ),
-                      );
-                    })
-                    .toList(growable: false),
-              );
-            },
+                      ),
+                  ],
+                );
+
+                if (stackHeader) {
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: <Widget>[
+                      heading,
+                      const SizedBox(height: 16),
+                      actions,
+                    ],
+                  );
+                }
+
+                return Row(
+                  children: <Widget>[
+                    Expanded(child: heading),
+                    const SizedBox(width: 16),
+                    actions,
+                  ],
+                );
+              },
+            ),
+            const SizedBox(height: 20),
+            LayoutBuilder(
+              builder: (BuildContext context, BoxConstraints constraints) {
+                const double spacing = 22;
+                final int maxColumns = constraints.maxWidth >= 1080
+                    ? 3
+                    : constraints.maxWidth >= 760
+                    ? 2
+                    : 1;
+                final int columnCount = _preferredColumnCount.clamp(
+                  1,
+                  maxColumns,
+                );
+                double cardWidth =
+                    (constraints.maxWidth - (spacing * (columnCount - 1))) /
+                    columnCount;
+
+                if (columnCount == 1) {
+                  cardWidth = cardWidth.clamp(0, 420);
+                }
+
+                return Wrap(
+                  alignment: columnCount == 1
+                      ? WrapAlignment.center
+                      : WrapAlignment.start,
+                  spacing: spacing,
+                  runSpacing: spacing,
+                  children: sortedRecordings
+                      .map((SavedVideoRecordingModel recording) {
+                        return SizedBox(
+                          width: cardWidth,
+                          child: SavedRecordingCard(
+                            key: Key('savedRecordingCard_${recording.id}'),
+                            recording: recording,
+                            currentUser: widget.currentUser,
+                            onRename: (String title) =>
+                                widget.onRenameRecording(recording, title),
+                            onDelete: () => widget.onDeleteRecording(recording),
+                          ),
+                        );
+                      })
+                      .toList(growable: false),
+                );
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _GridLayoutToggle extends StatelessWidget {
+  const _GridLayoutToggle({
+    required this.selectedColumnCount,
+    required this.supportsThreeColumns,
+    required this.onSelected,
+  });
+
+  final int selectedColumnCount;
+  final bool supportsThreeColumns;
+  final ValueChanged<int> onSelected;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(4),
+      decoration: BoxDecoration(
+        color: VideoFeatureTheme.panelFor(context),
+        borderRadius: BorderRadius.circular(999),
+        border: Border.all(color: VideoFeatureTheme.lineFor(context)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: <Widget>[
+          _GridLayoutOption(
+            label: '2',
+            icon: Icons.grid_view_rounded,
+            isSelected: selectedColumnCount == 2,
+            onTap: () => onSelected(2),
+          ),
+          const SizedBox(width: 6),
+          _GridLayoutOption(
+            label: '3',
+            icon: Icons.view_comfy_alt_rounded,
+            isSelected: selectedColumnCount == 3,
+            isEnabled: supportsThreeColumns,
+            onTap: supportsThreeColumns ? () => onSelected(3) : null,
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _GridLayoutOption extends StatelessWidget {
+  const _GridLayoutOption({
+    required this.label,
+    required this.icon,
+    required this.isSelected,
+    required this.onTap,
+    this.isEnabled = true,
+  });
+
+  final String label;
+  final IconData icon;
+  final bool isSelected;
+  final VoidCallback? onTap;
+  final bool isEnabled;
+
+  @override
+  Widget build(BuildContext context) {
+    final Color foregroundColor = !isEnabled
+        ? VideoFeatureTheme.mutedFor(context).withValues(alpha: 0.5)
+        : isSelected
+        ? Colors.white
+        : VideoFeatureTheme.inkFor(context);
+
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(999),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 180),
+        curve: Curves.easeOutCubic,
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        decoration: BoxDecoration(
+          color: isSelected ? VideoFeatureTheme.primary : Colors.transparent,
+          borderRadius: BorderRadius.circular(999),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: <Widget>[
+            Icon(icon, size: 16, color: foregroundColor),
+            const SizedBox(width: 6),
+            Text(
+              label,
+              style: TextStyle(
+                color: foregroundColor,
+                fontSize: 12,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -131,14 +308,14 @@ class _SavedCountChip extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.9),
+        color: VideoFeatureTheme.panelFor(context),
         borderRadius: BorderRadius.circular(999),
-        border: Border.all(color: VideoFeatureTheme.line),
+        border: Border.all(color: VideoFeatureTheme.lineFor(context)),
       ),
       child: Text(
         label,
-        style: const TextStyle(
-          color: VideoFeatureTheme.ink,
+        style: TextStyle(
+          color: VideoFeatureTheme.inkFor(context),
           fontSize: 12,
           fontWeight: FontWeight.w700,
         ),
@@ -162,24 +339,55 @@ class EmptySavedRecordingsExperience extends StatelessWidget {
     final bool compact = MediaQuery.sizeOf(context).width < 780;
     final bool isPhone = MediaQuery.sizeOf(context).width < 520;
     final TextTheme textTheme = Theme.of(context).textTheme;
+    final bool isDark = VideoFeatureTheme.isDark(context);
 
     return ConstrainedBox(
       constraints: const BoxConstraints(maxWidth: 1120),
-      child: Padding(
-        padding: EdgeInsets.symmetric(
-          horizontal: compact ? (isPhone ? 0 : 0) : 8,
+      child: Container(
+        padding: EdgeInsets.fromLTRB(
+          compact ? 18 : 28,
+          compact ? 20 : 28,
+          compact ? 18 : 28,
+          compact ? 22 : 30,
+        ),
+        decoration: BoxDecoration(
+          color: VideoFeatureTheme.panelFor(
+            context,
+          ).withValues(alpha: isDark ? 0.94 : 0.9),
+          borderRadius: BorderRadius.circular(32),
+          border: Border.all(color: VideoFeatureTheme.lineFor(context)),
+          boxShadow: VideoFeatureTheme.panelShadow,
         ),
         child: Column(
           children: <Widget>[
             ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 760),
+              constraints: const BoxConstraints(maxWidth: 780),
               child: Column(
                 children: <Widget>[
+                  // Container(
+                  //   padding: const EdgeInsets.symmetric(
+                  //     horizontal: 14,
+                  //     vertical: 8,
+                  //   ),
+                  //   decoration: BoxDecoration(
+                  //     color: VideoFeatureTheme.accentSoftFor(context),
+                  //     borderRadius: BorderRadius.circular(999),
+                  //   ),
+                  //   child: Text(
+                  //     'Workspace ready',
+                  //     style: TextStyle(
+                  //       color: VideoFeatureTheme.accentFor(context),
+                  //       fontSize: 12,
+                  //       fontWeight: FontWeight.w800,
+                  //     ),
+                  //   ),
+                  // ),
+                  SizedBox(height: compact ? 14 : 18),
                   Text(
                     config.title,
                     textAlign: TextAlign.center,
                     style: textTheme.displayMedium?.copyWith(
-                      fontSize: compact ? (isPhone ? 24 : 30) : 48,
+                      fontSize: compact ? (isPhone ? 26 : 32) : 46,
                     ),
                   ),
                   SizedBox(height: compact ? (isPhone ? 10 : 14) : 18),
@@ -187,47 +395,34 @@ class EmptySavedRecordingsExperience extends StatelessWidget {
                     config.subtitle,
                     textAlign: TextAlign.center,
                     style: textTheme.bodyLarge?.copyWith(
-                      color: VideoFeatureTheme.muted,
-                      fontSize: compact ? (isPhone ? 13 : 15) : 18,
-                      height: isPhone ? 1.45 : null,
+                      color: VideoFeatureTheme.mutedFor(context),
+                      fontSize: compact ? (isPhone ? 14 : 15) : 17,
+                      height: 1.6,
                     ),
                   ),
-                  SizedBox(height: compact ? (isPhone ? 16 : 22) : 28),
+                  SizedBox(height: compact ? (isPhone ? 18 : 22) : 28),
                   Wrap(
                     alignment: WrapAlignment.center,
                     spacing: isPhone ? 10 : 14,
                     runSpacing: isPhone ? 10 : 14,
                     children: <Widget>[
-                      FilledButton(
+                      FilledButton.icon(
                         onPressed: onStartRecording,
+                        icon: const Icon(Icons.videocam_rounded),
+                        label: Text(config.primaryActionLabel),
                         style: FilledButton.styleFrom(
-                          backgroundColor: VideoFeatureTheme.accent,
+                          backgroundColor: VideoFeatureTheme.primary,
                           foregroundColor: Colors.white,
                           padding: EdgeInsets.symmetric(
-                            horizontal: compact ? (isPhone ? 18 : 22) : 28,
-                            vertical: compact ? (isPhone ? 14 : 16) : 18,
+                            horizontal: compact ? 18 : 24,
+                            vertical: compact ? 14 : 16,
                           ),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(16),
                           ),
                         ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: <Widget>[
-                            Text(
-                              config.primaryActionLabel,
-                              style: TextStyle(
-                                fontFamily: VideoFeatureTheme.fontFamily,
-                                fontSize: isPhone ? 14 : 16,
-                                fontWeight: FontWeight.w700,
-                              ),
-                            ),
-                            SizedBox(width: 8),
-                            Icon(Icons.arrow_forward_rounded, size: 18),
-                          ],
-                        ),
                       ),
-                      OutlinedButton(
+                      OutlinedButton.icon(
                         onPressed: config.hasDemoVideo
                             ? () {
                                 SavedRecordingPlayer.showFullscreenDialog(
@@ -245,42 +440,29 @@ class EmptySavedRecordingsExperience extends StatelessWidget {
                                   ),
                                 );
                               },
+                        icon: const Icon(Icons.play_circle_outline_rounded),
+                        label: Text(config.secondaryActionLabel),
                         style: OutlinedButton.styleFrom(
-                          foregroundColor: VideoFeatureTheme.accent,
-                          side: const BorderSide(
-                            color: VideoFeatureTheme.lineStrong,
+                          foregroundColor: VideoFeatureTheme.inkFor(context),
+                          side: BorderSide(
+                            color: VideoFeatureTheme.lineStrongFor(context),
                           ),
                           padding: EdgeInsets.symmetric(
-                            horizontal: compact ? (isPhone ? 16 : 20) : 26,
-                            vertical: compact ? (isPhone ? 14 : 16) : 18,
+                            horizontal: compact ? 18 : 24,
+                            vertical: compact ? 14 : 16,
                           ),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(16),
                           ),
                         ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: <Widget>[
-                            Icon(Icons.play_arrow_rounded, size: 18),
-                            SizedBox(width: 8),
-                            Text(
-                              config.secondaryActionLabel,
-                              style: TextStyle(
-                                fontFamily: VideoFeatureTheme.fontFamily,
-                                fontSize: isPhone ? 14 : 16,
-                                fontWeight: FontWeight.w700,
-                              ),
-                            ),
-                          ],
-                        ),
                       ),
                     ],
                   ),
-                  SizedBox(height: compact ? (isPhone ? 14 : 20) : 24),
+                  SizedBox(height: compact ? 18 : 22),
                   Wrap(
                     alignment: WrapAlignment.center,
-                    spacing: isPhone ? 14 : 22,
-                    runSpacing: isPhone ? 10 : 12,
+                    spacing: isPhone ? 12 : 16,
+                    runSpacing: isPhone ? 12 : 14,
                     children: config.featurePoints
                         .map((String label) => _FeaturePoint(label: label))
                         .toList(growable: false),
@@ -288,7 +470,7 @@ class EmptySavedRecordingsExperience extends StatelessWidget {
                 ],
               ),
             ),
-            SizedBox(height: compact ? (isPhone ? 18 : 26) : 34),
+            SizedBox(height: compact ? 20 : 28),
             _EmptyFirebasePreview(compact: compact, config: config),
           ],
         ),
@@ -330,7 +512,7 @@ class _FeaturePoint extends StatelessWidget {
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
               style: TextStyle(
-                color: VideoFeatureTheme.muted,
+                color: VideoFeatureTheme.mutedFor(context),
                 fontSize: isPhone ? 13 : 15,
                 fontWeight: FontWeight.w600,
               ),
@@ -355,13 +537,15 @@ class _EmptyFirebasePreview extends StatelessWidget {
       width: double.infinity,
       padding: EdgeInsets.all(compact ? (isPhone ? 10 : 14) : 20),
       decoration: BoxDecoration(
-        color: const Color(0xFF0F2530),
+        color: VideoFeatureTheme.isDark(context)
+            ? const Color(0xFF111826)
+            : const Color(0xFF0F2530),
         borderRadius: BorderRadius.circular(compact ? (isPhone ? 18 : 24) : 28),
-        boxShadow: const <BoxShadow>[
+        boxShadow: <BoxShadow>[
           BoxShadow(
-            color: Color(0x1A0F2530),
+            color: const Color(0xFF0F2530).withValues(alpha: 0.18),
             blurRadius: 28,
-            offset: Offset(0, 16),
+            offset: const Offset(0, 16),
           ),
         ],
       ),
@@ -395,16 +579,16 @@ class _PreviewVideoPlaceholder extends StatelessWidget {
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
                     colors: <Color>[
-                      VideoFeatureTheme.canvasShade,
-                      VideoFeatureTheme.panelMuted,
+                      VideoFeatureTheme.canvasShadeFor(context),
+                      VideoFeatureTheme.panelMutedFor(context),
                     ],
                   ),
                 ),
-                child: const Center(
+                child: Center(
                   child: Icon(
                     Icons.play_circle_outline_rounded,
                     size: 44,
-                    color: VideoFeatureTheme.accent,
+                    color: VideoFeatureTheme.primary,
                   ),
                 ),
               ),

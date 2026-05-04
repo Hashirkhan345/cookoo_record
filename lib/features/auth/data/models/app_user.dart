@@ -12,6 +12,7 @@ class AppUser {
     required this.emailVerified,
     this.createdAt,
     this.lastSignInAt,
+    this.recordedVideosCount = 0,
   });
 
   final String uid;
@@ -21,6 +22,7 @@ class AppUser {
   final bool emailVerified;
   final DateTime? createdAt;
   final DateTime? lastSignInAt;
+  final int recordedVideosCount;
 
   String get initials {
     final List<String> parts = name
@@ -47,6 +49,7 @@ class AppUser {
       'emailVerified': emailVerified,
       'createdAt': createdAt,
       'lastSignInAt': lastSignInAt,
+      'recordedVideosCount': recordedVideosCount,
     };
   }
 
@@ -64,6 +67,7 @@ class AppUser {
       emailVerified: user.emailVerified,
       createdAt: createdAt ?? user.metadata.creationTime,
       lastSignInAt: lastSignInAt ?? user.metadata.lastSignInTime,
+      recordedVideosCount: 0,
     );
   }
 
@@ -85,7 +89,21 @@ class AppUser {
       lastSignInAt:
           _asDateTime(json['lastSignInAt']) ??
           fallbackUser.metadata.lastSignInTime,
+      recordedVideosCount: _asInt(json['recordedVideosCount']) ?? 0,
     );
+  }
+
+  static int? _asInt(Object? value) {
+    if (value is int) {
+      return value;
+    }
+    if (value is num) {
+      return value.toInt();
+    }
+    if (value is String) {
+      return int.tryParse(value);
+    }
+    return null;
   }
 
   static String _resolveName(firebase_auth.User user, {String? nameOverride}) {

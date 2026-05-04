@@ -16,7 +16,7 @@ void main() {
       MaterialApp(
         home: Scaffold(
           body: RecorderPanel(
-            brandLabel: 'bloop',
+            brandLabel: 'Aks',
             options: const <VideoRecordingOptionModel>[
               VideoRecordingOptionModel(
                 kind: VideoRecordingOptionKind.display,
@@ -39,10 +39,13 @@ void main() {
             tutorialLabel: 'Start a 1 minute tutorial',
             onClose: () async {},
             selectedRecordingMode: VideoRecordingMode.fullScreen,
+            onToggleCamera: () async {},
+            onToggleMicrophone: () async {},
             onSelectRecordingMode: (VideoRecordingMode mode) async {
               selectedMode = mode;
             },
             onStartRecording: () async {},
+            canStartRecording: true,
             isRecordingActive: false,
             isBusy: false,
           ),
@@ -52,10 +55,10 @@ void main() {
 
     await tester.tap(find.byKey(const Key('panelOption_display')));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Current Tab').last);
+    await tester.tap(find.text('Camera Only').last);
     await tester.pumpAndSettle();
 
-    expect(selectedMode, VideoRecordingMode.currentTab);
+    expect(selectedMode, VideoRecordingMode.cameraOnly);
   });
 
   testWidgets('start button triggers recording callback while idle', (
@@ -67,7 +70,7 @@ void main() {
       MaterialApp(
         home: Scaffold(
           body: RecorderPanel(
-            brandLabel: 'bloop',
+            brandLabel: 'Aks',
             options: const <VideoRecordingOptionModel>[
               VideoRecordingOptionModel(
                 kind: VideoRecordingOptionKind.display,
@@ -79,10 +82,13 @@ void main() {
             tutorialLabel: 'Start a 1 minute tutorial',
             onClose: () async {},
             selectedRecordingMode: VideoRecordingMode.fullScreen,
+            onToggleCamera: () async {},
+            onToggleMicrophone: () async {},
             onSelectRecordingMode: (_) async {},
             onStartRecording: () async {
               didStartRecording = true;
             },
+            canStartRecording: true,
             isRecordingActive: false,
             isBusy: false,
           ),

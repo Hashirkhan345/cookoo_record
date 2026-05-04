@@ -1,7 +1,9 @@
 import 'dart:convert';
 
 import 'package:camera/camera.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
+import '../models/admin_config_model.dart';
 import '../models/saved_video_recording_model.dart';
 
 const String savedVideoRecordingsManifestKey =
@@ -9,7 +11,8 @@ const String savedVideoRecordingsManifestKey =
 const String savedVideoRecordingDataPrefix = 'video_saved_recording_data_';
 const String lifetimeRecordedVideosCountKey =
     'video_lifetime_recorded_videos_count';
-const int lifetimeRecordedVideosRestrictionLimit = 2;
+const int lifetimeRecordedVideosRestrictionLimit =
+    AdminConfigModel.defaultFreeVideoLimit;
 
 String buildSavedRecordingId(DateTime timestamp) {
   return 'recording_${timestamp.microsecondsSinceEpoch}';
@@ -95,5 +98,33 @@ String encodeSavedRecordingsManifest(
     recordings.map((SavedVideoRecordingModel recording) {
       return recording.toJson();
     }).toList(),
+  );
+}
+
+Future<void> persistSavedRecordingMetadata(
+  SavedVideoRecordingModel recording,
+) async {
+  final SharedPreferences preferences = await SharedPreferences.getInstance();
+  final List<SavedVideoRecordingModel> manifest = decodeSavedRecordingsManifest(
+    preferences.getString(savedVideoRecordingsManifestKey),
+  );
+  bool didUpdate = false;
+  final List<SavedVideoRecordingModel> updatedManifest = manifest
+      .map((SavedVideoRecordingModel item) {
+        if (item.id != recording.id) {
+          return item;
+        }
+        didUpdate = true;
+        return recording;
+      })
+      .toList(growable: false);
+
+  if (!didUpdate) {
+    return;
+  }
+
+  await preferences.setString(
+    savedVideoRecordingsManifestKey,
+    encodeSavedRecordingsManifest(updatedManifest),
   );
 }

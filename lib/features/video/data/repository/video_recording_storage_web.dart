@@ -243,6 +243,7 @@ class WebVideoRecordingStorage implements VideoRecordingStorage {
           return null;
         }
       case VideoRecordingStorageKind.localFile:
+      case VideoRecordingStorageKind.firebaseStorage:
         return null;
     }
   }
@@ -259,6 +260,7 @@ class WebVideoRecordingStorage implements VideoRecordingStorage {
         await preferences.remove(recording.storagePath);
         return;
       case VideoRecordingStorageKind.localFile:
+      case VideoRecordingStorageKind.firebaseStorage:
         return;
     }
   }

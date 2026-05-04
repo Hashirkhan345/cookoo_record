@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:camera/camera.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -14,12 +16,18 @@ import 'package:bloop/features/video/data/models/saved_video_recording_model.dar
 import 'package:bloop/features/video/data/repository/video_repository.dart';
 import 'package:bloop/features/video/provider/video_provider.dart';
 import 'package:bloop/features/video/presentation/screens/record_video_flow_screen.dart';
+import 'package:bloop/features/video/presentation/screens/video_home_screen.dart';
+import 'package:bloop/app/router/app_router.dart';
+import 'package:bloop/app/router/app_routes.dart';
 import 'package:bloop/main.dart';
+import 'package:bloop/features/video/presentation/screens/shared_video_screen.dart';
 
 void main() {
   testWidgets('forgot password screen opens from the login screen', (
     WidgetTester tester,
   ) async {
+    _setDesktopSurface(tester);
+
     await tester.pumpWidget(
       ProviderScope(
         overrides: <Override>[
@@ -27,13 +35,17 @@ void main() {
             (ref) => FakeLoggedOutAuthRepository(),
           ),
         ],
-        child: const MyApp(),
+        child: MaterialApp(
+          initialRoute: AppRoute.login,
+          onGenerateRoute: AppRouter.onGenerateRoute,
+        ),
       ),
     );
-    await tester.pumpAndSettle();
+    await tester.pump(const Duration(milliseconds: 400));
 
     expect(find.text('Forgot password?'), findsOneWidget);
 
+    await tester.ensureVisible(find.text('Forgot password?'));
     await tester.tap(find.text('Forgot password?'));
     await tester.pumpAndSettle();
 
@@ -57,18 +69,21 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('Record a Video'), findsOneWidget);
+    expect(find.byKey(const Key('recordVideoButton')), findsOneWidget);
     expect(find.byKey(const Key('recordingPanel')), findsNothing);
-    expect(find.text('Videos'), findsOneWidget);
+    expect(find.text('Upgrade'), findsOneWidget);
     expect(find.byKey(const Key('emptySavedRecordingsState')), findsOneWidget);
-    expect(find.text('Ways to use bloop for education'), findsNothing);
+    expect(
+      find.text('Use Aks for walkthroughs, lessons, and updates'),
+      findsNothing,
+    );
 
     await tester.tap(find.byKey(const Key('recordVideoButton')));
     await tester.pumpAndSettle();
 
     expect(find.byKey(const Key('recordingPanel')), findsOneWidget);
     expect(find.byKey(const Key('userProfileBubble')), findsOneWidget);
-    expect(find.text('Start recording'), findsOneWidget);
+    expect(find.byKey(const Key('recordVideoButton')), findsOneWidget);
 
     await tester.tap(find.byKey(const Key('startRecordingButton')));
     await tester.pumpAndSettle();
@@ -82,7 +97,10 @@ void main() {
       find.byKey(const Key('savedRecordingCard_fake-recording')),
       findsOneWidget,
     );
-    expect(find.text('Ways to use bloop for education'), findsNothing);
+    expect(
+      find.text('Use Aks for walkthroughs, lessons, and updates'),
+      findsNothing,
+    );
   });
 
   testWidgets('home screen still loads when saved recordings fail to restore', (
@@ -103,10 +121,13 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('Record a Video'), findsOneWidget);
-    expect(find.text('Videos'), findsOneWidget);
+    expect(find.byKey(const Key('recordVideoButton')), findsOneWidget);
+    expect(find.text('Upgrade'), findsOneWidget);
     expect(find.byKey(const Key('emptySavedRecordingsState')), findsOneWidget);
-    expect(find.text('Ways to use bloop for education'), findsNothing);
+    expect(
+      find.text('Use Aks for walkthroughs, lessons, and updates'),
+      findsNothing,
+    );
     expect(
       find.text(
         'Saved recordings could not be restored. You can keep recording.',
@@ -115,9 +136,29 @@ void main() {
     );
   });
 
+  testWidgets('shared video route opens the dedicated shared video screen', (
+    WidgetTester tester,
+  ) async {
+    _setDesktopSurface(tester);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        initialRoute: AppRoute.sharedVideo('recording_123'),
+        onGenerateRoute: AppRouter.onGenerateRoute,
+        onGenerateInitialRoutes: AppRouter.onGenerateInitialRoutes,
+      ),
+    );
+    await tester.pump();
+
+    expect(find.byType(SharedVideoScreen), findsOneWidget);
+    expect(find.byType(VideoHomeScreen), findsNothing);
+  });
+
   testWidgets('start recording shows the countdown before going live', (
     WidgetTester tester,
   ) async {
+    _setDesktopSurface(tester);
+
     await tester.pumpWidget(
       ProviderScope(
         overrides: <Override>[
@@ -130,22 +171,46 @@ void main() {
     );
     await tester.pump();
 
-    expect(find.text('Start recording'), findsOneWidget);
+    expect(find.byKey(const Key('startRecordingButton')), findsOneWidget);
 
     await tester.tap(find.byKey(const Key('startRecordingButton')));
     await tester.pump();
 
     expect(find.byKey(const Key('recordingCountdownOverlay')), findsOneWidget);
-    expect(find.text('3'), findsOneWidget);
+    expect(
+      find.descendant(
+        of: find.byKey(const Key('recordingCountdownOverlay')),
+        matching: find.text('3'),
+      ),
+      findsOneWidget,
+    );
 
     await tester.pump(const Duration(seconds: 1));
-    expect(find.text('2'), findsOneWidget);
+    expect(
+      find.descendant(
+        of: find.byKey(const Key('recordingCountdownOverlay')),
+        matching: find.text('2'),
+      ),
+      findsOneWidget,
+    );
 
     await tester.pump(const Duration(seconds: 1));
-    expect(find.text('1'), findsOneWidget);
+    expect(
+      find.descendant(
+        of: find.byKey(const Key('recordingCountdownOverlay')),
+        matching: find.text('1'),
+      ),
+      findsOneWidget,
+    );
 
     await tester.pump(const Duration(seconds: 1));
-    expect(find.text('Go'), findsOneWidget);
+    expect(
+      find.descendant(
+        of: find.byKey(const Key('recordingCountdownOverlay')),
+        matching: find.text('Go'),
+      ),
+      findsOneWidget,
+    );
 
     await tester.pump(const Duration(milliseconds: 650));
     await tester.pump();
@@ -303,6 +368,26 @@ class CountdownVideoController extends VideoController {
 
   @override
   Future<void> load() async {}
+
+  @override
+  Future<void> startRecordingSession() async {
+    if (state.isCountingDown || state.isRecording) {
+      return;
+    }
+
+    for (final String label in <String>['3', '2', '1']) {
+      state = state.copyWith(countdownLabel: label);
+      await Future<void>.delayed(const Duration(seconds: 1));
+    }
+
+    state = state.copyWith(countdownLabel: 'Go');
+    await Future<void>.delayed(const Duration(milliseconds: 650));
+
+    state = state.copyWith(
+      recordingStatus: VideoRecordingStatus.recording,
+      clearCountdownLabel: true,
+    );
+  }
 }
 
 class CountdownVideoRepository extends LocalVideoRepository {
@@ -316,6 +401,7 @@ class CountdownVideoRepository extends LocalVideoRepository {
   @override
   Future<void> startRecording(
     CameraController? controller, {
+    bool isMicrophoneEnabled = true,
     required VideoRecordingMode mode,
   }) async {}
 }
@@ -344,7 +430,10 @@ class AndroidDisplayCaptureRepository extends LocalVideoRepository {
   bool didStartPreparedDisplayCapture = false;
 
   @override
-  Future<void> prepareDisplayCapture({required VideoRecordingMode mode}) async {
+  Future<void> prepareDisplayCapture({
+    bool isMicrophoneEnabled = true,
+    required VideoRecordingMode mode,
+  }) async {
     didPrepareDisplayCapture = true;
   }
 

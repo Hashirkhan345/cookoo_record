@@ -44,7 +44,7 @@ class LegalDocumentScreen extends StatelessWidget {
 
     return Scaffold(
       body: DecoratedBox(
-        decoration: const BoxDecoration(color: Color(0xFFF7F7F4)),
+        decoration: BoxDecoration(color: VideoFeatureTheme.canvasFor(context)),
         child: SafeArea(
           child: SingleChildScrollView(
             padding: const EdgeInsets.only(bottom: 40),
@@ -255,8 +255,8 @@ class _LegalSideRail extends StatelessWidget {
             children: <Widget>[
               Text(
                 title,
-                style: const TextStyle(
-                  color: VideoFeatureTheme.ink,
+                style: TextStyle(
+                  color: VideoFeatureTheme.inkFor(context),
                   fontSize: 20,
                   fontWeight: FontWeight.w800,
                 ),
@@ -264,8 +264,8 @@ class _LegalSideRail extends StatelessWidget {
               const SizedBox(height: 8),
               Text(
                 effectiveDateLabel,
-                style: const TextStyle(
-                  color: VideoFeatureTheme.muted,
+                style: TextStyle(
+                  color: VideoFeatureTheme.mutedFor(context),
                   fontSize: 14,
                   fontWeight: FontWeight.w600,
                 ),
@@ -298,8 +298,8 @@ class _LegalSideRail extends StatelessWidget {
                         Expanded(
                           child: Text(
                             item,
-                            style: const TextStyle(
-                              color: VideoFeatureTheme.ink,
+                            style: TextStyle(
+                              color: VideoFeatureTheme.inkFor(context),
                               fontSize: 14,
                               height: 1.5,
                             ),
@@ -338,7 +338,7 @@ class _LegalSideRail extends StatelessWidget {
                           width: 24,
                           height: 24,
                           decoration: BoxDecoration(
-                            color: const Color(0xFFEAF1FF),
+                            color: VideoFeatureTheme.accentSoftFor(context),
                             borderRadius: BorderRadius.circular(12),
                           ),
                           alignment: Alignment.center,
@@ -355,8 +355,8 @@ class _LegalSideRail extends StatelessWidget {
                         Expanded(
                           child: Text(
                             entry.value.heading,
-                            style: const TextStyle(
-                              color: VideoFeatureTheme.muted,
+                            style: TextStyle(
+                              color: VideoFeatureTheme.mutedFor(context),
                               fontSize: 14,
                               fontWeight: FontWeight.w600,
                               height: 1.45,
@@ -388,17 +388,17 @@ class _SideRailCard extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: VideoFeatureTheme.panelFor(context),
         borderRadius: BorderRadius.circular(26),
-        border: Border.all(color: const Color(0xFFE8E5DE)),
+        border: Border.all(color: VideoFeatureTheme.lineFor(context)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
           Text(
             title,
-            style: const TextStyle(
-              color: VideoFeatureTheme.ink,
+            style: TextStyle(
+              color: VideoFeatureTheme.inkFor(context),
               fontSize: 13,
               fontWeight: FontWeight.w800,
               letterSpacing: 0.3,
@@ -426,14 +426,16 @@ class _LegalDocumentCard extends StatelessWidget {
       width: double.infinity,
       padding: EdgeInsets.all(isTablet ? 34 : 24),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: VideoFeatureTheme.panelFor(context),
         borderRadius: BorderRadius.circular(30),
-        border: Border.all(color: const Color(0xFFE8E5DE)),
-        boxShadow: const <BoxShadow>[
+        border: Border.all(color: VideoFeatureTheme.lineFor(context)),
+        boxShadow: <BoxShadow>[
           BoxShadow(
-            color: Color(0x080B1326),
+            color: VideoFeatureTheme.isDark(context)
+                ? const Color(0x42040A12)
+                : const Color(0x080B1326),
             blurRadius: 18,
-            offset: Offset(0, 10),
+            offset: const Offset(0, 10),
           ),
         ],
       ),
@@ -456,8 +458,8 @@ class _LegalDocumentCard extends StatelessWidget {
                 children: <Widget>[
                   Text(
                     '$index. ${section.heading}',
-                    style: const TextStyle(
-                      color: VideoFeatureTheme.ink,
+                    style: TextStyle(
+                      color: VideoFeatureTheme.inkFor(context),
                       fontSize: 28,
                       fontWeight: FontWeight.w800,
                       letterSpacing: -0.8,
@@ -467,15 +469,18 @@ class _LegalDocumentCard extends StatelessWidget {
                   const SizedBox(height: 14),
                   Text(
                     section.body,
-                    style: const TextStyle(
-                      color: VideoFeatureTheme.muted,
+                    style: TextStyle(
+                      color: VideoFeatureTheme.mutedFor(context),
                       fontSize: 16,
                       height: 1.8,
                     ),
                   ),
                   if (index != sections.length) ...<Widget>[
                     const SizedBox(height: 26),
-                    const Divider(color: Color(0xFFEAE7E0), thickness: 1),
+                    Divider(
+                      color: VideoFeatureTheme.lineFor(context),
+                      thickness: 1,
+                    ),
                   ],
                 ],
               ),

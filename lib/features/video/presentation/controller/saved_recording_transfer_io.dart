@@ -5,9 +5,7 @@ import 'package:flutter/services.dart';
 import '../../data/models/saved_video_recording_model.dart';
 import '../../data/repository/public_video_share_repository.dart';
 
-const MethodChannel _videoTransferChannel = MethodChannel(
-  'bloop/video_transfer',
-);
+const MethodChannel _videoTransferChannel = MethodChannel('Aks/video_transfer');
 
 Future<String> downloadSavedRecording(
   SavedVideoRecordingModel recording,

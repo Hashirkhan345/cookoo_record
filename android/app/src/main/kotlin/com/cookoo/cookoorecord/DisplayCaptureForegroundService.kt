@@ -13,7 +13,7 @@ import androidx.core.content.ContextCompat
 
 class DisplayCaptureForegroundService : Service() {
     companion object {
-        private const val channelId = "bloop_display_capture"
+        private const val channelId = "Aks_display_capture"
         private const val channelName = "Screen recording"
         private const val notificationId = 4818
 
@@ -84,7 +84,7 @@ class DisplayCaptureForegroundService : Service() {
         val notification = NotificationCompat.Builder(this, channelId)
             .setSmallIcon(android.R.drawable.ic_menu_camera)
             .setContentTitle("Screen recording active")
-            .setContentText("bloop is preparing or capturing your screen.")
+            .setContentText("Aks is preparing or capturing your screen.")
             .setOngoing(true)
             .setOnlyAlertOnce(true)
             .setPriority(NotificationCompat.PRIORITY_LOW)
@@ -115,7 +115,7 @@ class DisplayCaptureForegroundService : Service() {
             channelName,
             NotificationManager.IMPORTANCE_LOW,
         ).apply {
-            description = "Required while bloop records the device screen."
+            description = "Required while Aks records the device screen."
             setShowBadge(false)
         }
         manager.createNotificationChannel(channel)

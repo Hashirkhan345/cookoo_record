@@ -37,6 +37,7 @@ class _RecorderControlRailState extends State<RecorderControlRail>
 
   @override
   Widget build(BuildContext context) {
+    final bool isDark = VideoFeatureTheme.isDark(context);
     return Column(
       children: <Widget>[
         MouseRegion(
@@ -48,7 +49,11 @@ class _RecorderControlRailState extends State<RecorderControlRail>
             width: 78,
             padding: const EdgeInsets.symmetric(vertical: 18),
             decoration: BoxDecoration(
-              color: VideoFeatureTheme.ink.withValues(alpha: 0.9),
+              color:
+                  (isDark
+                          ? VideoFeatureTheme.panelFor(context)
+                          : VideoFeatureTheme.ink)
+                      .withValues(alpha: isDark ? 0.94 : 0.9),
               borderRadius: BorderRadius.circular(28),
               boxShadow: VideoFeatureTheme.panelShadow,
             ),
@@ -66,8 +71,10 @@ class _RecorderControlRailState extends State<RecorderControlRail>
                   const SizedBox(height: 14),
                   Text(
                     widget.durationLabel,
-                    style: const TextStyle(
-                      color: Colors.white70,
+                    style: TextStyle(
+                      color: isDark
+                          ? VideoFeatureTheme.darkInk
+                          : Colors.white70,
                       fontSize: 16,
                       fontWeight: FontWeight.w700,
                     ),
@@ -111,13 +118,15 @@ class _RecorderControlRailState extends State<RecorderControlRail>
             width: 62,
             height: 62,
             decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.92),
+              color: VideoFeatureTheme.panelFor(
+                context,
+              ).withValues(alpha: 0.92),
               borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: VideoFeatureTheme.line),
+              border: Border.all(color: VideoFeatureTheme.lineFor(context)),
             ),
-            child: const Icon(
+            child: Icon(
               Icons.settings_outlined,
-              color: VideoFeatureTheme.ink,
+              color: VideoFeatureTheme.inkFor(context),
               size: 30,
             ),
           ),
@@ -143,6 +152,7 @@ class _RailAction extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final bool isDark = VideoFeatureTheme.isDark(context);
     return InkWell(
       onTap: enabled ? () => onTap() : null,
       borderRadius: BorderRadius.circular(16),
@@ -152,17 +162,25 @@ class _RailAction extends StatelessWidget {
         decoration: BoxDecoration(
           color: outlined
               ? Colors.transparent
-              : Colors.white.withValues(alpha: enabled ? 0.16 : 0.08),
+              : (isDark ? VideoFeatureTheme.primary : Colors.white).withValues(
+                  alpha: enabled ? (isDark ? 0.16 : 0.16) : 0.08,
+                ),
           borderRadius: BorderRadius.circular(16),
           border: outlined
               ? Border.all(
-                  color: Colors.white.withValues(alpha: enabled ? 0.18 : 0.08),
+                  color:
+                      (isDark
+                              ? VideoFeatureTheme.lineStrongFor(context)
+                              : Colors.white)
+                          .withValues(alpha: enabled ? 0.28 : 0.08),
                 )
               : null,
         ),
         child: Icon(
           icon,
-          color: enabled ? Colors.white70 : Colors.white38,
+          color: enabled
+              ? (isDark ? VideoFeatureTheme.inkFor(context) : Colors.white70)
+              : (isDark ? VideoFeatureTheme.mutedFor(context) : Colors.white38),
           size: 24,
         ),
       ),

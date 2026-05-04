@@ -8,4 +8,9 @@ abstract final class AppRoute {
   static const String helpCenter = '/help-center';
   static const String privacyPolicy = '/privacy-policy';
   static const String termsAndConditions = '/terms-and-conditions';
+  static const String sharedVideoPrefix = '/share/videos/';
+
+  static String sharedVideo(String videoId) {
+    return '$sharedVideoPrefix${Uri.encodeComponent(videoId)}';
+  }
 }

@@ -3,89 +3,113 @@ import 'package:flutter/material.dart';
 import '../controller/video_feature_theme.dart';
 
 class HomeTopBar extends StatelessWidget {
-  const HomeTopBar({super.key, required this.isDesktop});
+  const HomeTopBar({
+    super.key,
+    required this.title,
+    required this.subtitle,
+    required this.primaryActionLabel,
+    required this.onPrimaryAction,
+  });
 
-  final bool isDesktop;
+  final String title;
+  final String subtitle;
+  final String primaryActionLabel;
+  final VoidCallback onPrimaryAction;
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      children: <Widget>[
-        Expanded(
-          child: Container(
-            height: 62,
-            padding: const EdgeInsets.symmetric(horizontal: 20),
-            decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.92),
-              borderRadius: BorderRadius.circular(28),
-              border: Border.all(color: VideoFeatureTheme.line),
-            ),
-            child: const Row(
-              children: <Widget>[
-                Icon(Icons.search_rounded, color: VideoFeatureTheme.muted),
-                SizedBox(width: 14),
-                Expanded(
-                  child: Text(
-                    'Search videos, spaces, or teammates',
-                    style: TextStyle(
-                      color: VideoFeatureTheme.muted,
-                      fontSize: 16,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-        const SizedBox(width: 16),
-        if (isDesktop)
-          Container(
-            width: 126,
-            height: 62,
-            decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.92),
-              borderRadius: BorderRadius.circular(30),
-              border: Border.all(color: VideoFeatureTheme.line),
-            ),
-            child: const Center(
-              child: Text(
-                'Workspace',
-                style: TextStyle(
-                  color: VideoFeatureTheme.ink,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-            ),
-          ),
-        if (isDesktop) const SizedBox(width: 16),
-        Container(
-          width: 58,
-          height: 58,
-          decoration: BoxDecoration(
-            color: Colors.white.withValues(alpha: 0.98),
-            shape: BoxShape.circle,
-            border: Border.all(color: VideoFeatureTheme.line),
-            boxShadow: const <BoxShadow>[
-              BoxShadow(
-                color: Color(0x100B1326),
-                blurRadius: 18,
-                offset: Offset(0, 8),
-              ),
-            ],
-          ),
-          child: const Center(
-            child: Text(
-              'H',
-              style: TextStyle(
-                color: VideoFeatureTheme.ink,
+    final bool isPhone = MediaQuery.sizeOf(context).width < 600;
+
+    return Container(
+      constraints: BoxConstraints(minHeight: isPhone ? 180 : 220),
+      padding: EdgeInsets.fromLTRB(
+        isPhone ? 20 : 30,
+        isPhone ? 22 : 30,
+        isPhone ? 20 : 30,
+        isPhone ? 22 : 30,
+      ),
+      decoration: BoxDecoration(
+        color: VideoFeatureTheme.panelFor(context),
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: VideoFeatureTheme.lineFor(context)),
+      ),
+      child: _HeroPanel(
+        title: title,
+        subtitle: subtitle,
+        primaryActionLabel: primaryActionLabel,
+        onPrimaryAction: onPrimaryAction,
+        isPhone: isPhone,
+      ),
+    );
+  }
+}
+
+class _HeroPanel extends StatelessWidget {
+  const _HeroPanel({
+    required this.title,
+    required this.subtitle,
+    required this.primaryActionLabel,
+    required this.onPrimaryAction,
+    required this.isPhone,
+  });
+
+  final String title;
+  final String subtitle;
+  final String primaryActionLabel;
+  final VoidCallback onPrimaryAction;
+  final bool isPhone;
+
+  @override
+  Widget build(BuildContext context) {
+    return Align(
+      alignment: Alignment.centerLeft,
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 760),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: <Widget>[
+            Text(
+              title,
+              style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                color: VideoFeatureTheme.inkFor(context),
+                fontSize: isPhone ? 30 : 40,
                 fontWeight: FontWeight.w800,
-                fontSize: 22,
+                height: 1.02,
+                letterSpacing: -1.0,
               ),
             ),
-          ),
+            const SizedBox(height: 12),
+            Text(
+              subtitle,
+              style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                color: VideoFeatureTheme.mutedFor(context),
+                fontSize: isPhone ? 15 : 16,
+                height: 1.55,
+              ),
+            ),
+            SizedBox(height: isPhone ? 20 : 24),
+            FilledButton.icon(
+              key: const Key('recordVideoButton'),
+              onPressed: onPrimaryAction,
+              icon: const Icon(Icons.videocam_rounded),
+              label: Text(primaryActionLabel),
+              style: FilledButton.styleFrom(
+                backgroundColor: VideoFeatureTheme.primary,
+                foregroundColor: Colors.white,
+                minimumSize: const Size(0, 54),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 22,
+                  vertical: 14,
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
+              ),
+            ),
+          ],
         ),
-      ],
+      ),
     );
   }
 }

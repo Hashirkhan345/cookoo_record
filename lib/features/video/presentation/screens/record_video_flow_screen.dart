@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../data/enums/video_recording_mode.dart';
 import '../../data/models/video_recording_flow_model.dart';
 import '../../provider/video_provider.dart';
 import '../../provider/video_state.dart';
@@ -53,6 +54,9 @@ class _RecordVideoFlowScreenState extends ConsumerState<RecordVideoFlowScreen> {
     final bool hasActiveRecording = state.hasActiveRecording;
     final bool showLiveControls = state.isRecording || state.isPaused;
     final bool canPauseResume = state.supportsPauseResume && !isBusy;
+    final bool canStartRecording =
+        state.selectedRecordingMode != VideoRecordingMode.cameraOnly ||
+        state.isCameraEnabled;
     final videoController = ref.read(videoControllerProvider.notifier);
     final panelOptions = resolveRecordingPanelOptions(flow: flow, state: state);
 
@@ -151,101 +155,103 @@ class _RecordVideoFlowScreenState extends ConsumerState<RecordVideoFlowScreen> {
                           onDelete: () => _handleDeleteRequest(videoController),
                         ),
                       ),
-                    AnimatedPositioned(
-                      duration: const Duration(milliseconds: 220),
-                      curve: Curves.easeOutCubic,
-                      left: bubblePosition.dx,
-                      top: bubblePosition.dy,
-                      child: GestureDetector(
-                        onPanUpdate: canMoveBubble
-                            ? (DragUpdateDetails details) {
-                                setState(() {
-                                  _bubblePosition = _clampBubblePosition(
-                                    desiredPosition:
-                                        (_bubblePosition ?? bubblePosition) +
-                                        details.delta,
-                                    constraints: constraints,
-                                    bubbleSize: bubbleSize,
-                                    isCompact: isCompact,
-                                  );
-                                });
-                              }
-                            : null,
-                        child: MouseRegion(
-                          onEnter: (_) {
-                            setState(() {
-                              _isBubbleHovered = true;
-                            });
-                          },
-                          onExit: (_) {
-                            setState(() {
-                              _isBubbleHovered = false;
-                            });
-                          },
-                          child: Stack(
-                            clipBehavior: Clip.none,
-                            children: <Widget>[
-                              if (canMoveBubble &&
-                                  (_showBubbleSizeControls ||
-                                      _isBubbleHovered)) ...<Widget>[
-                                Positioned(
-                                  top: -54,
-                                  left: 0,
-                                  right: 0,
-                                  child: MouseRegion(
-                                    onEnter: (_) {
-                                      setState(() {
-                                        _isBubbleHovered = true;
-                                      });
-                                    },
-                                    onExit: (_) {
-                                      setState(() {
-                                        _isBubbleHovered = false;
-                                      });
-                                    },
-                                    child: _BubbleSizeControls(
-                                      selectedIndex: _bubbleSizeIndex,
-                                      onSelected: (int index) {
+                    if (state.isCameraEnabled)
+                      AnimatedPositioned(
+                        duration: const Duration(milliseconds: 220),
+                        curve: Curves.easeOutCubic,
+                        left: bubblePosition.dx,
+                        top: bubblePosition.dy,
+                        child: GestureDetector(
+                          onPanUpdate: canMoveBubble
+                              ? (DragUpdateDetails details) {
+                                  setState(() {
+                                    _bubblePosition = _clampBubblePosition(
+                                      desiredPosition:
+                                          (_bubblePosition ?? bubblePosition) +
+                                          details.delta,
+                                      constraints: constraints,
+                                      bubbleSize: bubbleSize,
+                                      isCompact: isCompact,
+                                    );
+                                  });
+                                }
+                              : null,
+                          child: MouseRegion(
+                            onEnter: (_) {
+                              setState(() {
+                                _isBubbleHovered = true;
+                              });
+                            },
+                            onExit: (_) {
+                              setState(() {
+                                _isBubbleHovered = false;
+                              });
+                            },
+                            child: Stack(
+                              clipBehavior: Clip.none,
+                              children: <Widget>[
+                                if (canMoveBubble &&
+                                    (_showBubbleSizeControls ||
+                                        _isBubbleHovered)) ...<Widget>[
+                                  Positioned(
+                                    top: -54,
+                                    left: 0,
+                                    right: 0,
+                                    child: MouseRegion(
+                                      onEnter: (_) {
                                         setState(() {
-                                          _bubbleSizeIndex = index;
-                                          _showBubbleSizeControls = true;
-                                          final Offset currentPosition =
-                                              _bubblePosition ?? bubblePosition;
-                                          final double nextBubbleSize =
-                                              bubbleBaseSize *
-                                              _bubbleSizeMultiplierFor(index);
-                                          _bubblePosition =
-                                              _clampBubblePosition(
-                                                desiredPosition:
-                                                    currentPosition,
-                                                constraints: constraints,
-                                                bubbleSize: nextBubbleSize,
-                                                isCompact: isCompact,
-                                              );
+                                          _isBubbleHovered = true;
                                         });
                                       },
+                                      onExit: (_) {
+                                        setState(() {
+                                          _isBubbleHovered = false;
+                                        });
+                                      },
+                                      child: _BubbleSizeControls(
+                                        selectedIndex: _bubbleSizeIndex,
+                                        onSelected: (int index) {
+                                          setState(() {
+                                            _bubbleSizeIndex = index;
+                                            _showBubbleSizeControls = true;
+                                            final Offset currentPosition =
+                                                _bubblePosition ??
+                                                bubblePosition;
+                                            final double nextBubbleSize =
+                                                bubbleBaseSize *
+                                                _bubbleSizeMultiplierFor(index);
+                                            _bubblePosition =
+                                                _clampBubblePosition(
+                                                  desiredPosition:
+                                                      currentPosition,
+                                                  constraints: constraints,
+                                                  bubbleSize: nextBubbleSize,
+                                                  isCompact: isCompact,
+                                                );
+                                          });
+                                        },
+                                      ),
                                     ),
+                                  ),
+                                ],
+                                GestureDetector(
+                                  onTap: canMoveBubble
+                                      ? () {
+                                          setState(() {
+                                            _showBubbleSizeControls = true;
+                                          });
+                                        }
+                                      : null,
+                                  child: ProfileBubble(
+                                    size: bubbleSize,
+                                    cameraController: state.cameraController,
                                   ),
                                 ),
                               ],
-                              GestureDetector(
-                                onTap: canMoveBubble
-                                    ? () {
-                                        setState(() {
-                                          _showBubbleSizeControls = true;
-                                        });
-                                      }
-                                    : null,
-                                child: ProfileBubble(
-                                  size: bubbleSize,
-                                  cameraController: state.cameraController,
-                                ),
-                              ),
-                            ],
+                            ),
                           ),
                         ),
                       ),
-                    ),
                     if (!hasActiveRecording)
                       Align(
                         alignment: isCompact
@@ -266,6 +272,9 @@ class _RecordVideoFlowScreenState extends ConsumerState<RecordVideoFlowScreen> {
                             tutorialLabel: flow.tutorialLabel,
                             onClose: videoController.closeRecordingFlow,
                             selectedRecordingMode: state.selectedRecordingMode,
+                            onToggleCamera: videoController.toggleCameraEnabled,
+                            onToggleMicrophone:
+                                videoController.toggleMicrophoneEnabled,
                             onSelectRecordingMode:
                                 (selectedRecordingMode) async {
                                   videoController.selectRecordingMode(
@@ -274,6 +283,7 @@ class _RecordVideoFlowScreenState extends ConsumerState<RecordVideoFlowScreen> {
                                 },
                             onStartRecording:
                                 videoController.startRecordingSession,
+                            canStartRecording: canStartRecording,
                             isRecordingActive: hasActiveRecording,
                             isBusy: isBusy,
                             isRecordingRestricted: false,

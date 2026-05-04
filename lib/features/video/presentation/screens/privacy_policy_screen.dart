@@ -10,12 +10,12 @@ class PrivacyPolicyScreen extends StatelessWidget {
     return const LegalDocumentScreen(
       title: 'Privacy Policy',
       subtitle:
-          'This Privacy Policy explains how bloop handles account details, browser permissions, and recordings created through the app.',
+          'This Privacy Policy explains how Aks handles account details, browser permissions, and recordings created through the app.',
       effectiveDateLabel: 'Effective date: March 17, 2026',
       icon: Icons.privacy_tip_outlined,
       heroColor: Color(0xFFFC4C1E),
       highlights: <String>[
-        'bloop account holders and signed-in workspace users',
+        'Aks account holders and signed-in workspace users',
         'Screen, camera, microphone, and browser recording flows',
         'Locally saved recordings, exports, and sharing actions',
         'Password reset, account security, and profile details',
@@ -24,7 +24,7 @@ class PrivacyPolicyScreen extends StatelessWidget {
         LegalDocumentSection(
           heading: 'Information we collect',
           body:
-              'bloop may collect your name, email address, and account status through Firebase Authentication. When you record a video, the app may also process screen, camera, microphone, and recording metadata such as file name, duration, and created date.',
+              'Aks may collect your name, email address, and account status through Firebase Authentication. When you record a video, the app may also process screen, camera, microphone, and recording metadata such as file name, duration, and created date.',
         ),
         LegalDocumentSection(
           heading: 'How recordings are stored',
@@ -44,7 +44,7 @@ class PrivacyPolicyScreen extends StatelessWidget {
         LegalDocumentSection(
           heading: 'Permissions and device access',
           body:
-              'bloop requests access to screen capture, camera, and microphone only when required for a recording flow. Browser-level permission controls remain available to you at all times.',
+              'Aks requests access to screen capture, camera, and microphone only when required for a recording flow. Browser-level permission controls remain available to you at all times.',
         ),
         LegalDocumentSection(
           heading: 'Retention and deletion',

@@ -5,7 +5,7 @@
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleDisplayName</key>
-	<string>bloop</string>
+	<string>Aks</string>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>
@@ -13,7 +13,7 @@
 	<key>CFBundleInfoDictionaryVersion</key>
 	<string>6.0</string>
 	<key>CFBundleName</key>
-	<string>bloop</string>
+	<string>Aks</string>
 	<key>CFBundleURLTypes</key>
 	<array>
 		<dict>
@@ -59,8 +59,8 @@
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
 	<key>NSCameraUsageDescription</key>
-	<string>bloop needs camera access to capture your video.</string>
+	<string>Aks needs camera access to capture your video.</string>
 	<key>NSMicrophoneUsageDescription</key>
-	<string>bloop needs microphone access to capture audio while recording.</string>
+	<string>Aks needs microphone access to capture audio while recording.</string>
 </dict>
 </plist>

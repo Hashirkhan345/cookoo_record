@@ -29,7 +29,7 @@ Future<String> shareSavedRecording(SavedVideoRecordingModel recording) async {
   try {
     await html.window.navigator.share(<String, Object>{
       'title': recording.fileName,
-      'text': 'Watch this bloop recording',
+      'text': 'Watch this Aks recording',
       'url': url,
     });
     return 'Share sheet opened.';

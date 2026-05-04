@@ -86,7 +86,10 @@ class BrowserVideoRecorderWeb implements BrowserVideoRecorder {
   }
 
   @override
-  Future<void> prepareRecording({required VideoRecordingMode mode}) async {
+  Future<void> prepareRecording({
+    required VideoRecordingMode mode,
+    bool includeMicrophone = true,
+  }) async {
     if (!mode.capturesDisplay) {
       throw StateError('Camera-only mode must use the camera recorder.');
     }
@@ -101,7 +104,9 @@ class BrowserVideoRecorderWeb implements BrowserVideoRecorder {
     _stopTriggeredExternally = false;
     _chunks.clear();
     final MediaStreamJs recordingStream = await _requestDisplayStream(mode);
-    final MediaStreamJs? microphoneStream = await _requestMicrophoneStream();
+    final MediaStreamJs? microphoneStream = includeMicrophone
+        ? await _requestMicrophoneStream()
+        : null;
 
     _recordingStream = recordingStream;
     _microphoneStream = microphoneStream;
@@ -150,8 +155,11 @@ class BrowserVideoRecorderWeb implements BrowserVideoRecorder {
   }
 
   @override
-  Future<void> startRecording({required VideoRecordingMode mode}) async {
-    await prepareRecording(mode: mode);
+  Future<void> startRecording({
+    required VideoRecordingMode mode,
+    bool includeMicrophone = true,
+  }) async {
+    await prepareRecording(mode: mode, includeMicrophone: includeMicrophone);
     await startPreparedRecording();
   }
 

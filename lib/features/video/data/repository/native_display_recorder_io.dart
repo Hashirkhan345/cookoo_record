@@ -7,7 +7,7 @@ import 'package:path/path.dart' as path;
 import 'native_display_recorder_contract.dart';
 
 const MethodChannel _nativeDisplayRecorderChannel = MethodChannel(
-  'bloop/native_display_recorder',
+  'Aks/native_display_recorder',
 );
 
 NativeDisplayRecorder createNativeDisplayRecorder() {

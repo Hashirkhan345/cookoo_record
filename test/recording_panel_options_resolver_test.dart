@@ -14,7 +14,7 @@ void main() {
     'resolved panel options use the active camera label and keep inputs on',
     () {
       const VideoRecordingFlowModel flow = VideoRecordingFlowModel(
-        brandLabel: 'bloop',
+        brandLabel: 'Aks',
         heroTitle: 'Record your video',
         heroDescription: 'Description',
         heroActionLabel: 'Record a Video',
@@ -57,10 +57,12 @@ void main() {
           resolveRecordingPanelOptions(flow: flow, state: state);
 
       expect(resolvedOptions.first.label, 'Window');
-      expect(resolvedOptions[1].label, 'FaceTime HD Camera');
+      expect(resolvedOptions[1].label, 'FaceTime camera');
       expect(resolvedOptions[1].status, 'On');
-      expect(resolvedOptions[2].label, 'Default - MacBook Microphone');
+      expect(resolvedOptions[1].isStatusInteractive, isTrue);
+      expect(resolvedOptions[2].label, 'MacBook microphone');
       expect(resolvedOptions[2].status, 'On');
+      expect(resolvedOptions[2].isStatusInteractive, isTrue);
     },
   );
 }

@@ -12,18 +12,21 @@ import '../controller/saved_recording_player_controller_factory.dart';
 import '../controller/saved_recording_transfer.dart';
 import '../controller/video_feature_theme.dart';
 import 'saved_recording_player.dart';
+import 'studio_dialog.dart';
 
-enum _RecordingCardMenuAction { openPlayer, share, download, delete }
+enum _RecordingCardMenuAction { openPlayer, rename, share, download, delete }
 
 class SavedRecordingCard extends StatefulWidget {
   const SavedRecordingCard({
     super.key,
     required this.recording,
+    required this.onRename,
     required this.onDelete,
     this.currentUser,
   });
 
   final SavedVideoRecordingModel recording;
+  final Future<void> Function(String title) onRename;
   final VoidCallback onDelete;
   final AppUser? currentUser;
 
@@ -43,9 +46,9 @@ class _SavedRecordingCardState extends State<SavedRecordingCard> {
       duration: const Duration(milliseconds: 220),
       curve: Curves.easeOutCubic,
       decoration: BoxDecoration(
-        color: VideoFeatureTheme.panel,
+        color: VideoFeatureTheme.panelFor(context),
         borderRadius: BorderRadius.circular(28),
-        border: Border.all(color: VideoFeatureTheme.line),
+        border: Border.all(color: VideoFeatureTheme.lineFor(context)),
         boxShadow: VideoFeatureTheme.floatingShadow,
       ),
       child: Column(
@@ -88,18 +91,18 @@ class _SavedRecordingCardState extends State<SavedRecordingCard> {
                             widget.currentUser?.name ?? 'You',
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
-                              color: VideoFeatureTheme.ink,
+                            style: TextStyle(
+                              color: VideoFeatureTheme.inkFor(context),
                               fontSize: 13,
                               fontWeight: FontWeight.w800,
                               letterSpacing: -0.4,
                             ),
                           ),
-                          const SizedBox(height: 2),
+                          const SizedBox(height: 4),
                           Text(
                             _formatRelativeSavedAt(recording.savedAt),
-                            style: const TextStyle(
-                              color: VideoFeatureTheme.muted,
+                            style: TextStyle(
+                              color: VideoFeatureTheme.mutedFor(context),
                               fontSize: 11,
                               fontWeight: FontWeight.w600,
                             ),
@@ -115,7 +118,7 @@ class _SavedRecordingCardState extends State<SavedRecordingCard> {
                   maxLines: isPhone ? 3 : 2,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
-                    color: VideoFeatureTheme.ink,
+                    color: VideoFeatureTheme.inkFor(context),
                     fontSize: isPhone ? 16 : 18,
                     fontWeight: FontWeight.w700,
                     height: 1.16,
@@ -128,7 +131,7 @@ class _SavedRecordingCardState extends State<SavedRecordingCard> {
                   maxLines: isPhone ? 2 : 1,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
-                    color: VideoFeatureTheme.muted,
+                    color: VideoFeatureTheme.mutedFor(context),
                     fontSize: isPhone ? 11 : 12,
                     fontWeight: FontWeight.w600,
                     height: isPhone ? 1.35 : 1.2,
@@ -151,7 +154,7 @@ class _SavedRecordingCardState extends State<SavedRecordingCard> {
                         ),
                         label: const Text('Watch recording'),
                         style: FilledButton.styleFrom(
-                          backgroundColor: VideoFeatureTheme.accent,
+                          backgroundColor: VideoFeatureTheme.primary,
                           foregroundColor: Colors.white,
                           padding: const EdgeInsets.symmetric(vertical: 12),
                           shape: RoundedRectangleBorder(
@@ -179,10 +182,13 @@ class _SavedRecordingCardState extends State<SavedRecordingCard> {
                         ),
                         label: const Text('Download'),
                         style: OutlinedButton.styleFrom(
-                          foregroundColor: VideoFeatureTheme.ink,
-                          backgroundColor: VideoFeatureTheme.panelMuted
-                              .withValues(alpha: 0.36),
-                          side: const BorderSide(color: VideoFeatureTheme.line),
+                          foregroundColor: VideoFeatureTheme.inkFor(context),
+                          backgroundColor: VideoFeatureTheme.panelMutedFor(
+                            context,
+                          ).withValues(alpha: 0.36),
+                          side: BorderSide(
+                            color: VideoFeatureTheme.lineFor(context),
+                          ),
                           padding: const EdgeInsets.symmetric(vertical: 12),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(18),
@@ -211,7 +217,7 @@ class _SavedRecordingCardState extends State<SavedRecordingCard> {
                           ),
                           label: const Text('Watch recording'),
                           style: FilledButton.styleFrom(
-                            backgroundColor: VideoFeatureTheme.accent,
+                            backgroundColor: VideoFeatureTheme.primary,
                             foregroundColor: Colors.white,
                             padding: const EdgeInsets.symmetric(vertical: 13),
                             shape: RoundedRectangleBorder(
@@ -241,11 +247,12 @@ class _SavedRecordingCardState extends State<SavedRecordingCard> {
                           ),
                           label: const Text('Download'),
                           style: OutlinedButton.styleFrom(
-                            foregroundColor: VideoFeatureTheme.ink,
-                            backgroundColor: VideoFeatureTheme.panelMuted
-                                .withValues(alpha: 0.36),
-                            side: const BorderSide(
-                              color: VideoFeatureTheme.line,
+                            foregroundColor: VideoFeatureTheme.inkFor(context),
+                            backgroundColor: VideoFeatureTheme.panelMutedFor(
+                              context,
+                            ).withValues(alpha: 0.36),
+                            side: BorderSide(
+                              color: VideoFeatureTheme.lineFor(context),
                             ),
                             padding: const EdgeInsets.symmetric(vertical: 13),
                             shape: RoundedRectangleBorder(
@@ -281,6 +288,9 @@ class _SavedRecordingCardState extends State<SavedRecordingCard> {
       case _RecordingCardMenuAction.openPlayer:
         await _openPlayer();
         return;
+      case _RecordingCardMenuAction.rename:
+        await _promptRename();
+        return;
       case _RecordingCardMenuAction.share:
         await _handleRecordingAction(shareSavedRecording);
         return;
@@ -290,6 +300,131 @@ class _SavedRecordingCardState extends State<SavedRecordingCard> {
       case _RecordingCardMenuAction.delete:
         widget.onDelete();
         return;
+    }
+  }
+
+  Future<void> _promptRename() async {
+    if (_isProcessingTransfer) {
+      return;
+    }
+
+    final TextEditingController controller = TextEditingController(
+      text: _editableTitle(widget.recording),
+    );
+    final String? nextTitle = await showStudioDialog<String>(
+      context: context,
+      builder: (BuildContext context) {
+        return StudioDialogShell(
+          title: 'Rename recording',
+          message:
+              'Choose a clear title for this recording. The new name will update in your library immediately.',
+          centerHeader: true,
+          maxWidth: 560,
+          showCloseButton: true,
+          content: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: <Widget>[
+              Text(
+                'Recording name',
+                style: TextStyle(
+                  color: VideoFeatureTheme.inkFor(context),
+                  fontSize: 14,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+              const SizedBox(height: 10),
+              TextField(
+                controller: controller,
+                autofocus: true,
+                textInputAction: TextInputAction.done,
+                decoration: InputDecoration(
+                  hintText: 'Enter a new name',
+                  filled: true,
+                  fillColor: VideoFeatureTheme.panelMutedFor(context),
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 16,
+                  ),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(18),
+                    borderSide: BorderSide(
+                      color: VideoFeatureTheme.lineFor(context),
+                    ),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(18),
+                    borderSide: BorderSide(
+                      color: VideoFeatureTheme.lineFor(context),
+                    ),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(18),
+                    borderSide: const BorderSide(
+                      color: VideoFeatureTheme.primary,
+                      width: 1.5,
+                    ),
+                  ),
+                ),
+                onSubmitted: (String value) {
+                  Navigator.of(context).pop(value.trim());
+                },
+              ),
+            ],
+          ),
+          actions: SizedBox(
+            width: double.infinity,
+            child: Wrap(
+              alignment: WrapAlignment.center,
+              spacing: 12,
+              runSpacing: 12,
+              children: <Widget>[
+                OutlinedButton(
+                  onPressed: () => Navigator.of(context).pop(),
+                  style: OutlinedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 20,
+                      vertical: 15,
+                    ),
+                  ),
+                  child: const Text('Cancel'),
+                ),
+                FilledButton(
+                  onPressed: () =>
+                      Navigator.of(context).pop(controller.text.trim()),
+                  style: FilledButton.styleFrom(
+                    backgroundColor: VideoFeatureTheme.primary,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 22,
+                      vertical: 15,
+                    ),
+                  ),
+                  child: const Text('Save'),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+    controller.dispose();
+
+    if (!mounted || nextTitle == null || nextTitle.trim().isEmpty) {
+      return;
+    }
+
+    setState(() {
+      _isProcessingTransfer = true;
+    });
+
+    try {
+      await widget.onRename(nextTitle.trim());
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isProcessingTransfer = false;
+        });
+      }
     }
   }
 
@@ -331,6 +466,11 @@ class _SavedRecordingCardState extends State<SavedRecordingCard> {
   }
 
   String _displayTitle(SavedVideoRecordingModel recording) {
+    final String? explicitTitle = recording.title?.trim();
+    if (explicitTitle != null && explicitTitle.isNotEmpty) {
+      return explicitTitle;
+    }
+
     final String rawTitle = recording.fileName.replaceFirst(
       RegExp(r'\.[^.]+$'),
       '',
@@ -344,14 +484,27 @@ class _SavedRecordingCardState extends State<SavedRecordingCard> {
       r'^recording\s+\d+$',
       caseSensitive: false,
     ).hasMatch(cleanedTitle)) {
-      return 'bloop recording • ${_formatLongDate(recording.savedAt)}';
+      return 'Aks recording • ${_formatLongDate(recording.savedAt)}';
     }
 
     if (cleanedTitle.isEmpty) {
-      return 'bloop recording';
+      return 'Aks recording';
     }
 
     return cleanedTitle;
+  }
+
+  String _editableTitle(SavedVideoRecordingModel recording) {
+    final String? explicitTitle = recording.title?.trim();
+    if (explicitTitle != null && explicitTitle.isNotEmpty) {
+      return explicitTitle;
+    }
+
+    return recording.fileName
+        .replaceFirst(RegExp(r'\.[^.]+$'), '')
+        .replaceAll(RegExp(r'[_-]+'), ' ')
+        .replaceAll(RegExp(r'\s+'), ' ')
+        .trim();
   }
 
   String _formatDuration(Duration duration) {
@@ -477,14 +630,6 @@ class _SavedRecordingPreviewTile extends StatelessWidget {
                 ),
                 Positioned(
                   top: isPhone ? 10 : 14,
-                  left: isPhone ? 10 : 14,
-                  child: _PreviewLabel(
-                    icon: Icons.bookmark_rounded,
-                    label: 'Saved',
-                  ),
-                ),
-                Positioned(
-                  top: isPhone ? 10 : 14,
                   right: isPhone ? 10 : 14,
                   child: _PreviewMenuButton(
                     isBusy: isBusy,
@@ -496,8 +641,9 @@ class _SavedRecordingPreviewTile extends StatelessWidget {
                   right: isPhone ? 10 : 16,
                   bottom: isPhone ? 10 : 16,
                   child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: <Widget>[
-                      Expanded(child: _PreviewActionPill(onTap: onTap)),
+                      _PreviewActionPill(onTap: onTap),
                       SizedBox(width: isPhone ? 8 : 12),
                       _PreviewDurationBadge(label: durationLabel),
                     ],
@@ -689,8 +835,8 @@ class _PreviewMenuButton extends StatelessWidget {
     return PopupMenuButton<_RecordingCardMenuAction>(
       enabled: !isBusy,
       tooltip: 'Recording actions',
-      color: Colors.white,
-      surfaceTintColor: Colors.white,
+      color: VideoFeatureTheme.panelFor(context),
+      surfaceTintColor: VideoFeatureTheme.panelFor(context),
       elevation: 16,
       padding: EdgeInsets.zero,
       onSelected: onSelected,
@@ -702,6 +848,13 @@ class _PreviewMenuButton extends StatelessWidget {
               child: _MenuActionLabel(
                 icon: Symbols.play_circle_rounded,
                 label: 'Watch recording',
+              ),
+            ),
+            const PopupMenuItem<_RecordingCardMenuAction>(
+              value: _RecordingCardMenuAction.rename,
+              child: _MenuActionLabel(
+                icon: Symbols.edit_rounded,
+                label: 'Rename',
               ),
             ),
             const PopupMenuItem<_RecordingCardMenuAction>(
@@ -732,7 +885,7 @@ class _PreviewMenuButton extends StatelessWidget {
         width: 42,
         height: 42,
         decoration: BoxDecoration(
-          color: VideoFeatureTheme.ink.withValues(alpha: 0.42),
+          color: Colors.black.withValues(alpha: 0.42),
           borderRadius: BorderRadius.circular(16),
           border: Border.all(color: Colors.white.withValues(alpha: 0.16)),
         ),
@@ -741,40 +894,6 @@ class _PreviewMenuButton extends StatelessWidget {
           color: isBusy ? Colors.white38 : Colors.white,
           size: 24,
         ),
-      ),
-    );
-  }
-}
-
-class _PreviewLabel extends StatelessWidget {
-  const _PreviewLabel({required this.icon, required this.label});
-
-  final IconData icon;
-  final String label;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-      decoration: BoxDecoration(
-        color: VideoFeatureTheme.ink.withValues(alpha: 0.34),
-        borderRadius: BorderRadius.circular(999),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.14)),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: <Widget>[
-          Icon(icon, color: Colors.white70, size: 16),
-          const SizedBox(width: 8),
-          Text(
-            label,
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 12,
-              fontWeight: FontWeight.w700,
-            ),
-          ),
-        ],
       ),
     );
   }
@@ -795,7 +914,7 @@ class _PreviewActionPill extends StatelessWidget {
           onTap: onTap,
           borderRadius: BorderRadius.circular(999),
           child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
             decoration: BoxDecoration(
               color: VideoFeatureTheme.ink.withValues(alpha: 0.5),
               borderRadius: BorderRadius.circular(999),
@@ -808,16 +927,19 @@ class _PreviewActionPill extends StatelessWidget {
                   icon: Symbols.play_arrow_rounded,
                   backgroundColor: Color(0x33FFFFFF),
                   foregroundColor: Colors.white,
-                  size: 26,
-                  iconSize: 14,
+                  size: 24,
+                  iconSize: 13,
                 ),
-                const SizedBox(width: 8),
-                const Text(
-                  'Watch recording',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 13,
-                    fontWeight: FontWeight.w700,
+                const SizedBox(width: 7),
+                const Flexible(
+                  child: Text(
+                    'Watch recording',
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700,
+                    ),
                   ),
                 ),
               ],
@@ -843,8 +965,8 @@ class _MenuActionLabel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final Color iconColor = isDestructive
-        ? VideoFeatureTheme.danger
-        : VideoFeatureTheme.ink;
+        ? VideoFeatureTheme.dangerFor(context)
+        : VideoFeatureTheme.inkFor(context);
 
     return Row(
       children: <Widget>[

@@ -34,6 +34,7 @@ class HomeAccountMenu extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final bool isPhone = MediaQuery.sizeOf(context).width < 600;
+    final bool isDark = VideoFeatureTheme.isDark(context);
     return Opacity(
       opacity: isBusy ? 0.68 : 1,
       child: Material(
@@ -41,39 +42,28 @@ class HomeAccountMenu extends StatelessWidget {
         child: InkWell(
           onTap: isBusy ? null : () => _showAccountPanel(context),
           borderRadius: BorderRadius.circular(999),
-          child: Container(
+          child: _AccountInitialsBadge(
             width: isPhone ? 48 : 56,
             height: isPhone ? 48 : 56,
-            decoration: BoxDecoration(
-              gradient: VideoFeatureTheme.primaryGradient,
-              borderRadius: BorderRadius.circular(999),
-              border: Border.all(color: Colors.white.withValues(alpha: 0.8)),
-              boxShadow: VideoFeatureTheme.floatingShadow,
-            ),
-            child: Center(
-              child: isGuest
-                  ? const Icon(
-                      Icons.person_outline_rounded,
-                      color: Colors.white,
-                      size: 22,
-                    )
-                  : Text(
-                      user!.initials,
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.w800,
-                        fontSize: isPhone ? 18 : 22,
-                        letterSpacing: -0.4,
-                      ),
-                    ),
-            ),
+            label: isGuest ? null : user!.initials,
+            icon: isGuest ? Icons.person_outline_rounded : null,
+            fontSize: isGuest ? (isPhone ? 16 : 18) : (isPhone ? 18 : 22),
+            borderColor: isDark
+                ? Colors.white.withValues(alpha: 0.16)
+                : Colors.white.withValues(alpha: 0.8),
+            showShadow: true,
           ),
         ),
       ),
     );
   }
 
-  Future<void> _showAccountPanel(BuildContext context) {
+  static Future<void> showAccountPanel({
+    required BuildContext context,
+    required AppUser? user,
+    required String guestLabel,
+    required ValueChanged<HomeAccountMenuAction> onSelected,
+  }) {
     final Size screenSize = MediaQuery.sizeOf(context);
     final bool isDesktop = screenSize.width >= 720;
     final bool isPhone = screenSize.width < 600;
@@ -148,6 +138,90 @@ class HomeAccountMenu extends StatelessWidget {
           },
     );
   }
+
+  Future<void> _showAccountPanel(BuildContext context) {
+    return showAccountPanel(
+      context: context,
+      user: user,
+      guestLabel: guestLabel,
+      onSelected: onSelected,
+    );
+  }
+}
+
+class AccountInitialsBadge extends StatelessWidget {
+  const AccountInitialsBadge({
+    super.key,
+    required this.label,
+    required this.size,
+    this.fontSize = 18,
+  });
+
+  final String label;
+  final double size;
+  final double fontSize;
+
+  @override
+  Widget build(BuildContext context) {
+    final bool isDark = VideoFeatureTheme.isDark(context);
+    return _AccountInitialsBadge(
+      width: size,
+      height: size,
+      label: label,
+      fontSize: fontSize,
+      borderColor: isDark
+          ? Colors.white.withValues(alpha: 0.16)
+          : Colors.white.withValues(alpha: 0.8),
+      showShadow: false,
+    );
+  }
+}
+
+class _AccountInitialsBadge extends StatelessWidget {
+  const _AccountInitialsBadge({
+    required this.width,
+    required this.height,
+    required this.fontSize,
+    required this.borderColor,
+    required this.showShadow,
+    this.label,
+    this.icon,
+  });
+
+  final double width;
+  final double height;
+  final String? label;
+  final IconData? icon;
+  final double fontSize;
+  final Color borderColor;
+  final bool showShadow;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: width,
+      height: height,
+      decoration: BoxDecoration(
+        gradient: VideoFeatureTheme.primaryGradient,
+        borderRadius: BorderRadius.circular(999),
+        border: Border.all(color: borderColor),
+        boxShadow: showShadow ? VideoFeatureTheme.floatingShadow : null,
+      ),
+      child: Center(
+        child: icon != null
+            ? Icon(icon, color: Colors.white, size: fontSize + 8)
+            : Text(
+                label ?? '',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w800,
+                  fontSize: fontSize,
+                  letterSpacing: -0.4,
+                ),
+              ),
+      ),
+    );
+  }
 }
 
 class _AccountPanel extends StatelessWidget {
@@ -168,11 +242,14 @@ class _AccountPanel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final bool isPhone = MediaQuery.sizeOf(context).width < 600;
+    final bool isDark = VideoFeatureTheme.isDark(context);
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.94),
+        color: VideoFeatureTheme.panelFor(
+          context,
+        ).withValues(alpha: isDark ? 0.96 : 0.94),
         borderRadius: BorderRadius.circular(isPhone ? 26 : 36),
-        border: Border.all(color: VideoFeatureTheme.line),
+        border: Border.all(color: VideoFeatureTheme.lineFor(context)),
         boxShadow: VideoFeatureTheme.panelShadow,
       ),
       child: ClipRRect(
@@ -201,7 +278,9 @@ class _AccountPanel extends StatelessWidget {
                               width: double.infinity,
                               padding: EdgeInsets.all(isPhone ? 14 : 20),
                               decoration: BoxDecoration(
-                                gradient: VideoFeatureTheme.heroGradient,
+                                gradient: VideoFeatureTheme.heroGradientFor(
+                                  context,
+                                ),
                                 borderRadius: BorderRadius.circular(
                                   isPhone ? 22 : 28,
                                 ),
@@ -280,9 +359,13 @@ class _AccountPanel extends StatelessWidget {
                                     : HomeAccountMenuAction.profile,
                               ),
                               style: OutlinedButton.styleFrom(
-                                foregroundColor: VideoFeatureTheme.ink,
-                                backgroundColor: VideoFeatureTheme.panelMuted
-                                    .withValues(alpha: 0.45),
+                                foregroundColor: VideoFeatureTheme.inkFor(
+                                  context,
+                                ),
+                                backgroundColor:
+                                    VideoFeatureTheme.panelMutedFor(
+                                      context,
+                                    ).withValues(alpha: 0.45),
                                 minimumSize: Size(0, isPhone ? 46 : 54),
                                 padding: EdgeInsets.symmetric(
                                   horizontal: isPhone ? 16 : 22,
@@ -308,55 +391,73 @@ class _AccountPanel extends StatelessWidget {
                       tooltip: 'Close account panel',
                       icon: Icon(
                         Icons.close_rounded,
-                        color: VideoFeatureTheme.ink,
+                        color: VideoFeatureTheme.inkFor(context),
                         size: isPhone ? 28 : 34,
                       ),
                     ),
                   ],
                 ),
               ),
-              const Divider(height: 1, color: VideoFeatureTheme.line),
+              Divider(height: 1, color: VideoFeatureTheme.lineFor(context)),
               Padding(
                 padding: EdgeInsets.symmetric(
                   horizontal: isPhone ? 12 : 18,
                   vertical: isPhone ? 10 : 14,
                 ),
                 child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: <Widget>[
+                    const _AccountSectionLabel(label: 'Workspace'),
                     _AccountActionTile(
                       label: 'Settings',
+                      subtitle: 'Preferences and workspace controls',
+                      icon: Icons.settings_outlined,
                       onTap: () =>
                           onActionSelected(HomeAccountMenuAction.settings),
                     ),
                     if (!isGuest)
                       _AccountActionTile(
                         label: 'View profile',
+                        subtitle: 'Review your account details',
+                        icon: Icons.person_outline_rounded,
                         onTap: () =>
                             onActionSelected(HomeAccountMenuAction.profile),
                       ),
                     if (isGuest)
                       _AccountActionTile(
                         label: 'Login',
+                        subtitle: 'Unlock saved account features',
+                        icon: Icons.login_rounded,
                         onTap: () =>
                             onActionSelected(HomeAccountMenuAction.login),
                       ),
                     _AccountActionTile(
                       label: 'Guide',
+                      subtitle: 'See how recording works in Aks',
+                      icon: Icons.play_lesson_outlined,
                       onTap: () =>
                           onActionSelected(HomeAccountMenuAction.guide),
                     ),
+                    const SizedBox(height: 10),
+                    const _AccountSectionLabel(label: 'Support'),
                     _AccountActionTile(
                       label: 'Help Center',
+                      subtitle: 'Troubleshooting and best practices',
+                      icon: Icons.help_outline_rounded,
                       onTap: () =>
                           onActionSelected(HomeAccountMenuAction.helpCenter),
                     ),
                     _AccountActionTile(
                       label: 'Privacy Policy',
+                      subtitle: 'How recordings and account data are handled',
+                      icon: Icons.privacy_tip_outlined,
                       onTap: () =>
                           onActionSelected(HomeAccountMenuAction.privacyPolicy),
                     ),
                     _AccountActionTile(
                       label: 'Terms & Conditions',
+                      subtitle: 'Usage and recording responsibility',
+                      icon: Icons.gavel_outlined,
                       onTap: () => onActionSelected(
                         HomeAccountMenuAction.termsAndConditions,
                       ),
@@ -364,7 +465,7 @@ class _AccountPanel extends StatelessWidget {
                   ],
                 ),
               ),
-              const Divider(height: 1, color: VideoFeatureTheme.line),
+              Divider(height: 1, color: VideoFeatureTheme.lineFor(context)),
               if (!isGuest)
                 Padding(
                   padding: EdgeInsets.fromLTRB(
@@ -375,6 +476,8 @@ class _AccountPanel extends StatelessWidget {
                   ),
                   child: _AccountActionTile(
                     label: 'Sign Out',
+                    subtitle: 'End this session on the current device',
+                    icon: Icons.logout_rounded,
                     onTap: () =>
                         onActionSelected(HomeAccountMenuAction.signOut),
                     isDestructive: true,
@@ -391,11 +494,15 @@ class _AccountPanel extends StatelessWidget {
 class _AccountActionTile extends StatelessWidget {
   const _AccountActionTile({
     required this.label,
+    required this.subtitle,
+    required this.icon,
     required this.onTap,
     this.isDestructive = false,
   });
 
   final String label;
+  final String subtitle;
+  final IconData icon;
   final VoidCallback onTap;
   final bool isDestructive;
 
@@ -415,37 +522,111 @@ class _AccountActionTile extends StatelessWidget {
           ),
           decoration: BoxDecoration(
             color: isDestructive
-                ? VideoFeatureTheme.accentSoft.withValues(alpha: 0.5)
-                : VideoFeatureTheme.panel,
+                ? VideoFeatureTheme.dangerFor(context).withValues(alpha: 0.12)
+                : VideoFeatureTheme.panelMutedFor(
+                    context,
+                  ).withValues(alpha: 0.55),
             borderRadius: BorderRadius.circular(isPhone ? 18 : 22),
             border: Border.all(
               color: isDestructive
-                  ? VideoFeatureTheme.accent.withValues(alpha: 0.18)
-                  : VideoFeatureTheme.line,
+                  ? VideoFeatureTheme.dangerFor(context).withValues(alpha: 0.28)
+                  : VideoFeatureTheme.lineFor(context),
             ),
           ),
           child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: <Widget>[
-              Expanded(
-                child: Text(
-                  label,
-                  style: TextStyle(
+              Container(
+                width: isPhone ? 36 : 40,
+                height: isPhone ? 36 : 40,
+                decoration: BoxDecoration(
+                  color: isDestructive
+                      ? VideoFeatureTheme.panelFor(
+                          context,
+                        ).withValues(alpha: 0.9)
+                      : VideoFeatureTheme.panelFor(context),
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(
                     color: isDestructive
-                        ? VideoFeatureTheme.danger
-                        : VideoFeatureTheme.ink,
-                    fontSize: isPhone ? 14 : 16,
-                    fontWeight: FontWeight.w600,
+                        ? VideoFeatureTheme.dangerFor(
+                            context,
+                          ).withValues(alpha: 0.18)
+                        : VideoFeatureTheme.lineFor(context),
                   ),
+                ),
+                child: Icon(
+                  icon,
+                  color: isDestructive
+                      ? VideoFeatureTheme.dangerFor(context)
+                      : VideoFeatureTheme.accentFor(context),
+                  size: isPhone ? 18 : 20,
+                ),
+              ),
+              SizedBox(width: isPhone ? 10 : 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: <Widget>[
+                    Text(
+                      label,
+                      style: TextStyle(
+                        color: isDestructive
+                            ? VideoFeatureTheme.dangerFor(context)
+                            : VideoFeatureTheme.inkFor(context),
+                        fontSize: isPhone ? 14 : 16,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      subtitle,
+                      style: TextStyle(
+                        color: isDestructive
+                            ? VideoFeatureTheme.dangerFor(
+                                context,
+                              ).withValues(alpha: 0.82)
+                            : VideoFeatureTheme.mutedFor(context),
+                        fontSize: isPhone ? 12 : 13,
+                        fontWeight: FontWeight.w500,
+                        height: 1.4,
+                      ),
+                    ),
+                  ],
                 ),
               ),
               if (!isDestructive)
-                Icon(
-                  Icons.arrow_forward_rounded,
-                  color: VideoFeatureTheme.muted,
-                  size: isPhone ? 18 : 20,
+                Padding(
+                  padding: const EdgeInsets.only(top: 8),
+                  child: Icon(
+                    Icons.arrow_forward_rounded,
+                    color: VideoFeatureTheme.mutedFor(context),
+                    size: isPhone ? 18 : 20,
+                  ),
                 ),
             ],
           ),
+        ),
+      ),
+    );
+  }
+}
+
+class _AccountSectionLabel extends StatelessWidget {
+  const _AccountSectionLabel({required this.label});
+
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(6, 8, 6, 6),
+      child: Text(
+        label,
+        style: TextStyle(
+          color: VideoFeatureTheme.mutedFor(context),
+          fontSize: 12,
+          fontWeight: FontWeight.w800,
+          letterSpacing: 0.35,
         ),
       ),
     );

@@ -38,7 +38,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           icon: Symbols.delete_sharp,
           title: 'Delete account?',
           message:
-              'This permanently removes your bloop account. If your session is old, Firebase may ask you to sign in again before deletion can finish.',
+              'This permanently removes your Aks account. If your session is old, Firebase may ask you to sign in again before deletion can finish.',
           maxWidth: 640,
           actions: Wrap(
             alignment: WrapAlignment.end,
@@ -146,10 +146,10 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     return Scaffold(
       body: Stack(
         children: <Widget>[
-          const Positioned.fill(
+          Positioned.fill(
             child: DecoratedBox(
               decoration: BoxDecoration(
-                gradient: VideoFeatureTheme.screenBackground,
+                gradient: VideoFeatureTheme.screenBackgroundFor(context),
               ),
             ),
           ),
@@ -187,9 +187,11 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                             icon: const Icon(Icons.arrow_back_rounded),
                             label: const Text('Back'),
                             style: OutlinedButton.styleFrom(
-                              foregroundColor: VideoFeatureTheme.ink,
-                              side: const BorderSide(
-                                color: VideoFeatureTheme.line,
+                              foregroundColor: VideoFeatureTheme.inkFor(
+                                context,
+                              ),
+                              side: BorderSide(
+                                color: VideoFeatureTheme.lineFor(context),
                               ),
                               padding: const EdgeInsets.symmetric(
                                 horizontal: 18,
@@ -209,9 +211,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                             label: const Text('Workspace'),
                             style: FilledButton.styleFrom(
                               foregroundColor: VideoFeatureTheme.primaryDeep,
-                              backgroundColor: Colors.white.withValues(
-                                alpha: 0.78,
-                              ),
+                              backgroundColor: VideoFeatureTheme.panelFor(
+                                context,
+                              ).withValues(alpha: 0.78),
                               padding: const EdgeInsets.symmetric(
                                 horizontal: 18,
                                 vertical: 14,
@@ -243,15 +245,15 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                                       value: user.name,
                                     ),
                                     const SizedBox(height: 18),
-                                    const Divider(
-                                      color: VideoFeatureTheme.line,
+                                    Divider(
+                                      color: VideoFeatureTheme.lineFor(context),
                                       height: 1,
                                     ),
                                     const SizedBox(height: 18),
                                     _InfoRow(label: 'Email', value: user.email),
                                     const SizedBox(height: 18),
-                                    const Divider(
-                                      color: VideoFeatureTheme.line,
+                                    Divider(
+                                      color: VideoFeatureTheme.lineFor(context),
                                       height: 1,
                                     ),
                                     const SizedBox(height: 18),
@@ -405,13 +407,13 @@ class _ProfileHeroCard extends StatelessWidget {
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
           decoration: BoxDecoration(
-            color: VideoFeatureTheme.accentSoft,
+            color: VideoFeatureTheme.accentSoftFor(context),
             borderRadius: BorderRadius.circular(999),
           ),
-          child: const Text(
+          child: Text(
             'Profile',
             style: TextStyle(
-              color: VideoFeatureTheme.accent,
+              color: VideoFeatureTheme.accentFor(context),
               fontSize: 12,
               fontWeight: FontWeight.w800,
               letterSpacing: 0.3,
@@ -422,7 +424,7 @@ class _ProfileHeroCard extends StatelessWidget {
         Text(
           user.name,
           style: TextStyle(
-            color: VideoFeatureTheme.ink,
+            color: VideoFeatureTheme.inkFor(context),
             fontSize: isWide ? 38 : 30,
             fontWeight: FontWeight.w800,
             letterSpacing: -1.2,
@@ -432,8 +434,8 @@ class _ProfileHeroCard extends StatelessWidget {
         const SizedBox(height: 10),
         Text(
           user.email,
-          style: const TextStyle(
-            color: VideoFeatureTheme.muted,
+          style: TextStyle(
+            color: VideoFeatureTheme.mutedFor(context),
             fontSize: 16,
             fontWeight: FontWeight.w600,
           ),
@@ -455,15 +457,33 @@ class _ProfileHeroCard extends StatelessWidget {
             ),
           ],
         ),
+        const SizedBox(height: 18),
+        Wrap(
+          spacing: 12,
+          runSpacing: 12,
+          children: <Widget>[
+            _HeroStatCard(
+              label: 'Status',
+              value: user.emailVerified ? 'Verified' : 'Needs review',
+            ),
+            _HeroStatCard(label: 'Workspace role', value: 'Owner'),
+            _HeroStatCard(
+              label: 'Profile photo',
+              value: (user.photoUrl?.trim().isNotEmpty ?? false)
+                  ? 'Connected'
+                  : 'Initials only',
+            ),
+          ],
+        ),
       ],
     );
 
     return Container(
       width: double.infinity,
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.95),
+        color: VideoFeatureTheme.panelFor(context).withValues(alpha: 0.94),
         borderRadius: BorderRadius.circular(36),
-        border: Border.all(color: VideoFeatureTheme.line),
+        border: Border.all(color: VideoFeatureTheme.lineFor(context)),
         boxShadow: VideoFeatureTheme.panelShadow,
       ),
       child: Stack(
@@ -521,9 +541,9 @@ class _FactChip extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: VideoFeatureTheme.panelFor(context),
         borderRadius: BorderRadius.circular(999),
-        border: Border.all(color: VideoFeatureTheme.line),
+        border: Border.all(color: VideoFeatureTheme.lineFor(context)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -532,10 +552,52 @@ class _FactChip extends StatelessWidget {
           const SizedBox(width: 8),
           Text(
             label,
-            style: const TextStyle(
-              color: VideoFeatureTheme.ink,
+            style: TextStyle(
+              color: VideoFeatureTheme.inkFor(context),
               fontSize: 13,
               fontWeight: FontWeight.w700,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _HeroStatCard extends StatelessWidget {
+  const _HeroStatCard({required this.label, required this.value});
+
+  final String label;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      constraints: const BoxConstraints(minWidth: 132),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      decoration: BoxDecoration(
+        color: VideoFeatureTheme.panelFor(context).withValues(alpha: 0.8),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: VideoFeatureTheme.lineFor(context)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: <Widget>[
+          Text(
+            label,
+            style: TextStyle(
+              color: VideoFeatureTheme.mutedFor(context),
+              fontSize: 12,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            value,
+            style: TextStyle(
+              color: VideoFeatureTheme.inkFor(context),
+              fontSize: 14,
+              fontWeight: FontWeight.w800,
             ),
           ),
         ],
@@ -567,7 +629,10 @@ class _ProfileAvatarDisplay extends StatelessWidget {
                   ? VideoFeatureTheme.success
                   : VideoFeatureTheme.focus,
               shape: BoxShape.circle,
-              border: Border.all(color: Colors.white, width: 4),
+              border: Border.all(
+                color: VideoFeatureTheme.panelFor(context),
+                width: 4,
+              ),
             ),
           ),
         ),
@@ -588,9 +653,9 @@ class _ProfileSectionCard extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.92),
+        color: VideoFeatureTheme.panelFor(context).withValues(alpha: 0.92),
         borderRadius: BorderRadius.circular(32),
-        border: Border.all(color: VideoFeatureTheme.line),
+        border: Border.all(color: VideoFeatureTheme.lineFor(context)),
         boxShadow: VideoFeatureTheme.floatingShadow,
       ),
       child: Column(
@@ -598,8 +663,8 @@ class _ProfileSectionCard extends StatelessWidget {
         children: <Widget>[
           Text(
             title,
-            style: const TextStyle(
-              color: VideoFeatureTheme.ink,
+            style: TextStyle(
+              color: VideoFeatureTheme.inkFor(context),
               fontSize: 22,
               fontWeight: FontWeight.w800,
               letterSpacing: -0.5,
@@ -628,8 +693,8 @@ class _InfoRow extends StatelessWidget {
           width: 108,
           child: Text(
             label,
-            style: const TextStyle(
-              color: VideoFeatureTheme.muted,
+            style: TextStyle(
+              color: VideoFeatureTheme.mutedFor(context),
               fontSize: 14,
               fontWeight: FontWeight.w700,
             ),
@@ -639,8 +704,8 @@ class _InfoRow extends StatelessWidget {
         Expanded(
           child: Text(
             value,
-            style: const TextStyle(
-              color: VideoFeatureTheme.ink,
+            style: TextStyle(
+              color: VideoFeatureTheme.inkFor(context),
               fontSize: 17,
               fontWeight: FontWeight.w700,
               height: 1.45,
@@ -664,17 +729,17 @@ class _StatusTile extends StatelessWidget {
       constraints: const BoxConstraints(minWidth: 150),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: VideoFeatureTheme.panel,
+        color: VideoFeatureTheme.panelFor(context),
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: VideoFeatureTheme.line),
+        border: Border.all(color: VideoFeatureTheme.lineFor(context)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
           Text(
             label,
-            style: const TextStyle(
-              color: VideoFeatureTheme.muted,
+            style: TextStyle(
+              color: VideoFeatureTheme.mutedFor(context),
               fontSize: 13,
               fontWeight: FontWeight.w700,
             ),
@@ -682,8 +747,8 @@ class _StatusTile extends StatelessWidget {
           const SizedBox(height: 8),
           Text(
             value,
-            style: const TextStyle(
-              color: VideoFeatureTheme.ink,
+            style: TextStyle(
+              color: VideoFeatureTheme.inkFor(context),
               fontSize: 18,
               fontWeight: FontWeight.w800,
               letterSpacing: -0.4,
@@ -707,28 +772,30 @@ class _DangerZoneCard extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.92),
+        color: VideoFeatureTheme.panelFor(context).withValues(alpha: 0.92),
         borderRadius: BorderRadius.circular(32),
-        border: Border.all(color: const Color(0x1FB24B37)),
+        border: Border.all(
+          color: VideoFeatureTheme.dangerFor(context).withValues(alpha: 0.24),
+        ),
         boxShadow: VideoFeatureTheme.floatingShadow,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
-          const Text(
+          Text(
             'Danger zone',
             style: TextStyle(
-              color: VideoFeatureTheme.ink,
+              color: VideoFeatureTheme.inkFor(context),
               fontSize: 22,
               fontWeight: FontWeight.w800,
               letterSpacing: -0.5,
             ),
           ),
           const SizedBox(height: 10),
-          const Text(
+          Text(
             'Delete this account and clear access for this workspace.',
             style: TextStyle(
-              color: VideoFeatureTheme.muted,
+              color: VideoFeatureTheme.mutedFor(context),
               fontSize: 15,
               height: 1.5,
             ),
@@ -748,9 +815,11 @@ class _DangerZoneCard extends StatelessWidget {
                 : const Icon(Symbols.delete_sharp),
             label: Text(isBusy ? 'Deleting account...' : 'Delete account'),
             style: FilledButton.styleFrom(
-              backgroundColor: const Color(0xFFAF2D2D),
+              backgroundColor: VideoFeatureTheme.dangerFor(context),
               foregroundColor: Colors.white,
-              disabledBackgroundColor: const Color(0xFFDBB3B3),
+              disabledBackgroundColor: VideoFeatureTheme.dangerFor(
+                context,
+              ).withValues(alpha: 0.45),
               disabledForegroundColor: Colors.white,
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
               shape: RoundedRectangleBorder(

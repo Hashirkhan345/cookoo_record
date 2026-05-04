@@ -48,14 +48,21 @@ class FirebaseAuthRepository implements AuthRepository {
 
   @override
   Stream<AppUser?> authStateChanges() {
-    return _firebaseAuth.authStateChanges().map((User? user) {
+    return _firebaseAuth.authStateChanges().asyncExpand((User? user) {
       if (user == null) {
-        return null;
+        return Stream<AppUser?>.value(null);
       }
 
-      final AppUser appUser = AppUser.fromFirebaseUser(user);
       unawaited(_syncUserProfile(user));
-      return appUser;
+      return _usersCollection.doc(user.uid).snapshots().map((
+        DocumentSnapshot<Map<String, dynamic>> snapshot,
+      ) {
+        final Map<String, dynamic>? data = snapshot.data();
+        if (data == null) {
+          return AppUser.fromFirebaseUser(user);
+        }
+        return AppUser.fromFirestore(data, fallbackUser: user);
+      });
     });
   }
 
@@ -67,7 +74,7 @@ class FirebaseAuthRepository implements AuthRepository {
     }
 
     unawaited(_syncUserProfile(user));
-    return AppUser.fromFirebaseUser(user);
+    return _readUserProfile(user);
   }
 
   @override
@@ -78,9 +85,8 @@ class FirebaseAuthRepository implements AuthRepository {
     final UserCredential credential = await _firebaseAuth
         .signInWithEmailAndPassword(email: email.trim(), password: password);
     final User user = credential.user ?? _requireCurrentUser();
-    final AppUser appUser = AppUser.fromFirebaseUser(user);
     unawaited(_syncUserProfile(user));
-    return appUser;
+    return _readUserProfile(user);
   }
 
   @override
@@ -109,7 +115,7 @@ class FirebaseAuthRepository implements AuthRepository {
         nameOverride: trimmedName,
       );
       await _writeUserDocument(appUser);
-      return appUser;
+      return _readUserProfile(refreshedUser);
     } catch (error) {
       if (createdUser != null) {
         await _rollbackIncompleteRegistration(createdUser);
@@ -142,13 +148,12 @@ class FirebaseAuthRepository implements AuthRepository {
     }
 
     final User user = credential.user ?? _requireCurrentUser();
-    final AppUser appUser = AppUser.fromFirebaseUser(user);
     if (credential.additionalUserInfo?.isNewUser ?? false) {
-      await _writeUserDocument(appUser);
+      await _writeUserDocument(AppUser.fromFirebaseUser(user));
     } else {
       unawaited(_syncUserProfile(user));
     }
-    return appUser;
+    return _readUserProfile(user);
   }
 
   @override
@@ -240,12 +245,31 @@ class FirebaseAuthRepository implements AuthRepository {
 
   Future<void> _writeUserDocument(AppUser appUser) {
     final Map<String, Object?> data = <String, Object?>{
-      ...appUser.toJson(),
+      'uid': appUser.uid,
+      'email': appUser.email,
+      'name': appUser.name,
+      'photoUrl': appUser.photoUrl,
+      'emailVerified': appUser.emailVerified,
       'createdAt': appUser.createdAt ?? DateTime.now(),
       'lastSignInAt': appUser.lastSignInAt ?? DateTime.now(),
     }..removeWhere((String key, Object? value) => value == null);
 
     return _usersCollection.doc(appUser.uid).set(data, SetOptions(merge: true));
+  }
+
+  Future<AppUser> _readUserProfile(User user) async {
+    try {
+      final DocumentSnapshot<Map<String, dynamic>> snapshot =
+          await _usersCollection.doc(user.uid).get();
+      final Map<String, dynamic>? data = snapshot.data();
+      if (data != null) {
+        return AppUser.fromFirestore(data, fallbackUser: user);
+      }
+    } catch (_) {
+      // Fall back to the FirebaseAuth user when the profile document is missing.
+    }
+
+    return AppUser.fromFirebaseUser(user);
   }
 
   Future<void> _rollbackIncompleteRegistration(User user) async {

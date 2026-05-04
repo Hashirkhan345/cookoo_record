@@ -9,6 +9,11 @@ service cloud.firestore {
     match /users/{userId} {
       allow read, create, update, delete: if request.auth != null
         && request.auth.uid == userId;
+
+      match /videos/{videoId} {
+        allow read, create, update, delete: if request.auth != null
+          && request.auth.uid == userId;
+      }
     }
 
     match /sharedVideos/{videoId} {

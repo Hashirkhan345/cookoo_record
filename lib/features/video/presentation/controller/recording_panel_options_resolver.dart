@@ -1,5 +1,3 @@
-import 'package:flutter/foundation.dart';
-
 import 'package:camera/camera.dart';
 
 import '../../data/enums/video_recording_mode.dart';
@@ -16,10 +14,6 @@ List<VideoRecordingOptionModel> resolveRecordingPanelOptions({
       state.cameraController?.value.isInitialized ?? state.activeCamera != null;
   final bool showDisplayOption = supportedRecordingModesForCurrentPlatform()
       .any((VideoRecordingMode mode) => mode.capturesDisplay);
-  final bool isAndroidDisplayMode =
-      !kIsWeb &&
-      defaultTargetPlatform == TargetPlatform.android &&
-      state.selectedRecordingMode.capturesDisplay;
 
   return flow.panelOptions
       .where(
@@ -36,6 +30,7 @@ List<VideoRecordingOptionModel> resolveRecordingPanelOptions({
               status: option.status,
               highlighted: option.highlighted,
               selectedRecordingMode: state.selectedRecordingMode,
+              isStatusInteractive: option.isStatusInteractive,
             );
           case VideoRecordingOptionKind.camera:
             return VideoRecordingOptionModel(
@@ -44,17 +39,17 @@ List<VideoRecordingOptionModel> resolveRecordingPanelOptions({
                 state.activeCamera,
                 fallback: option.label,
               ),
-              status: inputsReady
-                  ? 'On'
-                  : (isAndroidDisplayMode ? 'Preview off' : option.status),
+              status: state.isCameraEnabled && inputsReady ? 'On' : 'Off',
               highlighted: option.highlighted,
+              isStatusInteractive: true,
             );
           case VideoRecordingOptionKind.microphone:
             return VideoRecordingOptionModel(
               kind: option.kind,
-              label: option.label,
-              status: inputsReady ? 'On' : option.status,
+              label: _resolveMicrophoneLabel(option.label),
+              status: state.isMicrophoneEnabled ? 'On' : 'Off',
               highlighted: option.highlighted,
+              isStatusInteractive: true,
             );
         }
       })
@@ -67,7 +62,7 @@ String _resolveCameraLabel(
 }) {
   final String cameraName = activeCamera?.name.trim() ?? '';
   if (cameraName.isNotEmpty) {
-    return cameraName;
+    return _friendlyCameraLabel(cameraName);
   }
 
   switch (activeCamera?.lensDirection) {
@@ -80,4 +75,30 @@ String _resolveCameraLabel(
     case null:
       return fallback;
   }
+}
+
+String _friendlyCameraLabel(String cameraName) {
+  final String normalized = cameraName.replaceAll(RegExp(r'\s+'), ' ').trim();
+  if (normalized.toLowerCase().contains('facetime')) {
+    return 'FaceTime camera';
+  }
+  if (normalized.length > 24) {
+    return 'Camera';
+  }
+  return normalized;
+}
+
+String _resolveMicrophoneLabel(String label) {
+  final String normalized = label.replaceAll(RegExp(r'\s+'), ' ').trim();
+  final String lower = normalized.toLowerCase();
+  if (lower.contains('macbook')) {
+    return 'MacBook microphone';
+  }
+  if (lower.startsWith('default - ')) {
+    return normalized.substring('default - '.length);
+  }
+  if (normalized.length > 26) {
+    return 'Microphone';
+  }
+  return normalized;
 }

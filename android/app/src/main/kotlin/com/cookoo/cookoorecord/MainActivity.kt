@@ -29,8 +29,8 @@ class MainActivity : FlutterActivity() {
         private const val maxCaptureLongSide = 1280
     }
 
-    private val videoTransferChannelName = "bloop/video_transfer"
-    private val nativeDisplayRecorderChannelName = "bloop/native_display_recorder"
+    private val videoTransferChannelName = "Aks/video_transfer"
+    private val nativeDisplayRecorderChannelName = "Aks/native_display_recorder"
 
     private var pendingDisplayCaptureResult: MethodChannel.Result? = null
     private var preparedDisplayCaptureResultCode: Int? = null
@@ -210,7 +210,7 @@ class MainActivity : FlutterActivity() {
                 rotation = rotation
             )
             val virtualDisplay = projection.createVirtualDisplay(
-                "bloop-screen-recording",
+                "Aks-screen-recording",
                 width,
                 height,
                 densityDpi,
@@ -349,7 +349,7 @@ class MainActivity : FlutterActivity() {
         mimeType: String
     ): String {
         val resolver = applicationContext.contentResolver
-        val relativePath = Environment.DIRECTORY_DOWNLOADS + "/bloop"
+        val relativePath = Environment.DIRECTORY_DOWNLOADS + "/Aks"
         val values = ContentValues().apply {
             put(MediaStore.Downloads.DISPLAY_NAME, fileName)
             put(MediaStore.Downloads.MIME_TYPE, mimeType)
@@ -371,13 +371,13 @@ class MainActivity : FlutterActivity() {
         }
         resolver.update(uri, finalizeValues, null, null)
 
-        return "Recording exported to Downloads/bloop/$fileName."
+        return "Recording exported to Downloads/Aks/$fileName."
     }
 
     private fun exportToLegacyDownloads(sourceFile: File, fileName: String): String {
         val downloadsDirectory =
             Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
-        val targetDirectory = File(downloadsDirectory, "bloop")
+        val targetDirectory = File(downloadsDirectory, "Aks")
         if (!targetDirectory.exists()) {
             targetDirectory.mkdirs()
         }

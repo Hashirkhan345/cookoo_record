@@ -14,6 +14,7 @@ class SavedVideoRecordingModel {
     required this.playbackPath,
     required this.mimeType,
     required this.sizeInBytes,
+    this.title,
     this.publicShareUrl,
     this.publicShareStoragePath,
     this.sharedAt,
@@ -28,6 +29,7 @@ class SavedVideoRecordingModel {
   final String playbackPath;
   final String mimeType;
   final int sizeInBytes;
+  final String? title;
   final String? publicShareUrl;
   final String? publicShareStoragePath;
   final DateTime? sharedAt;
@@ -40,10 +42,14 @@ class SavedVideoRecordingModel {
         return 'Browser local storage';
       case VideoRecordingStorageKind.browserIndexedDb:
         return 'Browser IndexedDB';
+      case VideoRecordingStorageKind.firebaseStorage:
+        return 'Firebase Storage';
     }
   }
 
   SavedVideoRecordingModel copyWith({
+    String? fileName,
+    String? title,
     VideoRecordingStorageKind? storageKind,
     String? storagePath,
     String? playbackPath,
@@ -54,7 +60,7 @@ class SavedVideoRecordingModel {
   }) {
     return SavedVideoRecordingModel(
       id: id,
-      fileName: fileName,
+      fileName: fileName ?? this.fileName,
       savedAt: savedAt,
       duration: duration,
       storageKind: storageKind ?? this.storageKind,
@@ -62,6 +68,7 @@ class SavedVideoRecordingModel {
       playbackPath: playbackPath ?? this.playbackPath,
       mimeType: mimeType,
       sizeInBytes: sizeInBytes ?? this.sizeInBytes,
+      title: title ?? this.title,
       publicShareUrl: publicShareUrl ?? this.publicShareUrl,
       publicShareStoragePath:
           publicShareStoragePath ?? this.publicShareStoragePath,
@@ -79,6 +86,7 @@ class SavedVideoRecordingModel {
       'storagePath': storagePath,
       'mimeType': mimeType,
       'sizeInBytes': sizeInBytes,
+      'title': title,
       'publicShareUrl': publicShareUrl,
       'publicShareStoragePath': publicShareStoragePath,
       'sharedAt': sharedAt?.toIso8601String(),
@@ -98,11 +106,26 @@ class SavedVideoRecordingModel {
       playbackPath: json['storagePath'] as String,
       mimeType: json['mimeType'] as String? ?? 'video/mp4',
       sizeInBytes: json['sizeInBytes'] as int? ?? 0,
-      publicShareUrl: json['publicShareUrl'] as String?,
+      title: _firstNonEmptyString(json, const <String>['title']),
+      publicShareUrl:
+          json['publicShareUrl'] as String? ??
+          json['shareUrl'] as String? ??
+          json['shareableUrl'] as String? ??
+          json['shareableLink'] as String?,
       publicShareStoragePath: json['publicShareStoragePath'] as String?,
       sharedAt: (json['sharedAt'] as String?) != null
           ? DateTime.tryParse(json['sharedAt'] as String)
           : null,
     );
   }
+}
+
+String? _firstNonEmptyString(Map<String, dynamic> json, List<String> fields) {
+  for (final String field in fields) {
+    final String? value = (json[field] as String?)?.trim();
+    if (value != null && value.isNotEmpty) {
+      return value;
+    }
+  }
+  return null;
 }

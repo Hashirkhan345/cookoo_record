@@ -29,11 +29,17 @@ abstract class VideoRepository {
 
   Future<List<CameraDescription>> getAvailableCameras();
 
-  Future<CameraController> createCameraController(CameraDescription camera);
+  Future<CameraController> createCameraController(
+    CameraDescription camera, {
+    required bool enableAudio,
+  });
 
   Future<void> initializeCameraController(CameraController controller);
 
-  Future<void> prepareDisplayCapture({required VideoRecordingMode mode});
+  Future<void> prepareDisplayCapture({
+    required VideoRecordingMode mode,
+    bool isMicrophoneEnabled = true,
+  });
 
   Future<void> startPreparedDisplayCapture();
 
@@ -42,6 +48,7 @@ abstract class VideoRepository {
   Future<void> startRecording(
     CameraController? controller, {
     required VideoRecordingMode mode,
+    bool isMicrophoneEnabled = true,
   });
 
   Future<void> pauseRecording(CameraController? controller);
@@ -92,24 +99,24 @@ class LocalVideoRepository implements VideoRepository {
         _nativeDisplayRecorder.isSupported;
 
     return VideoRecordingFlowModel(
-      brandLabel: 'bloop',
-      heroTitle: 'Record your video',
+      brandLabel: 'Aks',
+      heroTitle: 'Your recording workspace',
       heroDescription: supportsNativeDisplayRecording
-          ? 'Record your screen or camera directly from your phone and keep your presenter available during the session.'
+          ? 'Capture your screen or camera from mobile, keep your presenter visible, and save polished updates without extra setup.'
           : isMobileNative
-          ? 'Record polished camera videos directly from your phone and keep your presenter visible throughout the session.'
-          : 'Launch a polished recording flow directly from the home screen and keep the presenter visible in the lower section.',
-      heroActionLabel: 'Record a Video',
+          ? 'Capture polished camera videos directly from your phone and keep the presenter visible throughout the session.'
+          : 'Start a polished screen or camera recording from one workspace, then review, save, and export it from your library.',
+      heroActionLabel: 'Start recording',
       helperMessage: supportsNativeDisplayRecording
           ? 'Camera, microphone, and screen recording are available on this device.'
           : isMobileNative
           ? 'Camera and microphone recording are available on this device.'
-          : 'For the best recording experience, open this flow on a larger screen.',
-      previewTitle: 'Ways to use bloop for education',
+          : 'For the best recording experience, use a larger screen and confirm browser permissions before you start.',
+      previewTitle: 'Use Aks for walkthroughs, lessons, and updates',
       startRecordingLabel: 'Start recording',
-      recordingLimitLabel: '2 recordings lifetime · 5 min each',
-      tutorialLabel: '1 minute tutorial',
-      successMessage: 'Recording setup opened successfully.',
+      recordingLimitLabel: '20 recordings lifetime · 5 min each',
+      tutorialLabel: 'Open recording guide',
+      successMessage: 'Recording workspace opened successfully.',
       panelOptions: supportsNativeDisplayRecording
           ? const <VideoRecordingOptionModel>[
               VideoRecordingOptionModel(
@@ -197,12 +204,13 @@ class LocalVideoRepository implements VideoRepository {
 
   @override
   Future<CameraController> createCameraController(
-    CameraDescription camera,
-  ) async {
+    CameraDescription camera, {
+    required bool enableAudio,
+  }) async {
     return CameraController(
       camera,
       ResolutionPreset.veryHigh,
-      enableAudio: true,
+      enableAudio: enableAudio,
     );
   }
 
@@ -216,9 +224,13 @@ class LocalVideoRepository implements VideoRepository {
   Future<void> startRecording(
     CameraController? controller, {
     required VideoRecordingMode mode,
+    bool isMicrophoneEnabled = true,
   }) async {
     if (kIsWeb && mode.capturesDisplay) {
-      await prepareDisplayCapture(mode: mode);
+      await prepareDisplayCapture(
+        mode: mode,
+        isMicrophoneEnabled: isMicrophoneEnabled,
+      );
       await startPreparedDisplayCapture();
       return;
     }
@@ -239,7 +251,10 @@ class LocalVideoRepository implements VideoRepository {
   }
 
   @override
-  Future<void> prepareDisplayCapture({required VideoRecordingMode mode}) async {
+  Future<void> prepareDisplayCapture({
+    required VideoRecordingMode mode,
+    bool isMicrophoneEnabled = true,
+  }) async {
     if (!mode.capturesDisplay) {
       throw StateError('Camera-only mode does not prepare display capture.');
     }
@@ -250,7 +265,10 @@ class LocalVideoRepository implements VideoRepository {
 
     _isBrowserRecordingActive = true;
     try {
-      await _browserRecorder.prepareRecording(mode: mode);
+      await _browserRecorder.prepareRecording(
+        mode: mode,
+        includeMicrophone: isMicrophoneEnabled,
+      );
     } catch (_) {
       _isBrowserRecordingActive = false;
       rethrow;

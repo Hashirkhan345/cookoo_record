@@ -11,6 +11,7 @@ class VideoRecordingOptionModel {
     this.status,
     this.highlighted = false,
     this.selectedRecordingMode,
+    this.isStatusInteractive = false,
   });
 
   final VideoRecordingOptionKind kind;
@@ -18,4 +19,5 @@ class VideoRecordingOptionModel {
   final String? status;
   final bool highlighted;
   final VideoRecordingMode? selectedRecordingMode;
+  final bool isStatusInteractive;
 }

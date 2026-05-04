@@ -1,31 +1,56 @@
-import 'dart:async';
-
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:path/path.dart' as path;
-import 'package:shared_preferences/shared_preferences.dart';
 
 import '../models/saved_video_recording_model.dart';
 import 'saved_recording_share_upload.dart';
+import 'user_video_upload_repository.dart';
 import 'video_recording_storage_support.dart';
 
 class PublicVideoShareRepository {
   PublicVideoShareRepository({
+    firebase_auth.FirebaseAuth? auth,
     FirebaseStorage? storage,
     FirebaseFirestore? firestore,
-  }) : _storage = storage ?? FirebaseStorage.instance,
+  }) : _auth = auth ?? firebase_auth.FirebaseAuth.instance,
+       _storage = storage ?? FirebaseStorage.instance,
        _firestore = firestore ?? FirebaseFirestore.instance;
 
   static final Map<String, Future<String>> _inflightShareUrls =
       <String, Future<String>>{};
 
+  final firebase_auth.FirebaseAuth _auth;
   final FirebaseStorage _storage;
   final FirebaseFirestore _firestore;
 
   Future<String> ensureShareUrl(SavedVideoRecordingModel recording) async {
     if (recording.publicShareUrl case final String existingUrl
         when existingUrl.isNotEmpty) {
-      return existingUrl;
+      if (_isAppShareUrl(existingUrl)) {
+        return _prepareUserShareUrl(recording);
+      }
+
+      return _publishExistingPlaybackUrl(
+        recording: recording,
+        playbackUrl: existingUrl,
+      );
+    }
+
+    final String? storedShareUrl = await _loadStoredUserShareUrl(recording);
+    if (storedShareUrl != null && storedShareUrl.isNotEmpty) {
+      if (!_isAppShareUrl(storedShareUrl)) {
+        return _publishExistingPlaybackUrl(
+          recording: recording,
+          playbackUrl: storedShareUrl,
+        );
+      }
+
+      final SavedVideoRecordingModel updatedRecording = recording.copyWith(
+        publicShareUrl: storedShareUrl,
+      );
+      await persistSavedRecordingMetadata(updatedRecording);
+      return _prepareUserShareUrl(updatedRecording);
     }
 
     final Future<String>? inflight = _inflightShareUrls[recording.id];
@@ -58,6 +83,123 @@ class PublicVideoShareRepository {
     }
   }
 
+  Future<String?> _loadStoredUserShareUrl(
+    SavedVideoRecordingModel recording,
+  ) async {
+    final firebase_auth.User? user = _auth.currentUser;
+    if (user == null) {
+      return null;
+    }
+
+    try {
+      final DocumentSnapshot<Map<String, dynamic>> snapshot = await _firestore
+          .collection('users')
+          .doc(user.uid)
+          .collection('videos')
+          .doc(recording.id)
+          .get();
+      final Map<String, dynamic>? data = snapshot.data();
+      if (data == null) {
+        return null;
+      }
+
+      for (final String field in <String>[
+        'shareUrl',
+        'publicShareUrl',
+        'shareableUrl',
+        'shareableLink',
+      ]) {
+        final String? value = (data[field] as String?)?.trim();
+        if (value != null && value.isNotEmpty) {
+          return value;
+        }
+      }
+    } on FirebaseException {
+      return null;
+    }
+
+    return null;
+  }
+
+  Future<String> _prepareUserShareUrl(
+    SavedVideoRecordingModel recording,
+  ) async {
+    final String shareUrl = await _persistUserSharedMetadata(recording);
+    if (shareUrl != recording.publicShareUrl) {
+      await persistSavedRecordingMetadata(
+        recording.copyWith(publicShareUrl: shareUrl, sharedAt: DateTime.now()),
+      );
+    }
+    return shareUrl;
+  }
+
+  Future<String> _persistUserSharedMetadata(
+    SavedVideoRecordingModel updatedRecording,
+  ) async {
+    final firebase_auth.User? user = _auth.currentUser;
+    if (user == null) {
+      throw StateError('Please sign in before creating a share link.');
+    }
+
+    try {
+      final DocumentSnapshot<Map<String, dynamic>> snapshot = await _firestore
+          .collection('users')
+          .doc(user.uid)
+          .collection('videos')
+          .doc(updatedRecording.id)
+          .get();
+      final Map<String, dynamic>? data = snapshot.data();
+      if (data == null) {
+        throw StateError(
+          'This recording is not uploaded yet. Record again or wait for upload to finish.',
+        );
+      }
+
+      final String? playbackUrl = _firstNonEmptyString(data, <String>[
+        'videoUrl',
+        'url',
+        'downloadUrl',
+      ]);
+      if (playbackUrl == null || _isAppShareUrl(playbackUrl)) {
+        throw StateError(
+          'This recording is missing its playback URL. Upload it again before sharing.',
+        );
+      }
+
+      final String shareUrl = UserVideoUploadRepository.buildShareableLink(
+        updatedRecording.id,
+        playbackUrl: playbackUrl,
+      );
+      final DateTime uploadedAt =
+          _asDateTime(data['uploadedAt']) ?? DateTime.now();
+
+      await _firestore
+          .collection('sharedVideos')
+          .doc(updatedRecording.id)
+          .set(<String, Object?>{
+            'id': updatedRecording.id,
+            'videoId': updatedRecording.id,
+            'ownerUid': user.uid,
+            'fileName': updatedRecording.fileName,
+            'url': playbackUrl,
+            'videoUrl': playbackUrl,
+            'storagePath': data['storagePath'],
+            'createdAt': data['createdAt'] ?? updatedRecording.savedAt,
+            'uploadedAt': Timestamp.fromDate(uploadedAt),
+            'shareUrl': shareUrl,
+            'shareableUrl': FieldValue.delete(),
+            'shareableLink': FieldValue.delete(),
+            'publicShareUrl': FieldValue.delete(),
+            'mimeType': updatedRecording.mimeType,
+            'durationMs': updatedRecording.duration.inMilliseconds,
+            'sizeInBytes': updatedRecording.sizeInBytes,
+          }, SetOptions(merge: true));
+      return shareUrl;
+    } on FirebaseException catch (error) {
+      throw StateError(_describeFirestoreError(error));
+    }
+  }
+
   Future<String> _createShareUrl(SavedVideoRecordingModel recording) async {
     if (recording.publicShareUrl case final String existingUrl
         when existingUrl.isNotEmpty) {
@@ -80,14 +222,22 @@ class PublicVideoShareRepository {
       downloadUrl = await _uploadAndGetDownloadUrl(ref, recording);
     }
 
+    final String shareUrl = UserVideoUploadRepository.buildShareableLink(
+      recording.id,
+      playbackUrl: downloadUrl,
+    );
     final SavedVideoRecordingModel updatedRecording = recording.copyWith(
-      publicShareUrl: downloadUrl,
+      publicShareUrl: shareUrl,
       publicShareStoragePath: storagePath,
       sharedAt: DateTime.now(),
     );
-    await _persistSharedRecording(updatedRecording);
-    unawaited(_persistSharedMetadata(updatedRecording));
-    return downloadUrl;
+    await persistSavedRecordingMetadata(updatedRecording);
+    await _persistSharedMetadata(
+      updatedRecording,
+      playbackUrl: downloadUrl,
+      shareUrl: shareUrl,
+    );
+    return shareUrl;
   }
 
   Future<String> _uploadAndGetDownloadUrl(
@@ -102,26 +252,59 @@ class PublicVideoShareRepository {
   }
 
   Future<void> _persistSharedMetadata(
-    SavedVideoRecordingModel updatedRecording,
-  ) async {
+    SavedVideoRecordingModel updatedRecording, {
+    required String playbackUrl,
+    required String shareUrl,
+  }) async {
     try {
       await _firestore
           .collection('sharedVideos')
           .doc(updatedRecording.id)
           .set(<String, Object?>{
             'id': updatedRecording.id,
+            'videoId': updatedRecording.id,
             'fileName': updatedRecording.fileName,
+            'url': playbackUrl,
+            'videoUrl': playbackUrl,
             'mimeType': updatedRecording.mimeType,
             'durationMs': updatedRecording.duration.inMilliseconds,
             'sizeInBytes': updatedRecording.sizeInBytes,
             'savedAt': updatedRecording.savedAt.toIso8601String(),
-            'publicShareUrl': updatedRecording.publicShareUrl,
+            'createdAt': Timestamp.fromDate(updatedRecording.savedAt),
+            'uploadedAt': Timestamp.fromDate(
+              updatedRecording.sharedAt ?? DateTime.now(),
+            ),
+            'shareUrl': shareUrl,
+            'shareableUrl': FieldValue.delete(),
+            'shareableLink': FieldValue.delete(),
+            'publicShareUrl': FieldValue.delete(),
             'publicShareStoragePath': updatedRecording.publicShareStoragePath,
             'sharedAt': updatedRecording.sharedAt?.toIso8601String(),
           }, SetOptions(merge: true));
-    } on FirebaseException {
-      // The public download URL is enough for sharing. Metadata persistence is optional.
+    } on FirebaseException catch (error) {
+      throw StateError(_describeFirestoreError(error));
     }
+  }
+
+  Future<String> _publishExistingPlaybackUrl({
+    required SavedVideoRecordingModel recording,
+    required String playbackUrl,
+  }) async {
+    final String shareUrl = UserVideoUploadRepository.buildShareableLink(
+      recording.id,
+      playbackUrl: playbackUrl,
+    );
+    final SavedVideoRecordingModel updatedRecording = recording.copyWith(
+      publicShareUrl: shareUrl,
+      sharedAt: DateTime.now(),
+    );
+    await persistSavedRecordingMetadata(updatedRecording);
+    await _persistSharedMetadata(
+      updatedRecording,
+      playbackUrl: playbackUrl,
+      shareUrl: shareUrl,
+    );
+    return shareUrl;
   }
 
   String _resolveStoragePath(SavedVideoRecordingModel recording) {
@@ -129,23 +312,6 @@ class PublicVideoShareRepository {
         ? '.mp4'
         : path.extension(recording.fileName);
     return 'sharedVideos/${recording.id}$extension';
-  }
-
-  Future<void> _persistSharedRecording(
-    SavedVideoRecordingModel recording,
-  ) async {
-    final SharedPreferences preferences = await SharedPreferences.getInstance();
-    final List<SavedVideoRecordingModel> manifest =
-        decodeSavedRecordingsManifest(
-          preferences.getString(savedVideoRecordingsManifestKey),
-        );
-    final List<SavedVideoRecordingModel> updatedManifest = manifest
-        .map((item) => item.id == recording.id ? recording : item)
-        .toList(growable: false);
-    await preferences.setString(
-      savedVideoRecordingsManifestKey,
-      encodeSavedRecordingsManifest(updatedManifest),
-    );
   }
 
   String _describeStorageError(FirebaseException error) {
@@ -160,5 +326,43 @@ class PublicVideoShareRepository {
         return error.message ??
             'Unable to create a public share link right now.';
     }
+  }
+
+  String _describeFirestoreError(FirebaseException error) {
+    switch (error.code) {
+      case 'permission-denied':
+        return 'Sharing is blocked by Firestore rules. Allow authenticated writes to sharedVideos/{videoId}.';
+      case 'unavailable':
+        return 'Sharing is temporarily unavailable. Please try again.';
+      default:
+        return error.message ?? 'Unable to prepare this video share link.';
+    }
+  }
+
+  String? _firstNonEmptyString(Map<String, dynamic> data, List<String> fields) {
+    for (final String field in fields) {
+      final String? value = (data[field] as String?)?.trim();
+      if (value != null && value.isNotEmpty) {
+        return value;
+      }
+    }
+    return null;
+  }
+
+  DateTime? _asDateTime(Object? value) {
+    if (value is Timestamp) {
+      return value.toDate();
+    }
+    if (value is DateTime) {
+      return value;
+    }
+    if (value is String) {
+      return DateTime.tryParse(value);
+    }
+    return null;
+  }
+
+  bool _isAppShareUrl(String url) {
+    return url.contains('/share/videos/') || url.startsWith('aks://share/');
   }
 }

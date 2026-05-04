@@ -12,7 +12,6 @@ class ProfileBubble extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final double borderWidth = size < 180 ? 3 : 5;
-    final double badgeSize = size * 0.15;
 
     return Stack(
       clipBehavior: Clip.none,
@@ -30,27 +29,6 @@ class ProfileBubble extends StatelessWidget {
             child: _ProfileBubbleContent(
               size: size,
               cameraController: cameraController,
-            ),
-          ),
-        ),
-        Positioned(
-          left: size * 0.03,
-          bottom: size * 0.03,
-          child: Container(
-            width: badgeSize,
-            height: badgeSize,
-            decoration: BoxDecoration(
-              gradient: VideoFeatureTheme.accentGradient,
-              borderRadius: BorderRadius.circular(badgeSize * 0.35),
-              border: Border.all(
-                color: Colors.white,
-                width: size < 180 ? 2 : 2.5,
-              ),
-            ),
-            child: Icon(
-              Icons.videocam_rounded,
-              color: Colors.white,
-              size: badgeSize * 0.46,
             ),
           ),
         ),

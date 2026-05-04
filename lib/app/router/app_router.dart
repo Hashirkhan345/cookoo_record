@@ -8,6 +8,7 @@ import '../../features/auth/presentation/screens/login_screen.dart';
 import '../../features/auth/presentation/screens/register_screen.dart';
 import '../../features/video/presentation/screens/help_center_screen.dart';
 import '../../features/video/presentation/screens/privacy_policy_screen.dart';
+import '../../features/video/presentation/screens/shared_video_screen.dart';
 import '../../features/video/presentation/screens/profile_screen.dart';
 import '../../features/video/presentation/screens/terms_and_conditions_screen.dart';
 import '../../features/video/presentation/screens/video_home_screen.dart';
@@ -25,6 +26,24 @@ abstract final class AppRouter {
   );
 
   static Route<dynamic> onGenerateRoute(RouteSettings settings) {
+    final String routeName = settings.name ?? AppRoute.root;
+    final Uri? routeUri = Uri.tryParse(routeName);
+    final String routePath = routeUri?.path ?? routeName;
+    if (routePath.startsWith(AppRoute.sharedVideoPrefix)) {
+      final String videoId =
+          routeUri != null && routeUri.pathSegments.length >= 3
+          ? routeUri.pathSegments[2]
+          : Uri.decodeComponent(
+              routePath.substring(AppRoute.sharedVideoPrefix.length),
+            );
+      final String? sourceUrl = routeUri?.queryParameters['source'];
+      return _buildRoute<void>(
+        settings: settings,
+        builder: (_) =>
+            SharedVideoScreen(videoId: videoId, sourceUrl: sourceUrl),
+      );
+    }
+
     switch (settings.name) {
       case AppRoute.root:
         return _buildRoute<void>(
@@ -87,6 +106,23 @@ abstract final class AppRouter {
           builder: (_) => const AuthGateScreen(),
         );
     }
+  }
+
+  static List<Route<dynamic>> onGenerateInitialRoutes(String initialRouteName) {
+    return <Route<dynamic>>[
+      onGenerateRoute(RouteSettings(name: initialRouteName)),
+    ];
+  }
+
+  static String resolveInitialRoute() {
+    final String defaultRouteName =
+        WidgetsBinding.instance.platformDispatcher.defaultRouteName;
+    final String defaultRoutePath =
+        Uri.tryParse(defaultRouteName)?.path ?? defaultRouteName;
+    if (defaultRoutePath.startsWith(AppRoute.sharedVideoPrefix)) {
+      return defaultRouteName;
+    }
+    return AppRoute.root;
   }
 
   static Route<T> _buildRoute<T>({

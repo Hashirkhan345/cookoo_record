@@ -10,7 +10,7 @@ class TermsAndConditionsScreen extends StatelessWidget {
     return const LegalDocumentScreen(
       title: 'Terms & Conditions',
       subtitle:
-          'These Terms & Conditions govern your use of bloop, including account access, recording behavior, storage, and exported content.',
+          'These Terms & Conditions govern your use of Aks, including account access, recording behavior, storage, and exported content.',
       effectiveDateLabel: 'Effective date: March 17, 2026',
       icon: Icons.gavel_outlined,
       heroColor: Color(0xFF1D2339),
@@ -24,7 +24,7 @@ class TermsAndConditionsScreen extends StatelessWidget {
         LegalDocumentSection(
           heading: 'Acceptance of terms',
           body:
-              'By creating an account, signing in, or using bloop, you agree to these Terms & Conditions. If you do not accept them, you should not use the application.',
+              'By creating an account, signing in, or using Aks, you agree to these Terms & Conditions. If you do not accept them, you should not use the application.',
         ),
         LegalDocumentSection(
           heading: 'Account responsibility',
@@ -39,7 +39,7 @@ class TermsAndConditionsScreen extends StatelessWidget {
         LegalDocumentSection(
           heading: 'Content ownership',
           body:
-              'You retain responsibility for the recordings and materials you create through bloop. The app does not claim ownership of your content, but you grant the service the limited rights needed to process recordings and save them for app functionality.',
+              'You retain responsibility for the recordings and materials you create through Aks. The app does not claim ownership of your content, but you grant the service the limited rights needed to process recordings and save them for app functionality.',
         ),
         LegalDocumentSection(
           heading: 'Acceptable use',
@@ -54,12 +54,12 @@ class TermsAndConditionsScreen extends StatelessWidget {
         LegalDocumentSection(
           heading: 'Termination',
           body:
-              'We may suspend or terminate access to bloop if misuse, abuse, security concerns, or policy violations are detected. You may stop using the service at any time by signing out and discontinuing access.',
+              'We may suspend or terminate access to Aks if misuse, abuse, security concerns, or policy violations are detected. You may stop using the service at any time by signing out and discontinuing access.',
         ),
         LegalDocumentSection(
           heading: 'Limitation of liability',
           body:
-              'bloop is provided on an as-available basis. To the maximum extent permitted by law, the service is not liable for lost recordings, indirect damages, interrupted business operations, or consequences resulting from misuse or unsupported environments.',
+              'Aks is provided on an as-available basis. To the maximum extent permitted by law, the service is not liable for lost recordings, indirect damages, interrupted business operations, or consequences resulting from misuse or unsupported environments.',
         ),
       ],
     );

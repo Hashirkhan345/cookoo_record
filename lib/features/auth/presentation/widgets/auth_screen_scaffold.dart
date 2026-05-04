@@ -22,14 +22,15 @@ class AuthScreenScaffold extends StatelessWidget {
     final Size screenSize = MediaQuery.sizeOf(context);
     final bool isWide = screenSize.width >= 920;
     final bool isPhone = screenSize.width < 520;
+    final bool isDark = VideoFeatureTheme.isDark(context);
 
     return Scaffold(
       body: Stack(
         children: <Widget>[
-          const Positioned.fill(
+          Positioned.fill(
             child: DecoratedBox(
               decoration: BoxDecoration(
-                gradient: VideoFeatureTheme.screenBackground,
+                gradient: VideoFeatureTheme.screenBackgroundFor(context),
               ),
             ),
           ),
@@ -57,9 +58,13 @@ class AuthScreenScaffold extends StatelessWidget {
                   constraints: const BoxConstraints(maxWidth: 1140),
                   child: Container(
                     decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.68),
+                      color: VideoFeatureTheme.panelFor(
+                        context,
+                      ).withValues(alpha: isDark ? 0.92 : 0.74),
                       borderRadius: BorderRadius.circular(isPhone ? 28 : 40),
-                      border: Border.all(color: VideoFeatureTheme.line),
+                      border: Border.all(
+                        color: VideoFeatureTheme.lineFor(context),
+                      ),
                       boxShadow: VideoFeatureTheme.panelShadow,
                     ),
                     child: ClipRRect(
@@ -144,7 +149,9 @@ class _AuthFeaturePanel extends StatelessWidget {
         compact ? (isPhone ? 16 : 20) : 40,
         compact ? (isPhone ? 18 : 22) : 40,
       ),
-      decoration: const BoxDecoration(gradient: VideoFeatureTheme.heroGradient),
+      decoration: BoxDecoration(
+        gradient: VideoFeatureTheme.heroGradientFor(context),
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
@@ -153,7 +160,7 @@ class _AuthFeaturePanel extends StatelessWidget {
               BrandMark(size: compact ? (isPhone ? 38 : 42) : 54),
               SizedBox(width: compact ? (isPhone ? 10 : 12) : 14),
               Text(
-                'bloop',
+                'Aks',
                 style: TextStyle(
                   color: Colors.white.withValues(alpha: 0.96),
                   fontSize: compact ? (isPhone ? 18 : 20) : 24,
@@ -165,34 +172,55 @@ class _AuthFeaturePanel extends StatelessWidget {
           ),
           SizedBox(height: compact ? (isPhone ? 14 : 18) : 40),
           Text(
-            'Record with clarity.',
+            'Record with confidence.',
             style: TextStyle(
               color: Colors.white,
               fontSize: compact ? (isPhone ? 18 : 22) : 42,
-              fontWeight: FontWeight.w700,
+              fontWeight: FontWeight.w800,
               height: 1.06,
-              letterSpacing: -1.3,
+              letterSpacing: -1.1,
             ),
           ),
           SizedBox(height: compact ? (isPhone ? 8 : 10) : 16),
           Text(
-            'Screen, camera, mic.',
+            'Screen, camera, and mic capture in one streamlined workspace.',
             style: TextStyle(
               color: Colors.white.withValues(alpha: 0.82),
               fontSize: compact ? (isPhone ? 12 : 13) : 15,
               fontWeight: FontWeight.w600,
+              height: 1.5,
             ),
           ),
           SizedBox(height: compact ? (isPhone ? 12 : 16) : 34),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: 0.12),
+              borderRadius: BorderRadius.circular(999),
+              border: Border.all(color: Colors.white.withValues(alpha: 0.14)),
+            ),
+            child: Text(
+              compact
+                  ? 'Fast onboarding'
+                  : 'Fast onboarding for creators and teams',
+              style: TextStyle(
+                color: Colors.white.withValues(alpha: 0.94),
+                fontSize: 12,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+          ),
+          SizedBox(height: compact ? 12 : 18),
           _AuthPreviewPanel(compact: compact),
           if (!compact) ...<Widget>[
             const SizedBox(height: 22),
             Text(
-              'Fast setup. Clean capture.',
+              'Sign in once, then move from setup to saved library without leaving the workspace.',
               style: TextStyle(
                 color: Colors.white.withValues(alpha: 0.76),
                 fontSize: 14,
                 fontWeight: FontWeight.w600,
+                height: 1.5,
               ),
             ),
           ],
@@ -442,34 +470,56 @@ class _AuthFormPanel extends StatelessWidget {
     final bool isPhone = MediaQuery.sizeOf(context).width < 520;
     return Container(
       width: double.infinity,
-      color: VideoFeatureTheme.panel,
-      padding: EdgeInsets.all(compact ? (isPhone ? 18 : 24) : 32),
+      color: VideoFeatureTheme.panelFor(context).withValues(alpha: 0.96),
+      padding: EdgeInsets.all(compact ? (isPhone ? 18 : 24) : 36),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
-          BrandMark(size: isPhone ? 24 : 28),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            decoration: BoxDecoration(
+              color: VideoFeatureTheme.panelMutedFor(context),
+              borderRadius: BorderRadius.circular(999),
+              border: Border.all(color: VideoFeatureTheme.lineFor(context)),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: <Widget>[
+                BrandMark(size: isPhone ? 22 : 24),
+                const SizedBox(width: 8),
+                Text(
+                  'Secure access',
+                  style: TextStyle(
+                    color: VideoFeatureTheme.inkFor(context),
+                    fontSize: 12,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+              ],
+            ),
+          ),
           SizedBox(height: isPhone ? 16 : 20),
           Text(
             title,
             style: TextStyle(
-              color: VideoFeatureTheme.ink,
+              color: VideoFeatureTheme.inkFor(context),
               fontSize: compact ? (isPhone ? 24 : 30) : 34,
-              fontWeight: FontWeight.w700,
-              height: 1.05,
-              letterSpacing: -1.2,
+              fontWeight: FontWeight.w800,
+              height: 1.08,
+              letterSpacing: -0.8,
             ),
           ),
           SizedBox(height: isPhone ? 8 : 10),
           Text(
             subtitle,
             style: TextStyle(
-              color: VideoFeatureTheme.muted,
+              color: VideoFeatureTheme.mutedFor(context),
               fontSize: isPhone ? 14 : 15,
               height: 1.5,
             ),
           ),
           SizedBox(height: compact ? (isPhone ? 18 : 24) : 28),
-          child,
+          Container(padding: EdgeInsets.all(compact ? 0 : 4), child: child),
           SizedBox(height: isPhone ? 18 : 24),
           Align(alignment: Alignment.center, child: footer),
         ],

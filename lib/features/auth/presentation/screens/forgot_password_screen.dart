@@ -54,16 +54,16 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
     return AuthScreenScaffold(
       title: 'Forgot password',
       subtitle:
-          'Enter the email linked to your bloop account and we will send you a reset link.',
+          'Enter the email linked to your Aks account and we will send you a reset link.',
       footer: Wrap(
         alignment: WrapAlignment.center,
         crossAxisAlignment: WrapCrossAlignment.center,
         spacing: 4,
         runSpacing: 4,
         children: <Widget>[
-          const Text(
+          Text(
             'Remembered your password?',
-            style: TextStyle(color: VideoFeatureTheme.muted),
+            style: TextStyle(color: VideoFeatureTheme.mutedFor(context)),
           ),
           TextButton(
             onPressed: authState.isSubmitting ? null : _backToSignIn,
@@ -79,19 +79,21 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: VideoFeatureTheme.panelMuted.withValues(alpha: 0.58),
+                color: VideoFeatureTheme.panelMutedFor(
+                  context,
+                ).withValues(alpha: 0.58),
                 borderRadius: BorderRadius.circular(24),
-                border: Border.all(color: VideoFeatureTheme.line),
+                border: Border.all(color: VideoFeatureTheme.lineFor(context)),
               ),
-              child: const Row(
+              child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: <Widget>[
-                  Icon(
+                  const Icon(
                     Icons.mark_email_unread_outlined,
                     color: VideoFeatureTheme.primary,
                     size: 20,
                   ),
-                  SizedBox(width: 12),
+                  const SizedBox(width: 12),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -99,15 +101,15 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
                         Text(
                           'We will email a secure link',
                           style: TextStyle(
-                            color: VideoFeatureTheme.ink,
+                            color: VideoFeatureTheme.inkFor(context),
                             fontWeight: FontWeight.w700,
                           ),
                         ),
-                        SizedBox(height: 4),
+                        const SizedBox(height: 4),
                         Text(
                           'Reset emails usually arrive within a minute. If you do not see it, check spam or promotions.',
                           style: TextStyle(
-                            color: VideoFeatureTheme.muted,
+                            color: VideoFeatureTheme.mutedFor(context),
                             fontSize: 13,
                             height: 1.45,
                           ),
@@ -140,7 +142,7 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
               onPressed: authState.isSubmitting ? null : _submitResetRequest,
               style: FilledButton.styleFrom(
                 minimumSize: const Size.fromHeight(60),
-                backgroundColor: VideoFeatureTheme.accent,
+                backgroundColor: VideoFeatureTheme.primary,
                 foregroundColor: Colors.white,
                 textStyle: const TextStyle(
                   fontSize: 16,
@@ -156,10 +158,10 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
                   : const Text('Send reset link'),
             ),
             const SizedBox(height: 12),
-            const Text(
-              'Use the same email you use to sign in to bloop.',
+            Text(
+              'Use the same email you use to sign in to Aks.',
               style: TextStyle(
-                color: VideoFeatureTheme.muted,
+                color: VideoFeatureTheme.mutedFor(context),
                 fontSize: 13,
                 height: 1.4,
               ),

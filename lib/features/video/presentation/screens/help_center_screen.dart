@@ -10,7 +10,7 @@ class HelpCenterScreen extends StatelessWidget {
     return const LegalDocumentScreen(
       title: 'Help Center',
       subtitle:
-          'Use this Help Center to understand how bloop works, how to fix common recording issues, and how to manage saved recordings inside the app.',
+          'Use this Help Center to understand how Aks works, how to fix common recording issues, and how to manage saved recordings inside the app.',
       effectiveDateLabel: 'Updated: March 17, 2026',
       icon: Icons.help_outline_rounded,
       heroColor: Color(0xFF1D63E8),
@@ -24,12 +24,12 @@ class HelpCenterScreen extends StatelessWidget {
         LegalDocumentSection(
           heading: 'Getting started',
           body:
-              'Sign in to bloop, choose a recording mode, and click the main record button to start a session. The browser may ask for screen, tab, camera, or microphone permissions depending on the mode you select.',
+              'Sign in to Aks, choose a recording mode, and click the main record button to start a session. The browser may ask for screen, tab, camera, or microphone permissions depending on the mode you select.',
         ),
         LegalDocumentSection(
           heading: 'Recording modes',
           body:
-              'bloop supports common browser capture flows such as current tab recording and full-screen recording. Choose the mode that matches what you want to capture, then confirm the source in the browser share dialog before the recording begins.',
+              'Aks supports common browser capture flows such as current tab recording and full-screen recording. Choose the mode that matches what you want to capture, then confirm the source in the browser share dialog before the recording begins.',
         ),
         LegalDocumentSection(
           heading: 'Camera and microphone permissions',

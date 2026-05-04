@@ -64,9 +64,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         spacing: 4,
         runSpacing: 4,
         children: <Widget>[
-          const Text(
+          Text(
             'No account?',
-            style: TextStyle(color: VideoFeatureTheme.muted),
+            style: TextStyle(color: VideoFeatureTheme.mutedFor(context)),
           ),
           TextButton(
             onPressed: authState.isSubmitting
@@ -126,7 +126,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
               onPressed: authState.isSubmitting ? null : _submitLogin,
               style: FilledButton.styleFrom(
                 minimumSize: const Size.fromHeight(60),
-                backgroundColor: VideoFeatureTheme.accent,
+                backgroundColor: VideoFeatureTheme.primary,
                 foregroundColor: Colors.white,
                 textStyle: const TextStyle(
                   fontSize: 16,
@@ -145,20 +145,26 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
             Row(
               children: <Widget>[
                 Expanded(
-                  child: Container(height: 1, color: VideoFeatureTheme.line),
+                  child: Container(
+                    height: 1,
+                    color: VideoFeatureTheme.lineFor(context),
+                  ),
                 ),
-                const Padding(
+                Padding(
                   padding: EdgeInsets.symmetric(horizontal: 12),
                   child: Text(
                     'or',
                     style: TextStyle(
-                      color: VideoFeatureTheme.muted,
+                      color: VideoFeatureTheme.mutedFor(context),
                       fontWeight: FontWeight.w700,
                     ),
                   ),
                 ),
                 Expanded(
-                  child: Container(height: 1, color: VideoFeatureTheme.line),
+                  child: Container(
+                    height: 1,
+                    color: VideoFeatureTheme.lineFor(context),
+                  ),
                 ),
               ],
             ),
@@ -169,11 +175,11 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   : ref.read(authControllerProvider.notifier).signInWithGoogle,
               style: OutlinedButton.styleFrom(
                 minimumSize: const Size.fromHeight(58),
-                backgroundColor: VideoFeatureTheme.panelMuted.withValues(
-                  alpha: 0.4,
-                ),
-                foregroundColor: VideoFeatureTheme.ink,
-                side: const BorderSide(color: VideoFeatureTheme.line),
+                backgroundColor: VideoFeatureTheme.panelMutedFor(
+                  context,
+                ).withValues(alpha: 0.4),
+                foregroundColor: VideoFeatureTheme.inkFor(context),
+                side: BorderSide(color: VideoFeatureTheme.lineFor(context)),
                 padding: const EdgeInsets.symmetric(horizontal: 18),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(22),

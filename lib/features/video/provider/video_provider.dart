@@ -6,11 +6,14 @@ import 'package:flutter/scheduler.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../auth/provider/auth_provider.dart';
+import '../data/enums/video_recording_storage_kind.dart';
 import '../data/enums/video_recording_mode.dart';
 import '../data/enums/video_recording_status.dart';
 import '../data/models/saved_video_recording_model.dart';
-import '../data/repository/public_video_share_repository.dart';
+import '../data/repository/user_video_upload_repository.dart';
 import '../data/repository/video_repository.dart';
+import '../data/repository/video_recording_storage_support.dart';
 import 'video_state.dart';
 import 'video_saved_recordings_merge.dart';
 
@@ -18,13 +21,56 @@ final videoRepositoryProvider = Provider<VideoRepository>(
   (ref) => LocalVideoRepository(),
 );
 
+final userVideoUploadRepositoryProvider = Provider<UserVideoUploadRepository>(
+  (ref) => UserVideoUploadRepository(),
+);
+
 final videoControllerProvider =
-    StateNotifierProvider<VideoController, VideoState>(
-      (ref) => VideoController(ref.read(videoRepositoryProvider))..load(),
-    );
+    StateNotifierProvider<VideoController, VideoState>((ref) {
+      final VideoController controller = VideoController(
+        ref.read(videoRepositoryProvider),
+        userVideoUploadRepositoryFactory: () =>
+            ref.read(userVideoUploadRepositoryProvider),
+        currentUserUid: () => ref.read(authControllerProvider).user?.uid,
+      )..load();
+
+      ref.listen(authControllerProvider, (previous, next) {
+        final String? previousUid = previous?.user?.uid;
+        final String? nextUid = next.user?.uid;
+        if (previousUid != nextUid) {
+          unawaited(controller.load());
+        }
+      });
+
+      return controller;
+    });
 
 class VideoController extends StateNotifier<VideoState> {
-  VideoController(this._repository) : super(const VideoState()) {
+  VideoController(
+    this._repository, {
+    UserVideoUploadRepository Function()? userVideoUploadRepositoryFactory,
+    String? Function()? currentUserUid,
+    Future<UserVideoUploadResult> Function(
+      String userUid,
+      SavedVideoRecordingModel recording,
+    )?
+    uploadRecordingForUser,
+    Future<List<SavedVideoRecordingModel>> Function(String userUid)?
+    loadCloudRecordingsForUser,
+    Future<void> Function(String userUid, String recordingId, String title)?
+    renameCloudRecordingForUser,
+    Stream<List<SavedVideoRecordingModel>> Function(String userUid)?
+    watchCloudRecordingsForUser,
+    Future<void> Function(String userUid, SavedVideoRecordingModel recording)?
+    deleteCloudRecordingForUser,
+  }) : _userVideoUploadRepositoryFactory = userVideoUploadRepositoryFactory,
+       _currentUserUid = currentUserUid ?? (() => null),
+       _uploadRecordingForUser = uploadRecordingForUser,
+       _loadCloudRecordingsForUser = loadCloudRecordingsForUser,
+       _renameCloudRecordingForUser = renameCloudRecordingForUser,
+       _watchCloudRecordingsForUser = watchCloudRecordingsForUser,
+       _deleteCloudRecordingForUser = deleteCloudRecordingForUser,
+       super(const VideoState()) {
     _repository.setExternalStopListener(_handleExternalRecordingStop);
   }
 
@@ -38,23 +84,52 @@ class VideoController extends StateNotifier<VideoState> {
   static const Duration _countdownGoTick = Duration(milliseconds: 650);
   static const Duration _countdownDismissDelay = Duration(milliseconds: 240);
   final VideoRepository _repository;
+  final UserVideoUploadRepository Function()? _userVideoUploadRepositoryFactory;
+  final String? Function() _currentUserUid;
+  final Future<UserVideoUploadResult> Function(
+    String userUid,
+    SavedVideoRecordingModel recording,
+  )?
+  _uploadRecordingForUser;
+  final Future<List<SavedVideoRecordingModel>> Function(String userUid)?
+  _loadCloudRecordingsForUser;
+  final Future<void> Function(String userUid, String recordingId, String title)?
+  _renameCloudRecordingForUser;
+  final Stream<List<SavedVideoRecordingModel>> Function(String userUid)?
+  _watchCloudRecordingsForUser;
+  final Future<void> Function(
+    String userUid,
+    SavedVideoRecordingModel recording,
+  )?
+  _deleteCloudRecordingForUser;
   Timer? _recordingTimer;
   Future<CameraController>? _cameraControllerInitialization;
+  StreamSubscription<List<SavedVideoRecordingModel>>?
+  _cloudRecordingsSubscription;
+  List<SavedVideoRecordingModel> _localSavedRecordings =
+      const <SavedVideoRecordingModel>[];
+  List<SavedVideoRecordingModel> _cloudSavedRecordings =
+      const <SavedVideoRecordingModel>[];
   int _countdownRunId = 0;
+  int _loadRunId = 0;
 
   Future<void> load() async {
+    final int loadRunId = ++_loadRunId;
+    await _cloudRecordingsSubscription?.cancel();
+    _cloudRecordingsSubscription = null;
+    _cloudSavedRecordings = const <SavedVideoRecordingModel>[];
     state = state.copyWith(isLoading: true, clearFeedbackMessage: true);
 
     try {
       final flow = await _repository.loadVideoRecordingFlow();
-      List<SavedVideoRecordingModel> savedRecordings =
+      List<SavedVideoRecordingModel> localSavedRecordings =
           const <SavedVideoRecordingModel>[];
       int lifetimeRecordedCount = 0;
       String? storageLocationLabel;
       String? feedbackMessage;
 
       try {
-        savedRecordings = await _repository.loadSavedRecordings();
+        localSavedRecordings = await _repository.loadSavedRecordings();
         lifetimeRecordedCount = await _repository.loadLifetimeRecordingCount();
         storageLocationLabel = await _repository
             .getSavedRecordingsStorageLocationLabel();
@@ -64,17 +139,47 @@ class VideoController extends StateNotifier<VideoState> {
             'Saved recordings could not be restored. You can keep recording.';
       }
 
+      _localSavedRecordings = localSavedRecordings;
+      _cloudSavedRecordings = const <SavedVideoRecordingModel>[];
+
+      try {
+        _cloudSavedRecordings = await _loadCloudRecordingsForCurrentUser();
+        if (_cloudSavedRecordings.length > lifetimeRecordedCount) {
+          lifetimeRecordedCount = _cloudSavedRecordings.length;
+        }
+        unawaited(
+          _syncStoredUsageCountIfPossible(_cloudSavedRecordings.length),
+        );
+      } catch (error, stackTrace) {
+        debugPrint('[video] cloud recordings load failed: $error');
+        debugPrintStack(
+          label: '[video] cloud recordings load stack',
+          stackTrace: stackTrace,
+        );
+        feedbackMessage ??=
+            'Cloud recordings could not be loaded. Local recordings are still available.';
+      }
+
+      if (!mounted || loadRunId != _loadRunId) {
+        return;
+      }
+
+      await _restartCloudRecordingsSubscription();
+
       state = state.copyWith(
         isLoading: false,
         flow: flow,
-        savedRecordings: savedRecordings,
+        savedRecordings: _mergedSavedRecordings(),
         lifetimeRecordedCount: lifetimeRecordedCount,
         savedRecordingsStorageLocationLabel: storageLocationLabel,
         selectedRecordingMode: defaultRecordingModeForCurrentPlatform(),
         feedbackMessage: feedbackMessage,
       );
-      _prewarmSavedRecordingShareLinks(savedRecordings);
     } catch (_) {
+      if (!mounted || loadRunId != _loadRunId) {
+        return;
+      }
+
       state = state.copyWith(
         isLoading: false,
         feedbackMessage: 'Unable to load the video recording flow.',
@@ -99,6 +204,8 @@ class VideoController extends StateNotifier<VideoState> {
       recordingDuration: Duration.zero,
       clearRecordedVideo: true,
       selectedRecordingMode: defaultRecordingModeForCurrentPlatform(),
+      isCameraEnabled: true,
+      isMicrophoneEnabled: true,
     );
 
     String? feedbackMessage;
@@ -197,6 +304,13 @@ class VideoController extends StateNotifier<VideoState> {
     }
 
     final VideoRecordingMode selectedMode = state.selectedRecordingMode;
+    if (selectedMode == VideoRecordingMode.cameraOnly &&
+        !state.isCameraEnabled) {
+      state = state.copyWith(
+        feedbackMessage: 'Turn the camera on to use camera-only recording.',
+      );
+      return;
+    }
     if (_usesDisplayCaptureHandshake(selectedMode)) {
       await _startDisplayRecordingSession(selectedMode);
       return;
@@ -222,11 +336,16 @@ class VideoController extends StateNotifier<VideoState> {
     );
 
     try {
-      final CameraController? controller =
-          selectedMode == VideoRecordingMode.cameraOnly
+      final CameraController? controller = !state.isCameraEnabled
+          ? null
+          : selectedMode == VideoRecordingMode.cameraOnly
           ? await _ensureCameraController()
           : await _ensureOptionalCameraController();
-      await _repository.startRecording(controller, mode: selectedMode);
+      await _repository.startRecording(
+        controller,
+        mode: selectedMode,
+        isMicrophoneEnabled: state.isMicrophoneEnabled,
+      );
       if (kIsWeb && selectedMode.capturesDisplay) {
         await _refreshWebCameraPreviewAfterDisplayCapture();
       }
@@ -265,9 +384,14 @@ class VideoController extends StateNotifier<VideoState> {
 
     try {
       if (kIsWeb) {
-        await _ensureOptionalCameraController();
+        if (state.isCameraEnabled) {
+          await _ensureOptionalCameraController();
+        }
       }
-      await _repository.prepareDisplayCapture(mode: selectedMode);
+      await _repository.prepareDisplayCapture(
+        mode: selectedMode,
+        isMicrophoneEnabled: state.isMicrophoneEnabled,
+      );
       if (!mounted) {
         await _repository.cancelPreparedDisplayCapture();
         return;
@@ -371,31 +495,40 @@ class VideoController extends StateNotifier<VideoState> {
     state = state.copyWith(recordingStatus: VideoRecordingStatus.finalizing);
     _recordingTimer?.cancel();
     final Duration completedDuration = state.recordingDuration;
-    final List<SavedVideoRecordingModel> previousSavedRecordings =
-        state.savedRecordings;
 
     try {
       final XFile recordedVideo = await _repository.stopRecording(
         state.cameraController,
       );
-      final SavedVideoRecordingModel savedRecording = await _repository
-          .saveRecording(recordedVideo, duration: completedDuration);
-      final int lifetimeRecordedCount = state.lifetimeRecordedCount + 1;
-      List<SavedVideoRecordingModel> savedRecordings =
-          mergeSavedRecordingIntoList(savedRecording, previousSavedRecordings);
-
+      SavedVideoRecordingModel savedRecording = await _repository.saveRecording(
+        recordedVideo,
+        duration: completedDuration,
+      );
+      String feedbackMessage =
+          'Recording saved to ${savedRecording.storageSummary}.';
       try {
-        final List<SavedVideoRecordingModel> reloadedRecordings =
-            await _repository.loadSavedRecordings();
-        if (reloadedRecordings.any(
-          (SavedVideoRecordingModel recording) =>
-              recording.id == savedRecording.id,
-        )) {
-          savedRecordings = reloadedRecordings;
+        final SavedVideoRecordingModel? uploadedRecording =
+            await _uploadSavedRecordingForCurrentUser(savedRecording);
+        if (uploadedRecording != null) {
+          savedRecording = uploadedRecording;
+          feedbackMessage = 'Recording saved and uploaded to your workspace.';
         }
-      } catch (_) {
-        // Keep the optimistic in-memory list when storage reload lags or fails.
+      } catch (error, stackTrace) {
+        debugPrint('[video] cloud upload failed: $error');
+        debugPrintStack(
+          label: '[video] cloud upload stack',
+          stackTrace: stackTrace,
+        );
+        feedbackMessage =
+            'Recording saved locally, but cloud upload failed. Please try again later.';
       }
+      final int lifetimeRecordedCount = state.lifetimeRecordedCount + 1;
+      _localSavedRecordings = await _refreshLocalRecordingsAfterMutation(
+        baseRecordings: mergeSavedRecordingIntoList(
+          savedRecording,
+          _localSavedRecordings,
+        ),
+      );
 
       final String? storageLocationLabel = await _safeStorageLocationLabel();
 
@@ -408,12 +541,11 @@ class VideoController extends StateNotifier<VideoState> {
           mimeType: savedRecording.mimeType,
           name: savedRecording.fileName,
         ),
-        savedRecordings: savedRecordings,
+        savedRecordings: _mergedSavedRecordings(),
         lifetimeRecordedCount: lifetimeRecordedCount,
         savedRecordingsStorageLocationLabel: storageLocationLabel,
-        feedbackMessage: 'Recording saved to ${savedRecording.storageSummary}.',
+        feedbackMessage: feedbackMessage,
       );
-      unawaited(PublicVideoShareRepository().prewarmShareUrl(savedRecording));
     } catch (error) {
       await _disposeCameraController();
       state = state.copyWith(
@@ -489,6 +621,264 @@ class VideoController extends StateNotifier<VideoState> {
     }
   }
 
+  Future<SavedVideoRecordingModel?> _uploadSavedRecordingForCurrentUser(
+    SavedVideoRecordingModel savedRecording,
+  ) async {
+    final String? userUid = _currentUserUid();
+    if (userUid == null || userUid.isEmpty) {
+      return null;
+    }
+    final UserVideoUploadRepository Function()? uploadRepositoryFactory =
+        _userVideoUploadRepositoryFactory;
+    if (uploadRepositoryFactory == null) {
+      if (_uploadRecordingForUser == null) {
+        return null;
+      }
+    }
+
+    final UserVideoUploadResult uploadResult = uploadRepositoryFactory != null
+        ? await uploadRepositoryFactory().uploadRecordingForUser(
+            userUid: userUid,
+            recording: savedRecording,
+          )
+        : await _uploadRecordingForUser!(userUid, savedRecording);
+    final SavedVideoRecordingModel uploadedRecording = savedRecording.copyWith(
+      publicShareUrl: uploadResult.shareUrl,
+      publicShareStoragePath: uploadResult.storagePath,
+      sharedAt: uploadResult.uploadedAt,
+    );
+    await persistSavedRecordingMetadata(uploadedRecording);
+    return uploadedRecording;
+  }
+
+  Future<List<SavedVideoRecordingModel>>
+  _loadCloudRecordingsForCurrentUser() async {
+    final String? userUid = _currentUserUid();
+    if (userUid == null || userUid.isEmpty) {
+      return const <SavedVideoRecordingModel>[];
+    }
+    final UserVideoUploadRepository Function()? uploadRepositoryFactory =
+        _userVideoUploadRepositoryFactory;
+    if (uploadRepositoryFactory == null) {
+      if (_loadCloudRecordingsForUser == null) {
+        return const <SavedVideoRecordingModel>[];
+      }
+    }
+
+    return uploadRepositoryFactory != null
+        ? uploadRepositoryFactory().loadRecordingsForUser(userUid: userUid)
+        : _loadCloudRecordingsForUser!(userUid);
+  }
+
+  Stream<List<SavedVideoRecordingModel>>? _watchCloudRecordings(
+    String userUid,
+  ) {
+    final UserVideoUploadRepository Function()? uploadRepositoryFactory =
+        _userVideoUploadRepositoryFactory;
+    if (uploadRepositoryFactory != null) {
+      return uploadRepositoryFactory().watchRecordingsForUser(userUid: userUid);
+    }
+    return _watchCloudRecordingsForUser?.call(userUid);
+  }
+
+  Future<void> _deleteCloudRecordingIfNeeded(
+    SavedVideoRecordingModel recording,
+  ) async {
+    if (!_hasCloudBackedRecording(recording)) {
+      return;
+    }
+
+    final String? userUid = _currentUserUid();
+    if (userUid == null || userUid.isEmpty) {
+      return;
+    }
+
+    final UserVideoUploadRepository Function()? uploadRepositoryFactory =
+        _userVideoUploadRepositoryFactory;
+    if (uploadRepositoryFactory != null) {
+      await uploadRepositoryFactory().deleteRecordingForUser(
+        userUid: userUid,
+        recording: recording,
+      );
+      return;
+    }
+
+    if (_deleteCloudRecordingForUser != null) {
+      await _deleteCloudRecordingForUser!(userUid, recording);
+    }
+  }
+
+  Future<void> _renameCloudRecordingIfNeeded(
+    SavedVideoRecordingModel recording,
+  ) async {
+    final String? userUid = _currentUserUid();
+    if (userUid == null || userUid.isEmpty) {
+      return;
+    }
+
+    final UserVideoUploadRepository Function()? uploadRepositoryFactory =
+        _userVideoUploadRepositoryFactory;
+    if (uploadRepositoryFactory != null) {
+      await uploadRepositoryFactory().updateRecordingTitleForUser(
+        userUid: userUid,
+        recordingId: recording.id,
+        title: recording.title ?? '',
+      );
+      return;
+    }
+
+    if (_renameCloudRecordingForUser != null) {
+      await _renameCloudRecordingForUser!(
+        userUid,
+        recording.id,
+        recording.title ?? '',
+      );
+    }
+  }
+
+  Future<void> _restartCloudRecordingsSubscription() async {
+    await _cloudRecordingsSubscription?.cancel();
+    _cloudRecordingsSubscription = null;
+
+    final String? userUid = _currentUserUid();
+    if (userUid == null || userUid.isEmpty) {
+      _cloudSavedRecordings = const <SavedVideoRecordingModel>[];
+      if (mounted) {
+        state = state.copyWith(savedRecordings: _mergedSavedRecordings());
+      }
+      return;
+    }
+
+    final Stream<List<SavedVideoRecordingModel>>? stream =
+        _watchCloudRecordings(userUid);
+    if (stream == null) {
+      return;
+    }
+
+    _cloudRecordingsSubscription = stream.listen(
+      (List<SavedVideoRecordingModel> cloudRecordings) {
+        _cloudSavedRecordings = cloudRecordings;
+        if (!mounted) {
+          return;
+        }
+
+        state = state.copyWith(
+          savedRecordings: _mergedSavedRecordings(),
+          lifetimeRecordedCount:
+              cloudRecordings.length > state.lifetimeRecordedCount
+              ? cloudRecordings.length
+              : state.lifetimeRecordedCount,
+        );
+        unawaited(_syncStoredUsageCountIfPossible(cloudRecordings.length));
+      },
+      onError: (Object error, StackTrace stackTrace) {
+        debugPrint('[video] cloud recordings stream failed: $error');
+        debugPrintStack(
+          label: '[video] cloud recordings stream stack',
+          stackTrace: stackTrace,
+        );
+      },
+    );
+  }
+
+  List<SavedVideoRecordingModel> _mergedSavedRecordings() {
+    if (_cloudSavedRecordings.isEmpty) {
+      return _localSavedRecordings;
+    }
+    if (_localSavedRecordings.isEmpty) {
+      return _cloudSavedRecordings;
+    }
+
+    return _mergeRecordingLists(
+      primary: _cloudSavedRecordings,
+      secondary: _localSavedRecordings,
+    );
+  }
+
+  Future<List<SavedVideoRecordingModel>> _refreshLocalRecordingsAfterMutation({
+    required List<SavedVideoRecordingModel> baseRecordings,
+  }) async {
+    List<SavedVideoRecordingModel> merged = baseRecordings;
+
+    try {
+      final List<SavedVideoRecordingModel> reloadedLocalRecordings =
+          await _repository.loadSavedRecordings();
+      merged = _mergeRecordingLists(
+        primary: merged,
+        secondary: reloadedLocalRecordings,
+      );
+    } catch (_) {
+      // Keep the optimistic in-memory list when local storage reload lags.
+    }
+
+    return merged;
+  }
+
+  Future<void> _syncStoredUsageCountIfPossible(int count) async {
+    final String? userUid = _currentUserUid();
+    if (userUid == null || userUid.isEmpty) {
+      return;
+    }
+
+    final UserVideoUploadRepository Function()? uploadRepositoryFactory =
+        _userVideoUploadRepositoryFactory;
+    if (uploadRepositoryFactory == null) {
+      return;
+    }
+
+    try {
+      await uploadRepositoryFactory().syncRecordedVideosCountForUser(
+        userUid: userUid,
+        count: count,
+      );
+    } catch (error, stackTrace) {
+      debugPrint('[video] stored usage sync failed: $error');
+      debugPrintStack(
+        label: '[video] stored usage sync stack',
+        stackTrace: stackTrace,
+      );
+    }
+  }
+
+  bool _hasCloudBackedRecording(SavedVideoRecordingModel recording) {
+    return recording.storageKind == VideoRecordingStorageKind.firebaseStorage ||
+        (recording.publicShareStoragePath?.trim().isNotEmpty ?? false);
+  }
+
+  List<SavedVideoRecordingModel> _replaceRecordingInList(
+    List<SavedVideoRecordingModel> recordings,
+    SavedVideoRecordingModel updatedRecording,
+  ) {
+    return recordings
+        .map((SavedVideoRecordingModel item) {
+          return item.id == updatedRecording.id ? updatedRecording : item;
+        })
+        .toList(growable: false);
+  }
+
+  List<SavedVideoRecordingModel> _mergeRecordingLists({
+    required List<SavedVideoRecordingModel> primary,
+    required List<SavedVideoRecordingModel> secondary,
+  }) {
+    final Map<String, SavedVideoRecordingModel> recordingsById =
+        <String, SavedVideoRecordingModel>{};
+    for (final SavedVideoRecordingModel recording in secondary) {
+      recordingsById[recording.id] = recording;
+    }
+    for (final SavedVideoRecordingModel recording in primary) {
+      recordingsById[recording.id] = recording;
+    }
+
+    final List<SavedVideoRecordingModel> merged = recordingsById.values.toList(
+      growable: false,
+    );
+    merged.sort(
+      (SavedVideoRecordingModel a, SavedVideoRecordingModel b) =>
+          b.savedAt.compareTo(a.savedAt),
+    );
+    return merged;
+  }
+
   Future<void> closeRecordingFlow() async {
     _cancelCountdown();
     _recordingTimer?.cancel();
@@ -506,13 +896,60 @@ class VideoController extends StateNotifier<VideoState> {
     state = state.copyWith(clearFeedbackMessage: true);
   }
 
+  Future<void> renameSavedRecording(
+    SavedVideoRecordingModel recording, {
+    required String title,
+  }) async {
+    final String trimmedTitle = title.trim();
+    if (trimmedTitle.isEmpty) {
+      state = state.copyWith(
+        feedbackMessage: 'Recording name cannot be empty.',
+      );
+      return;
+    }
+
+    final SavedVideoRecordingModel updatedRecording = recording.copyWith(
+      title: trimmedTitle,
+    );
+
+    try {
+      await persistSavedRecordingMetadata(updatedRecording);
+      _localSavedRecordings = _replaceRecordingInList(
+        _localSavedRecordings,
+        updatedRecording,
+      );
+
+      if (_hasCloudBackedRecording(recording)) {
+        await _renameCloudRecordingIfNeeded(updatedRecording);
+        _cloudSavedRecordings = _replaceRecordingInList(
+          _cloudSavedRecordings,
+          updatedRecording,
+        );
+      }
+
+      state = state.copyWith(
+        savedRecordings: _mergedSavedRecordings(),
+        feedbackMessage: 'Recording renamed to $trimmedTitle.',
+      );
+    } catch (error) {
+      state = state.copyWith(feedbackMessage: error.toString());
+    }
+  }
+
   Future<void> deleteSavedRecording(SavedVideoRecordingModel recording) async {
     try {
+      await _deleteCloudRecordingIfNeeded(recording);
       await _repository.deleteSavedRecording(recording);
-      final List<SavedVideoRecordingModel> savedRecordings = await _repository
-          .loadSavedRecordings();
+      _localSavedRecordings = await _refreshLocalRecordingsAfterMutation(
+        baseRecordings: _localSavedRecordings
+            .where((SavedVideoRecordingModel item) => item.id != recording.id)
+            .toList(growable: false),
+      );
+      _cloudSavedRecordings = _cloudSavedRecordings
+          .where((SavedVideoRecordingModel item) => item.id != recording.id)
+          .toList(growable: false);
       state = state.copyWith(
-        savedRecordings: savedRecordings,
+        savedRecordings: _mergedSavedRecordings(),
         feedbackMessage: '${recording.fileName} deleted.',
       );
     } catch (error) {
@@ -523,9 +960,10 @@ class VideoController extends StateNotifier<VideoState> {
   Future<void> clearSavedRecordings({String? feedbackMessage}) async {
     try {
       await _repository.clearSavedRecordings();
+      _localSavedRecordings = const <SavedVideoRecordingModel>[];
       final String? storageLocationLabel = await _safeStorageLocationLabel();
       state = state.copyWith(
-        savedRecordings: const <SavedVideoRecordingModel>[],
+        savedRecordings: _mergedSavedRecordings(),
         savedRecordingsStorageLocationLabel: storageLocationLabel,
         clearRecordedVideo: true,
         feedbackMessage: feedbackMessage,
@@ -540,19 +978,6 @@ class VideoController extends StateNotifier<VideoState> {
       return await _repository.getSavedRecordingsStorageLocationLabel();
     } catch (_) {
       return null;
-    }
-  }
-
-  void _prewarmSavedRecordingShareLinks(
-    List<SavedVideoRecordingModel> savedRecordings,
-  ) {
-    for (final SavedVideoRecordingModel recording in savedRecordings) {
-      if (recording.publicShareUrl case final String existingUrl
-          when existingUrl.isNotEmpty) {
-        continue;
-      }
-
-      unawaited(PublicVideoShareRepository().prewarmShareUrl(recording));
     }
   }
 
@@ -594,14 +1019,13 @@ class VideoController extends StateNotifier<VideoState> {
       throw StateError('No available camera was found on this device.');
     }
 
-    final CameraDescription activeCamera = cameras.firstWhere(
-      (CameraDescription camera) =>
-          camera.lensDirection == CameraLensDirection.front,
-      orElse: () => cameras.first,
-    );
+    final CameraDescription activeCamera = _preferredCameraFrom(cameras);
 
     final CameraController controller = await _repository
-        .createCameraController(activeCamera);
+        .createCameraController(
+          activeCamera,
+          enableAudio: state.isMicrophoneEnabled,
+        );
     try {
       await _repository.initializeCameraController(controller);
     } catch (_) {
@@ -631,6 +1055,99 @@ class VideoController extends StateNotifier<VideoState> {
       return null;
     } catch (_) {
       return null;
+    }
+  }
+
+  Future<void> toggleCameraEnabled() async {
+    if (state.hasActiveRecording || state.isPreparingCameraPreview) {
+      return;
+    }
+
+    if (state.isCameraEnabled) {
+      await _disposeCameraController(clearActiveCamera: false);
+      if (!mounted) {
+        return;
+      }
+      state = state.copyWith(
+        isCameraEnabled: false,
+        clearFeedbackMessage: true,
+      );
+      return;
+    }
+
+    state = state.copyWith(
+      isCameraEnabled: true,
+      isPreparingCameraPreview: true,
+      clearFeedbackMessage: true,
+    );
+
+    String? feedbackMessage;
+    try {
+      await _ensureCameraController();
+    } on _CancelledCameraPreviewPreparation {
+      return;
+    } catch (error, stackTrace) {
+      debugPrint('[video] toggleCameraEnabled failed: $error');
+      debugPrintStack(
+        label: '[video] toggleCameraEnabled stack',
+        stackTrace: stackTrace,
+      );
+      feedbackMessage = _describeRecordingError(error);
+    }
+
+    if (!mounted) {
+      return;
+    }
+
+    state = state.copyWith(
+      isCameraEnabled: feedbackMessage == null,
+      isPreparingCameraPreview: false,
+      feedbackMessage: feedbackMessage,
+    );
+  }
+
+  Future<void> toggleMicrophoneEnabled() async {
+    if (state.hasActiveRecording || state.isPreparingCameraPreview) {
+      return;
+    }
+
+    final bool nextValue = !state.isMicrophoneEnabled;
+    state = state.copyWith(
+      isMicrophoneEnabled: nextValue,
+      clearFeedbackMessage: true,
+    );
+
+    if (!state.isCameraEnabled) {
+      return;
+    }
+
+    final CameraDescription? activeCamera = state.activeCamera;
+    final CameraController? existingController = state.cameraController;
+    if (activeCamera == null && existingController == null) {
+      return;
+    }
+
+    state = state.copyWith(isPreparingCameraPreview: true);
+
+    try {
+      await _rebuildCameraController();
+      if (!mounted) {
+        return;
+      }
+      state = state.copyWith(isPreparingCameraPreview: false);
+    } catch (error, stackTrace) {
+      debugPrint('[video] toggleMicrophoneEnabled failed: $error');
+      debugPrintStack(
+        label: '[video] toggleMicrophoneEnabled stack',
+        stackTrace: stackTrace,
+      );
+      if (!mounted) {
+        return;
+      }
+      state = state.copyWith(
+        isPreparingCameraPreview: false,
+        feedbackMessage: _describeRecordingError(error),
+      );
     }
   }
 
@@ -694,13 +1211,13 @@ class VideoController extends StateNotifier<VideoState> {
     });
   }
 
-  Future<void> _disposeCameraController() async {
+  Future<void> _disposeCameraController({bool clearActiveCamera = true}) async {
     _cameraControllerInitialization = null;
     final CameraController? controller = state.cameraController;
     state = state.copyWith(
       isPreparingCameraPreview: false,
       clearCameraController: true,
-      clearActiveCamera: true,
+      clearActiveCamera: clearActiveCamera,
       recordingDuration: Duration.zero,
     );
 
@@ -751,7 +1268,10 @@ class VideoController extends StateNotifier<VideoState> {
       state = state.copyWith(clearCameraController: true);
 
       final CameraController refreshedController = await _repository
-          .createCameraController(activeCamera);
+          .createCameraController(
+            activeCamera,
+            enableAudio: state.isMicrophoneEnabled,
+          );
       await _repository.initializeCameraController(refreshedController);
 
       if (!mounted) {
@@ -792,6 +1312,63 @@ class VideoController extends StateNotifier<VideoState> {
     }
 
     await _refreshWebCameraPreviewAfterDisplayCapture();
+  }
+
+  CameraDescription _preferredCameraFrom(List<CameraDescription> cameras) {
+    final CameraDescription? previousCamera = state.activeCamera;
+    if (previousCamera != null) {
+      for (final CameraDescription camera in cameras) {
+        if (camera.name == previousCamera.name &&
+            camera.lensDirection == previousCamera.lensDirection) {
+          return camera;
+        }
+      }
+    }
+
+    return cameras.firstWhere(
+      (CameraDescription camera) =>
+          camera.lensDirection == CameraLensDirection.front,
+      orElse: () => cameras.first,
+    );
+  }
+
+  Future<void> _rebuildCameraController() async {
+    final List<CameraDescription> cameras = state.availableCameras.isNotEmpty
+        ? state.availableCameras
+        : await _repository.getAvailableCameras();
+    final CameraDescription selectedCamera = _preferredCameraFrom(cameras);
+
+    final CameraController? existingController = state.cameraController;
+    state = state.copyWith(clearCameraController: true);
+    _cameraControllerInitialization = null;
+
+    if (existingController != null) {
+      await existingController.dispose();
+    }
+
+    final CameraController refreshedController = await _repository
+        .createCameraController(
+          selectedCamera,
+          enableAudio: state.isMicrophoneEnabled,
+        );
+    try {
+      await _repository.initializeCameraController(refreshedController);
+    } catch (_) {
+      await refreshedController.dispose();
+      rethrow;
+    }
+
+    if (!mounted) {
+      await refreshedController.dispose();
+      return;
+    }
+
+    state = state.copyWith(
+      cameraController: refreshedController,
+      activeCamera: selectedCamera,
+      availableCameras: cameras,
+      supportsPauseResume: _repository.supportsPauseResume(),
+    );
   }
 
   String _describeRecordingError(Object error) {
@@ -855,6 +1432,7 @@ class VideoController extends StateNotifier<VideoState> {
   void dispose() {
     _recordingTimer?.cancel();
     _cancelCountdown();
+    unawaited(_cloudRecordingsSubscription?.cancel());
     unawaited(_repository.cancelPreparedDisplayCapture());
     _repository.setExternalStopListener(null);
     final CameraController? controller = state.cameraController;

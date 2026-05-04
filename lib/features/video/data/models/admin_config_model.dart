@@ -11,6 +11,7 @@ class AdminConfigModel {
     required this.primaryActionLabel,
     required this.secondaryActionLabel,
     required this.featurePoints,
+    required this.freeVideoLimit,
     this.demoVideoUrl,
     this.demoVideoUrlWeb,
     this.demoVideoUrlMobile,
@@ -23,6 +24,7 @@ class AdminConfigModel {
   final String primaryActionLabel;
   final String secondaryActionLabel;
   final List<String> featurePoints;
+  final int freeVideoLimit;
   final String? demoVideoUrl;
   final String? demoVideoUrlWeb;
   final String? demoVideoUrlMobile;
@@ -68,7 +70,7 @@ class AdminConfigModel {
       id: 'admin-demo-video',
       fileName: demoVideoTitle?.trim().isNotEmpty == true
           ? '${demoVideoTitle!.trim()}$extension'
-          : 'bloop-demo-video$extension',
+          : 'Aks-demo-video$extension',
       savedAt: DateTime.fromMillisecondsSinceEpoch(0),
       duration: Duration.zero,
       storageKind: VideoRecordingStorageKind.localFile,
@@ -86,6 +88,7 @@ class AdminConfigModel {
       'primaryActionLabel': primaryActionLabel,
       'secondaryActionLabel': secondaryActionLabel,
       'featurePoints': featurePoints,
+      'freeVideoLimit': freeVideoLimit,
       'demoVideoUrl': demoVideoUrl,
       'demoVideoUrlWeb': demoVideoUrlWeb,
       'demoVideoUrlMobile': demoVideoUrlMobile,
@@ -124,6 +127,12 @@ class AdminConfigModel {
               'secondaryActionLabel',
             ])!
           : defaults.secondaryActionLabel,
+      freeVideoLimit:
+          _readFirstPositiveInt(json, const <String>[
+            'freeVideoLimit',
+            'free_video_limit',
+          ]) ??
+          defaults.freeVideoLimit,
       featurePoints: rawPoints
           .whereType<String>()
           .map((String value) => value.trim())
@@ -175,6 +184,7 @@ class AdminConfigModel {
     String? primaryActionLabel,
     String? secondaryActionLabel,
     List<String>? featurePoints,
+    int? freeVideoLimit,
     String? demoVideoUrl,
     String? demoVideoUrlWeb,
     String? demoVideoUrlMobile,
@@ -187,6 +197,7 @@ class AdminConfigModel {
       primaryActionLabel: primaryActionLabel ?? this.primaryActionLabel,
       secondaryActionLabel: secondaryActionLabel ?? this.secondaryActionLabel,
       featurePoints: featurePoints ?? this.featurePoints,
+      freeVideoLimit: freeVideoLimit ?? this.freeVideoLimit,
       demoVideoUrl: demoVideoUrl ?? this.demoVideoUrl,
       demoVideoUrlWeb: demoVideoUrlWeb ?? this.demoVideoUrlWeb,
       demoVideoUrlMobile: demoVideoUrlMobile ?? this.demoVideoUrlMobile,
@@ -195,17 +206,16 @@ class AdminConfigModel {
     );
   }
 
+  static const int defaultFreeVideoLimit = 20;
+
   static const AdminConfigModel defaults = AdminConfigModel(
-    title: 'Hassle-free video communication,\nno need to install',
+    title: 'Create clear recordings without setup friction',
     subtitle:
-        'Start recording instantly, keep your workspace clean, and let Firebase videos appear below when your library begins to fill.',
-    primaryActionLabel: 'Get Started',
-    secondaryActionLabel: 'Watch Intro',
-    featurePoints: <String>[
-      'Auto video encoding',
-      'Easy to use',
-      'Complete controls',
-    ],
+        'Launch a polished recording flow, keep your workspace organized, and let every saved video stay ready for playback or export.',
+    primaryActionLabel: 'Start recording',
+    secondaryActionLabel: 'Watch demo',
+    featurePoints: <String>['Guided setup', 'Saved library', 'Fast export'],
+    freeVideoLimit: defaultFreeVideoLimit,
     demoVideoTitle: 'Demo video',
     demoVideoSubtitle: 'Demo video is not configured yet.',
   );
@@ -244,6 +254,26 @@ class AdminConfigModel {
         final String trimmed = value.trim();
         if (trimmed.isNotEmpty) {
           return trimmed;
+        }
+      }
+    }
+
+    return null;
+  }
+
+  static int? _readFirstPositiveInt(
+    Map<String, dynamic> json,
+    List<String> keys,
+  ) {
+    for (final String key in keys) {
+      final dynamic value = json[key];
+      if (value is int && value > 0) {
+        return value;
+      }
+      if (value is String) {
+        final int? parsed = int.tryParse(value.trim());
+        if (parsed != null && parsed > 0) {
+          return parsed;
         }
       }
     }

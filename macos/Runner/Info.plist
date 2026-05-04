@@ -27,9 +27,9 @@
 	<key>NSMainNibFile</key>
 	<string>MainMenu</string>
 	<key>NSCameraUsageDescription</key>
-	<string>bloop needs camera access to capture your video.</string>
+	<string>Aks needs camera access to capture your video.</string>
 	<key>NSMicrophoneUsageDescription</key>
-	<string>bloop needs microphone access to capture audio while recording.</string>
+	<string>Aks needs microphone access to capture audio while recording.</string>
 	<key>NSPrincipalClass</key>
 	<string>NSApplication</string>
 </dict>

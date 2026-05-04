@@ -26,6 +26,8 @@ class VideoState {
     this.recordingDuration = Duration.zero,
     this.supportsPauseResume = true,
     this.selectedRecordingMode = VideoRecordingMode.fullScreen,
+    this.isCameraEnabled = true,
+    this.isMicrophoneEnabled = true,
     this.feedbackMessage,
   });
 
@@ -45,6 +47,8 @@ class VideoState {
   final Duration recordingDuration;
   final bool supportsPauseResume;
   final VideoRecordingMode selectedRecordingMode;
+  final bool isCameraEnabled;
+  final bool isMicrophoneEnabled;
   final String? feedbackMessage;
 
   bool get isPreparingRecording =>
@@ -61,8 +65,10 @@ class VideoState {
   bool get hasActiveRecording =>
       isRecording || isPaused || isPreparingRecording || isFinalizing;
 
+  int get currentRecordedCount => savedRecordings.length;
+
   bool get hasReachedRecordingRestriction =>
-      lifetimeRecordedCount >= lifetimeRecordedVideosRestrictionLimit;
+      currentRecordedCount >= lifetimeRecordedVideosRestrictionLimit;
 
   VideoState copyWith({
     bool? isLoading,
@@ -81,6 +87,8 @@ class VideoState {
     Duration? recordingDuration,
     bool? supportsPauseResume,
     VideoRecordingMode? selectedRecordingMode,
+    bool? isCameraEnabled,
+    bool? isMicrophoneEnabled,
     String? feedbackMessage,
     bool clearFeedbackMessage = false,
     bool clearCameraController = false,
@@ -119,6 +127,8 @@ class VideoState {
       supportsPauseResume: supportsPauseResume ?? this.supportsPauseResume,
       selectedRecordingMode:
           selectedRecordingMode ?? this.selectedRecordingMode,
+      isCameraEnabled: isCameraEnabled ?? this.isCameraEnabled,
+      isMicrophoneEnabled: isMicrophoneEnabled ?? this.isMicrophoneEnabled,
       feedbackMessage: clearFeedbackMessage
           ? null
           : feedbackMessage ?? this.feedbackMessage,
